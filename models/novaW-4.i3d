@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+
+<i3D name="novaW-4.i3d" version="1.6" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://i3d.giants.ch/schema/i3d-1.6.xsd">
+  <Asset>
+    <Export program="GIANTS Editor 64bit" version="9.0.4"/>
+  </Asset>
+
+  <Files>
+  </Files>
+
+
+  <Materials>
+    <Material name="default" materialId="11" diffuseColor="0.494118 0.494118 0.494118 1">
+    </Material>
+  </Materials>
+
+
+  <Shapes externalShapesFile="novaW-4.i3d.shapes">
+  </Shapes>
+
+
+  <Dynamics>
+  </Dynamics>
+
+  <Scene>
+      <Shape shapeId="1" name="NovaW-4_main_component1" rotation="-6.83019e-06 -0 0" dynamic="true" compound="true" collisionMask="2109442" clipDistance="300" nodeId="15" materialIds="11" castsShadows="true" receiveShadows="true" nonRenderable="true">
+        <Shape shapeId="2" name="NovaW-4.001" translation="0 0.266335 -1.16419e-08" rotation="-6.83019e-06 -0 0" clipDistance="300" nodeId="16" materialIds="11" castsShadows="true" receiveShadows="true"/>
+      </Shape>
+  </Scene>
+
+</i3D>

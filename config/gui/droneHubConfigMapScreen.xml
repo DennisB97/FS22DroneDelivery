@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8" standalone="no" ?>
+<GUI name="droneHubDroneConfigMapScreen" onCreate="onCreate">
+
+
+    <GuiElement type="boxLayout" size="450px 300px" anchors="0 0 1 1" id="boxLayout">
+        <GuiElement type="button" profile="textButton" size="450px 50px"/>
+
+        <GuiElement type="flowLayout" handleFocus="false" size="450px 200px"  anchors="0 0 1 1">
+            <GuiElement type="empty"  size="50px 200px" anchors="0 0 1 1"/>
+            <GuiElement type="bitmap" id="map" profile="mapImage" size="350px 200px" anchors="0 0 1 1">
+                <GuiElement type="bitmap" size="15px 20px" imageColor="0.16 0.76 0.93 1.0" anchors="0.5 0.5 0.5 0.5" />
+            </GuiElement>
+            <GuiElement type="empty" size="50px 200px" anchors="0 0 1 1"/>
+        </GuiElement>
+
+        <GuiElement type="text" handleFocus="false" textSize="0.02" textAlignment="center" size="450px 50px"  anchors="0 0 1 1"/>
+    </GuiElement>
+
+
+</GUI>

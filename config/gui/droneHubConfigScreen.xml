@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8" standalone="no" ?>
+<GUI name="DroneHubConfigScreen" onOpen="onOpen" onClose="onClose">
+    <GuiElement type="empty" profile="uiInGameMenuFrame">
+        <GuiElement type="empty" profile="ingameMenuFrameHeaderPanel">
+            <GuiElement type="bitmap" profile="menuHeaderIcon" size="64px 64px"/>
+            <GuiElement type="text" profile="ingameMenuFrameHeaderText" id="header"/>
+        </GuiElement>
+
+        <GuiElement type="bitmap" profile="droneHubBackground" id="main">
+            <GuiElement type="empty" profile="droneHubInnerDiv">
+
+                <GuiElement type="scrollingLayout" id="configList" size="1000px 500px" anchors="0 0 1 1" focusInit="true" onSelectionChanged="onTabMenuSelectionChanged" onScroll="onTabMenuScroll" >
+                    <GuiElement type="flowLayout" size="1000px 300px" id="mapConfigs">
+
+                        <!-- will have the left pick up map GUI added, droneHubDroneConfigMapScreen.xml -->
+                        <GuiElement type="empty" size="450px 300px" anchors="0 0 1 1">
+                        </GuiElement>
+
+                        <!-- <!-- <!-- <!-- middle "decoration part with just arrow pointing towards the right part which is "pickup point setting"  -->
+                        <GuiElement type="boxLayout" size="100px 300px" anchors="0 0 1 1">
+                            <GuiElement type="empty" size="100px 50px" anchors="0 0 1 1"/>
+                            <GuiElement type="text" text="---->" size="100px 200px" textAlignment="center" anchors="0 0 1 1"/>
+                            <GuiElement type="empty" size="100px 50px" anchors="0 0 1 1"/>
+                        </GuiElement>
+
+                        <!-- will have the right delivery map GUI added, droneHubDroneConfigMapScreen.xml -->
+                        <GuiElement type="empty" size="450px 300px" anchors="0 0 1 1">
+                        </GuiElement>
+
+                    </GuiElement>
+
+
+                    <GuiElement type="flowLayout" size="1000px 200px" anchors="0 0 1 1" margin="0px 50px 0px 0px" id="flowLayout">
+                        <GuiElement type="empty" size="200px 200px" anchors="0 0 1 1" />
+                        <GuiElement type="boxLayout" size="600px 200px" anchors="0 0 1 1">
+
+                            <!-- Delivery type selection -->
+                            <GuiElement type="multiTextOption" profile="multiTextOptionSettings" anchors="0 0 1 1" position="0px 0px" margin="0px 0px 0px 0px" size="600px 65px" onClick="onDeliveryTypeChange" id="deliveryTypeOption">
+
+                                <GuiElement type="button"  profile="multiTextOptionSettingsLeft" size="50px 50px" anchors="0 0 1 1" position="200px 0px" margin="0px 0px 0px 0px"/>
+                                <GuiElement type="button" profile="multiTextOptionSettingsRight" size="50px 50px" anchors="0 0 1 1" position="550px 0px" margin="0px 0px 0px 0px"/>
+                                <GuiElement type="text" size="300px 50px" textSize="0.02" textBold="true" textAlignment="center" textVerticalAlignment="middle" anchors="0 0 1 1" position="250px 0px" margin="0px 0px 0px 0px"/>
+                                <GuiElement type="text" size="100px 50px"  profile="multiTextOptionSettingsTitle" text="$l10n_configGUI_deliveryType" anchors="0 0 1 1" position="0px 0px" margin="0px 0px 0px 0px"/>
+                                <GuiElement type="bitmap" profile="multiTextOptionSettingsBg" size="300px 50px" anchors="0 0 1 1" position="250px 0px" margin="0px 0px 0px 0px"/>
+                            </GuiElement>
+
+
+                            <!-- Checkbox to require price reached on delivery type before delivering -->
+                            <GuiElement type="checkedOption" profile="multiTextOptionSettings" size="600px 50px" anchors="0 0 1 1" id="priceLimitCheckOption" onClick="onPriceLimitChecked">
+                                <GuiElement type="button" profile="multiTextOptionSettingsLeft"  size="50px 50px" anchors="0 0 1 1" position="200px 0px" margin="0px 0px 0px 0px"/>
+                                <GuiElement type="button" profile="multiTextOptionSettingsRight"  size="50px 50px" anchors="0 0 1 1" position="550px 0px" margin="0px 0px 0px 0px"/>
+                                <GuiElement type="text" size="300px 50px" textSize="0.02" textBold="true" textAlignment="center" textVerticalAlignment="middle" anchors="0 0 1 1" position="250px 0px" margin="0px 0px 0px 0px"/>
+                                <GuiElement type="text" profile="multiTextOptionSettingsTitle" text="$l10n_configGUI_priceLimit"  anchors="0 0 1 1" position="0px 0px" margin="0px 0px 0px 0px"/>
+                                <GuiElement type="bitmap" profile="multiTextOptionSettingsBg"  size="300px 50px" anchors="0 0 1 1" position="250px 0px" margin="0px 0px 0px 0px"/>
+                            </GuiElement>
+
+                            <!-- Text input for price limit -->
+                            <GuiElement type="empty" size="600px 50px" anchors="0 0 1 1" position="0px -50px" id="priceLimitOption">
+                                <!-- <GuiElement type="text" textMaxWidth="250px" profile="multiTextOptionSettingsTitle" text="$l10n_configGUI_price"  anchors="0 0 1 1" position="0px 0px" margin="0px 0px 0px 0px"/> -->
+                                <GuiElement type="text" size="300px 50px" textSize="0.02" textBold="true" textAlignment="center" textVerticalAlignment="middle" anchors="0 0 1 1" position="250px 0px" margin="0px 0px 0px 0px"/>
+                                <GuiElement type="bitmap" profile="multiTextOptionSettingsBg"  size="300px 50px" anchors="0 0 1 1" position="250px 0px" margin="0px 0px 0px 0px"/>
+                                <GuiElement type="button" size="50px 50px" anchors="0 0 1 1" position="550px 0px" imageColor="0.164 0.756 0.929 1" imageFocusedColor="1 1 1 1" imageHighlightedColor="1 1 1 1">
+                                    <GuiElement type="bitmap" handleFocus="false"  size="50px 50px" imageColor="0.164 0.756 0.929 1" imageFocusedColor="1 1 1 1" imageHighlightedColor="1 1 1 1" anchors="0.5 0.5 0.5 0.5"/>
+                                </GuiElement>
+                            </GuiElement>
+
+
+
+                        </GuiElement>
+                        <GuiElement type="empty" size="200px 200px" anchors="0 0 1 1"/>
+
+                    </GuiElement>
+                </GuiElement>
+
+                <GuiElement type="threePartBitmap" profile="verticalListSliderRightDocked" size="10px 500px" >
+                    <GuiElement type="slider" id="slider" onChanged="onListSelectionChanged" profile="verticalListSliderBar" dataElementId="configList" size="4px 494px" sliderSize="4px 50px" />
+                </GuiElement>
+
+            </GuiElement>
+        </GuiElement>
+
+        <GuiElement type="flowLayout" profile="buttonBoxDockedOnScreen" size="1000px 50px">
+            <GuiElement type="button" profile="buttonBack" onClick="onClickBack" text="$l10n_button_back"/>
+            <GuiElement type="button" profile="buttonRectangle" onClick="onAcceptClicked" text="$l10n_button_apply" id="applyButton"/>
+        </GuiElement>
+
+    </GuiElement>
+</GUI>

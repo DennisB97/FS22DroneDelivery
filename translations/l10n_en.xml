@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8" standalone="no" ?>
+<l10n>
+     <texts>
+		<text name="droneHub_hubActivateText" text="Configure drones"/>
+		<text name="listingGUI_droneNotLinked" text="NO DRONE LINKED"/>
+		<text name="listingGUI_droneIdle" text="Idle"/>
+		<text name="listingGUI_droneCharging" text="Charging"/>
+		<text name="listingGUI_dronePicking" text="Picking up"/>
+		<text name="listingGUI_droneDelivering" text="Delivering"/>
+		<text name="listingGUI_droneBooting" text="Booting..."/>
+		<text name="listingGUI_droneIncompatible" text="Map not supported by drones!"/>
+		<text name="listingGUI_newDroneName" text="Give a new name to this drone route"/>
+		<text name="listingGUI_linkButton" text="Link Drone"/>
+        <text name="listingGUI_linkingFailure" text="Could not link a drone, make sure to place a drone on the hub!"/>
+        <text name="listingGUI_configureButton" text="Configure Drone"/>
+        <text name="listingGUI_unLinkButton" text="Unlink Drone" />
+        <text name="listingGUI_unLinkingFailure" text="Could not unlink drone, can only unlink while drone is at hub." />
+        <text name="droneHub_rightsMissing" text="You need manageProduction permissions to adjust drone settings" />
+        <text name="listingGUI_linkingChange" text="Link status changing..." />
+        <text name="listingGUI_unlinkConfirmTitle" text="Unlinking drone" />
+        <text name="listingGUI_unlinkConfirmText" text="Are you sure you want to unlink the drone? This will remove all the configured values!" />
+        <text name="listingGUI_statusText" text="Status: " />
+        <text name="configGUI_configure" text="Configure" />
+        <text name="configGUI_pickupPointButton" text="Select Pick-up Point" />
+        <text name="configGUI_deliveryPointButton" text="Select Delivery Point" />
+        <text name="configGUI_deliveryType" text="Delivery type" />
+        <text name="configGUI_priceLimit" text="Sell price limit" />
+        <text name="configGUI_price" text="Price" />
+        <text name="configGUI_newPriceLimit" text="Enter new price limit" />
+
+
+
+
+        <text name="input_FLYPATHFINDING_DBG_PREVIOUS" text="Debug previous" />
+        <text name="input_FLYPATHFINDING_DBG_NEXT" text="Debug next" />
+        <text name="input_FLYPATHFINDING_DBG_ASTAR_SHOW_CLOSEDNODES" text="Toggle closed nodes" />
+	</texts>
+</l10n>

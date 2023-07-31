@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<GUIProfiles>
+
+    <Traits>
+		<Trait name="anchorTopLeft">
+            <Value name="anchors" value="0 0 1 1" />
+        </Trait>
+		<Trait name="anchorTopCenter">
+            <Value name="anchors" value="0.5 0.5 1 1" />
+        </Trait>
+		<Trait name="anchorMiddleCenter">
+			<Value name="anchors" value="0.5 0.5 0.5 0.5" />
+        </Trait>
+    </Traits>
+
+	<Profile name="droneHubBackground" extends="emptyFullPanel">
+		<Value name="imageColor" value="0.0111 0.0276 0.0377 0.95"/>
+    </Profile>
+	
+    <Profile name="droneHubInnerDiv" with="anchorMiddleCenter">
+		<Value name="size" value="1000px 500px"/>
+    </Profile>
+
+    <Profile name="droneHubSideDiv" with="anchorTopLeft" >
+		<Value name="size" value="500px 500px"/>
+    </Profile>
+
+    <Profile name="textButton" with="anchorTopLeft">
+        <Value name="textColor" value="0.16 0.76 0.93 1"/>
+        <Value name="textSelectedColor" value="1 1 1 1"/>
+        <Value name="textHighlightedColor" value="1 1 1 1"/>
+        <Value name="textSize" value="0.02"/>
+        <Value name="size" value="200px 100px"/>
+        <Value name="textAutoWidth" value="true"/>
+        <Value name="textAlignment" value="center"/>
+    </Profile>
+
+    <Profile name="mapImage" with="anchorMiddleCenter">
+        <Value name="size" value="500px 350px"/>
+        <Value name="screenAlign" value="middleCenter"/>
+        <Value name="hasFrame" value="true"/>
+        <Value name="frameThickness" value="2px 2px 2px 2px"/>
+    </Profile>
+
+    <Profile name="batteryCharge" with="anchorTopLeft">
+        <Value name="size" value="50px 50px"/>
+        <Value name="screenAlign" value="middleCenter"/>
+        <Value name="imageColor" value="0.164 0.756 0.929 1"/>
+        <Value name="offset" value="0px -10px"/>
+    </Profile>
+
+
+</GUIProfiles>

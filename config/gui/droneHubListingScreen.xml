@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8" standalone="no" ?>
+<GUI name="droneHubDroneListingScreen" onOpen="onOpen" onClose="onClose">
+    <GuiElement type="listItem" >
+        <GuiElement type="flowLayout">
+            <!-- Left side box -->
+            <GuiElement type="empty" profile="droneHubSideDiv">
+                <GuiElement type="boxLayout" anchors="0 0 1 1">
+
+                    <!-- top drone name area -->
+                    <GuiElement type="empty" size="500px 100px" anchors="0 0 1 1" >
+                        <GuiElement type="flowLayout" handleFocus="false" id="droneIdentity">
+                            <GuiElement type="text" handleFocus="false" textAutoWidth="true" size="400px 100px" anchors="0.0 0.0 1 1" textMaxWidth="400px"/>
+                            <GuiElement type="button" handleFocus="true" size="100px 100px" imageColor="0.164 0.756 0.929 1" imageFocusedColor="1 1 1 1" imageHighlightedColor="1 1 1 1" anchors="0.0 0.0 1 1">
+                                <GuiElement type="bitmap" handleFocus="false"  size="50px 50px" imageColor="0.164 0.756 0.929 1" imageFocusedColor="1 1 1 1" imageHighlightedColor="1 1 1 1" anchors="0.5 0.5 0.5 0.5"/>
+                            </GuiElement>
+                        </GuiElement>
+                    </GuiElement>
+
+                    <!-- middle drone map area -->
+                    <GuiElement type="empty" size="500px 350px" anchors="0 0 1 1">
+                        <GuiElement type="boxLayout" anchors="0 0 1 1" size="500px 350px" autoValidateLayout="true">
+                            <GuiElement type="bitmap" profile="mapImage" id="droneMap">
+                                <GuiElement type="bitmap" size="15px 20px" imageColor="1.0 0.0 0.0 1.0" anchors="0.5 0.5 0.5 0.5" />
+                            </GuiElement>
+                        </GuiElement>
+                    </GuiElement>
+
+                    <!-- bottom drone battery & status area -->
+                    <GuiElement type="empty" size="500px 50px" anchors="0 0 1 1">
+                        <GuiElement type="flowLayout" numFlows="2" size="500px 50px" anchors="0 0 1 1">
+                            <GuiElement type="flowLayout" alignmentY="middle" size="120px 50px" id="droneCharge" fitFlowToElements="true" anchors="0 0 1 1">
+                                <GuiElement type="bitmap" profile="batteryCharge"/>
+                                <GuiElement type="text" textAlignment="left" size="70px 50px" textSize="0.015" anchors="0 0 1 1"/>
+                            </GuiElement>
+
+                            <GuiElement type="flowLayout" alignmentY="middle" size="380px 50px" anchors="0 0 1 1" fitFlowToElements="true">
+                                <GuiElement type="text" text="$l10n_listingGUI_statusText" size="80px 50px" margin="80px 0px 0px 0px" textMaxWidth="80px" textAutoWidth="true" textSize="0.015" anchors="0.0 0.0 1 1"/>
+                                <GuiElement type="text" size="300px 50px" id="status" textMaxWidth="300px" textAutoWidth="true" textSize="0.015" anchors="0.0 0.0 1 1"/>
+                            </GuiElement>
+
+                        </GuiElement>
+                    </GuiElement>
+
+                </GuiElement>
+
+
+            </GuiElement>
+            <!-- Right side box -->
+            <GuiElement type="empty" profile="droneHubSideDiv">
+
+                <GuiElement type="boxLayout" anchors="0.5 0.5 0.5 0.5" alignmentY="bottom" size="500px 300px" >
+                    <GuiElement type="text" size="500px 100px" textColor="1 0 0 1" textSize="0.015" textLayoutMode="overflow" id="linkErrorText" textMaxNumLines="3" text="Can't unlink drone while drone not at the hub! Can't unlink drone while drone not at the hub! Can't unlink drone while drone not at the hub!"  anchors="0 0 1 1"/>
+                    <GuiElement type="empty" size="500px 100px" anchors="0.0 0.0 1.0 1.0">
+                        <GuiElement type="flowLayout" handleFocus="false" alignmentX="center" id="buttonLayout">
+                            <!-- <GuiElement type="button" onClick="onClick" profile="textButton" text="Configure"/> -->
+                            <!-- <GuiElement type="button" onClick="onClick" profile="textButton" text="Unlink"/> -->
+                        </GuiElement>
+                    </GuiElement>
+
+                </GuiElement>
+            </GuiElement>
+        </GuiElement>
+    </GuiElement>
+
+
+
+</GUI>
