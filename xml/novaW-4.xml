@@ -4,7 +4,7 @@
         <name>NovaW-4</name>
         <image>images/store_birdSeed.dds</image>
         <brand>NovaFlyFast</brand>
-        <price>200000</price>
+        <price>150000</price>
         <dailyUpkeep>20</dailyUpkeep>
         <lifetime>1000</lifetime>
         <rotation>0</rotation>
@@ -21,33 +21,116 @@
         <canBeReset>false</canBeReset>
         <supportsPickUp>true</supportsPickUp>
         <components>
-            <component centerOfMass="0 0 0" solverIterationCount="10" mass="100"/>
+            <component centerOfMass="0 0 0" solverIterationCount="10" mass="300"/>
         </components>
         <showInVehicleMenu>true</showInVehicleMenu>
-        <mapHotspot available="false" />
+        <mapHotspot type="TOOL" />
         <input allowed="false"/>
+        <schemaOverlay attacherJointPosition="0 0" name="VEHICLE" />
     </base>
 
-    <!-- <fillUnit> -->
-        <!-- <fillUnitConfigurations> -->
-            <!-- <fillUnitConfiguration> -->
-                <!-- <fillUnits removeVehicleIfEmpty="false"> -->
-                    <!-- <fillUnit showCapacityInShop="true" fillTypeCategories="BULK" unitTextOverride="g" capacity="1000" startFillLevel="0" ignoreFillLimit="false"/> -->
-                <!-- </fillUnits> -->
-            <!-- </fillUnitConfiguration> -->
-        <!-- </fillUnitConfigurations> -->
-    <!-- </fillUnit> -->
+    <animations>
+        <animation name="legAnimation">
+            <part node="leftLeg" startTime="0" duration="1" startRot="0 0 0" endRot="0 0 180"/>
+            <part node="rightLeg" startTime="0" duration="1" startRot="0 0 0" endRot="0 0 -180"/>
 
-<!--  -->
-    <!-- <customDischarge customDirectionY="1" bUseCustomDirection="true" /> -->
+            <sound template="defaultHydraulicSound" startTime="0.01" endTime="0.99" volumeScale="1.2" pitchScale="0.4" linkNode="leftLeg"/>
+            <sound template="clackVar6"             startTime="0.99" direction="1"  volumeScale="0.6" pitchScale="0.6" linkNode="leftLeg"/>
+            <sound template="sheetImp01"            startTime="0.99" direction="1"  volumeScale="0.3" pitchScale="0.5" linkNode="leftLeg"/>
+            <sound template="clackVar6"             startTime="0.01" direction="-1" volumeScale="0.6" pitchScale="0.6" linkNode="leftLeg"/>
+            <sound template="sheetImp01"            startTime="0.01" direction="-1" volumeScale="0.3" pitchScale="0.5" linkNode="leftLeg"/>
+        </animation>
 
-    <!-- <dischargeable requiresTipOcclusionArea="false"> -->
-        <!-- <dischargeNode node="dischargeNode" emptySpeed="100" fillUnitIndex="1" canStartDischargeAutomatically="true" playSound="false"> -->
-           <!-- <raycast node="dischargeNode" useWorldNegYDirection="false" maxDistance="1" /> -->
-        <!-- </dischargeNode> -->
-    <!-- </dischargeable> -->
+        <animation name="rotorAnimation" looping="true" >
+            <part node="rotor1" startTime="0" duration="0.02" startRot="0 0 0" endRot="0 360 0"/>
+            <part node="rotor2" startTime="0" duration="0.02" startRot="0 0 0" endRot="0 360 0"/>
+            <part node="rotor5" startTime="0" duration="0.02" startRot="0 0 0" endRot="0 360 0"/>
+            <part node="rotor6" startTime="0" duration="0.02" startRot="0 0 0" endRot="0 360 0"/>
+
+            <sound template="clackVar6"             startTime="0.99" direction="1"  volumeScale="0.6" pitchScale="0.6" linkNode="rotor1"/>
+            <sound template="sheetImp01"            startTime="0.99" direction="1"  volumeScale="0.3" pitchScale="0.5" linkNode="rotor1"/>
+            <sound template="clackVar6"             startTime="0.01" direction="-1" volumeScale="0.6" pitchScale="0.6" linkNode="rotor1"/>
+            <sound template="sheetImp01"            startTime="0.01" direction="-1" volumeScale="0.3" pitchScale="0.5" linkNode="rotor1"/>
+        </animation>
+
+        <animation name="hookAnimation">
+            <part node="hookHolder" startTime="0" duration="1" startRot="0 0 0" endRot="0 0 90"/>
+
+            <sound template="defaultHydraulicSound" startTime="0.01" endTime="0.99" volumeScale="1.2" pitchScale="0.4" linkNode="hookHolder"/>
+            <sound template="clackVar6"             startTime="0.99" direction="1"  volumeScale="0.6" pitchScale="0.6" linkNode="hookHolder"/>
+            <sound template="sheetImp01"            startTime="0.99" direction="1"  volumeScale="0.3" pitchScale="0.5" linkNode="hookHolder"/>
+            <sound template="clackVar6"             startTime="0.01" direction="-1" volumeScale="0.6" pitchScale="0.6" linkNode="hookHolder"/>
+            <sound template="sheetImp01"            startTime="0.01" direction="-1" volumeScale="0.3" pitchScale="0.5" linkNode="hookHolder"/>
+        </animation>
+
+        <animation name="palletHolderAnimation">
+            <part node="palletHolder1" startTime="0" duration="1" startRot="0 0 0" endRot="0 0 -90"/>
+            <part node="palletHolder2" startTime="0" duration="1" startRot="0 0 0" endRot="0 0 90"/>
+
+            <sound template="defaultHydraulicSound" startTime="0.01" endTime="0.99" volumeScale="1.2" pitchScale="0.4" linkNode="palletHolder1"/>
+            <sound template="clackVar6"             startTime="0.99" direction="1"  volumeScale="0.6" pitchScale="0.6" linkNode="palletHolder1"/>
+            <sound template="sheetImp01"            startTime="0.99" direction="1"  volumeScale="0.3" pitchScale="0.5" linkNode="palletHolder1"/>
+            <sound template="clackVar6"             startTime="0.01" direction="-1" volumeScale="0.6" pitchScale="0.6" linkNode="palletHolder1"/>
+            <sound template="sheetImp01"            startTime="0.01" direction="-1" volumeScale="0.3" pitchScale="0.5" linkNode="palletHolder1"/>
+        </animation>
+
+    </animations>
+
+    <dynamicMount triggerNode="dynamicMountTrigger" transferMass="true" triggerForceAcceleration="4" />
+
+    <tensionBeltObject>
+        <meshNodes>
+            <meshNode node="NovaW_vis"/>
+        </meshNodes>
+    </tensionBeltObject>
+
+    <tensionBelts>
+        <tensionBeltsConfigurations>
+            <tensionBeltsConfiguration>
+                <tensionBelts linkNode="tensionBelts" jointNode="droneNode" width="0.10" interactionRadius="0" maxEdgeLength="0.1" geometryBias="0.01" ratchetPosition="0.2" defaultOffset="0.1" defaultOffsetSide="0.1" defaultHeight="4" >
+                    <tensionBelt startNode="startPoint01" endNode="startPoint01End" >
+                        <intersectionNode node="tensionBelt01Intersection01"/>
+                        <intersectionNode node="tensionBelt01Intersection02"/>
+                    </tensionBelt>
+                    <sounds>
+                        <addBelt    template="beltOpen" />
+                        <removeBelt template="beltClose" />
+                    </sounds>
+                </tensionBelts>
+            </tensionBeltsConfiguration>
+        </tensionBeltsConfigurations>
+    </tensionBelts>
+
+    <attacherJoints>
+        <attacherJoint node="bigBagJoint" jointType="bigBag" allowsJointLimitMovement="false" allowsLowering="false" lowerRotLimit="5 5 90" upperRotLimit="5 5 90" upperTransLimit="0 0 0" lowerTransLimit="0 0 0" rotLimitSpring="7500 7500 7500" rotLimitDamping="1 1 1" transLimitSpring="7500 7500 7500" transLimitDamping="1 1 1">
+            <schema position="1 0" rotation="0" invertX="false" />
+        </attacherJoint>
+        <sounds>
+            <attach template="ATTACH_BigBag" volumeScale="1" pitchScale="0.8"/>
+        </sounds>
+    </attacherJoints>
 
     <i3dMappings>
         <i3dMapping id="droneNode" node="0>" />
+        <i3dMapping id="NovaW_vis" node="0>0" />
+        <i3dMapping id="dynamicMountTrigger" node="0>0|0" />
+        <i3dMapping id="hookHolder" node="0>0|1" />
+        <i3dMapping id="leftLeg" node="0>0|2" />
+        <i3dMapping id="rightLeg" node="0>0|5" />
+        <i3dMapping id="palletHolder1" node="0>0|3" />
+        <i3dMapping id="palletHolder2" node="0>0|4" />
+        <i3dMapping id="rotor1" node="0>0|6" />
+        <i3dMapping id="rotor2" node="0>0|7" />
+        <i3dMapping id="rotor5" node="0>0|8" />
+        <i3dMapping id="rotor6" node="0>0|9" />
+        <i3dMapping id="tensionBelts" node="0>0|10" />
+        <i3dMapping id="startPoint01" node="0>0|10|0" />
+        <i3dMapping id="startPoint01End" node="0>0|10|0|2" />
+        <i3dMapping id="tensionBelt01Intersection01" node="0>0|10|0|0" />
+        <i3dMapping id="tensionBelt01Intersection02" node="0>0|10|0|1" />
+        <i3dMapping id="bigBagJoint" node="0>0|11|0" />
+
+
+
     </i3dMappings>
 </vehicle>

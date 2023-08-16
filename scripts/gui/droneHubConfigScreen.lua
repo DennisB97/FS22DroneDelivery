@@ -527,15 +527,14 @@ function DroneHubConfigScreen:activateSelection()
     end
 
     self:registerMouseActionEvents()
+
     self.main:setVisible(false)
     g_depthOfFieldManager:popArea()
 
     g_currentMission.hud.ingameMap:setTopDownCamera(self.camera)
     self.camera:activate()
     self.cursor:activate()
-
     self.selectorBrush:activate(true)
-
 end
 
 --- inactivateSelection will be called when going back from the top down selection view.
@@ -576,8 +575,10 @@ function DroneHubConfigScreen:registerMouseActionEvents()
 
     local _, eventId = g_inputBinding:registerActionEvent(InputAction.CONSTRUCTION_ACTION_FOURTH, self, self.onSelection, false, true, false, true)
     table.insert(self.mouseEvents, eventId)
-    self.primaryMouseEvent = eventId
 
+    g_inputBinding:setActionEventTextVisibility(eventId, true)
+    g_inputBinding:setActionEventText(eventId, g_i18n:getText("customAction_select"))
+    g_inputBinding:setActionEventTextPriority(eventId, GS_PRIO_HIGH)
 
 end
 

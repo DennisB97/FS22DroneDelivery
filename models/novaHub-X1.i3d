@@ -10,9 +10,9 @@
 
 
   <Materials>
-    <Material name="default" materialId="79" diffuseColor="0.8 0.8 0.8 1" emissiveColor="0 0 0 1" specularColor="0.8 1 0.8">
+    <Material name="default" materialId="5" diffuseColor="0.8 0.8 0.8 1" emissiveColor="0 0 0 1" specularColor="0.8 1 0.8">
     </Material>
-    <Material name="UnnamedMaterial" materialId="85" diffuseColor="1 1 1 1">
+    <Material name="UnnamedMaterial" materialId="6" diffuseColor="1 1 1 1">
     </Material>
   </Materials>
 
@@ -25,42 +25,43 @@
   </Dynamics>
 
   <Scene>
-      <TransformGroup name="novaHub-X1" nodeId="64">
-        <TransformGroup name="novaHub-X1_vis" nodeId="65">
-          <TransformGroup name="LOD0" nodeId="66">
-            <Shape shapeId="1" name="novaHub-X1" clipDistance="300" nodeId="78" materialIds="79" castsShadows="true" receiveShadows="true" distanceBlending="false"/>
+      <TransformGroup name="novaHub-X1" nodeId="10">
+        <TransformGroup name="novaHub-X1_vis" nodeId="11">
+          <TransformGroup name="LOD0" nodeId="12">
+            <Shape shapeId="1" name="novaHub-X1" clipDistance="300" nodeId="13" materialIds="5" castsShadows="true" receiveShadows="true" distanceBlending="false"/>
           </TransformGroup>
         </TransformGroup>
-        <TransformGroup name="misc" nodeId="67">
-          <TransformGroup name="mapPosition" nodeId="93"/>
-          <TransformGroup name="teleportPosition" translation="-2.47893 0 0" nodeId="94"/>
-          <TransformGroup name="droneAttachPositions" nodeId="95">
-            <TransformGroup name="droneAttachPosition1" translation="0 0.512202 0" nodeId="96"/>
+        <TransformGroup name="misc" nodeId="14">
+          <TransformGroup name="mapPosition" nodeId="15"/>
+          <TransformGroup name="teleportPosition" translation="-2.47893 0 0" nodeId="16"/>
+          <TransformGroup name="droneAttachPositions" nodeId="17">
+            <TransformGroup name="droneAttachPosition1" translation="0 0.512202 0" nodeId="18"/>
           </TransformGroup>
-          <Shape shapeId="2" name="menuTrigger" translation="0 2.0178 0" scale="6 4 6" static="true" trigger="true" collisionMask="1048576" nodeId="98" materialIds="85" nonRenderable="true" distanceBlending="false"/>
+          <Shape shapeId="2" name="menuTrigger" translation="0 2.0178 0" scale="6 4 6" static="true" trigger="true" collisionMask="1048576" nodeId="19" materialIds="6" nonRenderable="true" distanceBlending="false"/>
+          <TransformGroup name="entrance" translation="0 2 4" nodeId="20"/>
         </TransformGroup>
-        <TransformGroup name="clearAreas" nodeId="68">
-          <TransformGroup name="clearArea1Start" translation="2.5 0 3" nodeId="90"/>
-          <TransformGroup name="clearArea1Width" translation="-2.5 0 3" nodeId="91"/>
-          <TransformGroup name="clearArea1Heigth" translation="2.5 0 -3" nodeId="92"/>
+        <TransformGroup name="clearAreas" nodeId="21">
+          <TransformGroup name="clearArea1Start" translation="2.5 0 4.5" nodeId="22"/>
+          <TransformGroup name="clearArea1Width" translation="-2.5 0 4.5" nodeId="23"/>
+          <TransformGroup name="clearArea1Heigth" translation="2.5 0 -3" nodeId="24"/>
         </TransformGroup>
-        <TransformGroup name="testAreas" nodeId="69">
-          <TransformGroup name="testArea1Start" translation="-1.4 0 -1.7" nodeId="88">
-            <TransformGroup name="testArea1End" translation="2.699 0.619808 3.475" nodeId="89"/>
-          </TransformGroup>
-        </TransformGroup>
-        <TransformGroup name="tipOcclusionUpdateAreas" nodeId="70">
-          <TransformGroup name="tipOcclusionUpdateArea1Start" translation="-1.4 0 -1.7" nodeId="86">
-            <TransformGroup name="tipOcclusionUpdateArea1End" translation="2.69923 0 3.47495" nodeId="87"/>
+        <TransformGroup name="testAreas" nodeId="25">
+          <TransformGroup name="testArea1Start" translation="-2.68047 0 -1.7" nodeId="26">
+            <TransformGroup name="testArea1End" translation="5.379 3 7.18339" nodeId="27"/>
           </TransformGroup>
         </TransformGroup>
-        <TransformGroup name="collisions" nodeId="71">
-          <Shape shapeId="2" name="novaHub-X1_col" translation="0 0.25 0" scale="2.2 0.5 3" static="true" clipDistance="300" nodeId="84" materialIds="85" castsShadows="true" receiveShadows="true" nonRenderable="true" distanceBlending="false"/>
+        <TransformGroup name="tipOcclusionUpdateAreas" nodeId="28">
+          <TransformGroup name="tipOcclusionUpdateArea1Start" translation="-1.4 0 -1.7" nodeId="29">
+            <TransformGroup name="tipOcclusionUpdateArea1End" translation="2.69923 0 3.47495" nodeId="30"/>
+          </TransformGroup>
         </TransformGroup>
-        <TransformGroup name="levelAreas" nodeId="72">
-          <TransformGroup name="levelAreaStart" translation="2.5 0 3" nodeId="80"/>
-          <TransformGroup name="levelAreaWidth" translation="-2.5 0 3" nodeId="81"/>
-          <TransformGroup name="levelAreaHeight" translation="2.5 0 -3" nodeId="82"/>
+        <TransformGroup name="collisions" nodeId="31">
+          <Shape shapeId="2" name="novaHub-X1_col" translation="0 0.25 0" scale="2.2 0.5 3" static="true" clipDistance="300" nodeId="32" materialIds="6" castsShadows="true" receiveShadows="true" nonRenderable="true" distanceBlending="false"/>
+        </TransformGroup>
+        <TransformGroup name="levelAreas" nodeId="33">
+          <TransformGroup name="levelAreaStart" translation="2.5 0 4.5" nodeId="34"/>
+          <TransformGroup name="levelAreaWidth" translation="-2.5 0 4.5" nodeId="35"/>
+          <TransformGroup name="levelAreaHeight" translation="2.5 0 -3" nodeId="36"/>
         </TransformGroup>
       </TransformGroup>
   </Scene>

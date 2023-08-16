@@ -214,7 +214,8 @@ function DroneHubListingScreen:updateIdentity()
     if self.droneSlot.currentState == self.droneSlot.EDroneWorkStatus.NOLINK or self.droneSlot.currentState == self.droneSlot.EDroneWorkStatus.LINKCHANGING then
         name = g_i18n:getText("listingGUI_droneNotLinked")
         self.droneIdentity.elements[2]:setVisible(false)
-    elseif self.droneSlot.currentState == self.droneSlot.EDroneWorkStatus.INCOMPATIBLE or self.droneSlot.currentState == self.droneSlot.EDroneWorkStatus.BOOTING then
+    elseif self.droneSlot.currentState == self.droneSlot.EDroneWorkStatus.INCOMPATIBLEPLACEMENT or self.droneSlot.currentState == self.droneSlot.EDroneWorkStatus.BOOTING
+            or self.droneSlot.currentState == self.droneSlot.EDroneWorkStatus.NOFLYPATHFINDING then
         name = ""
         self.droneIdentity.elements[2]:setVisible(false)
     end
@@ -253,13 +254,19 @@ function DroneHubListingScreen:updateChargeText()
 
 end
 
---- updateStateText updates text stating which state drone is in.
+--- updateStateText updates text stating which state drone or hub slot is in.
 function DroneHubListingScreen:updateStateText()
 
     local stateText = ""
 
     if self.droneSlot ~= nil then
-        stateText = self.droneSlot:getCurrentStateName()
+
+        if self.droneSlot:isLinked() and self.droneSlot.currentState ~= self.droneSlot.EDroneWorkStatus.BOOTING then
+            stateText = self.droneSlot:getDrone():getCurrentStateName()
+        else
+            stateText = self.droneSlot:getCurrentStateName()
+        end
+
     end
 
     if self.status ~= nil then
@@ -292,8 +299,6 @@ function DroneHubListingScreen:updateMap()
         dx,dz = MathUtil.vector2Normalize(dx,dz);
 
         local yRot = MathUtil.getYRotationFromDirection(dx,dz)
-
-        yRot = yRot
 
         self.droneMap.elements[1]:setImageRotation(yRot)
         self.droneMap.elements[1]:setImageUVs(nil, unpack(GuiUtils.getUVs({0,0,32,32},{32,32})))
@@ -351,7 +356,7 @@ function DroneHubListingScreen:setDroneButtons()
     self:clearDroneButtons()
 
     -- if booting or incompatible then no buttons should be shown
-    if self.droneSlot.currentState == self.droneSlot.EDroneWorkStatus.BOOTING or self.droneSlot.currentState == self.droneSlot.EDroneWorkStatus.INCOMPATIBLE then
+    if self.droneSlot.currentState == self.droneSlot.EDroneWorkStatus.BOOTING or self.droneSlot.currentState == self.droneSlot.EDroneWorkStatus.INCOMPATIBLEPLACEMENT or self.droneSlot.currentState == self.droneSlot.EDroneWorkStatus.NOFLYPATHFINDING then
         self.buttonLayout:invalidateLayout()
         return
     end

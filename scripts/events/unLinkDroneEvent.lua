@@ -11,7 +11,8 @@ function UnLinkDroneEvent.emptyNew()
     return self
 end
 --- new creates a new event and saves object received as param.
---@param object is the drone hub object.
+--@param hub is the drone hub which drone will be unlinked from.
+--@param slotIndex is the index of slot which unlinking from.
 function UnLinkDroneEvent.new(hub,slotIndex)
     local self = UnLinkDroneEvent.emptyNew()
     self.hub = hub
@@ -30,7 +31,7 @@ function UnLinkDroneEvent:writeStream(streamId, connection)
     streamWriteInt8(streamId, self.slotIndex)
 end
 
---- run
+--- run calls on hub to unlink drone from given slotIndex
 function UnLinkDroneEvent:run(connection)
 
     if self.hub ~= nil then
@@ -41,7 +42,8 @@ function UnLinkDroneEvent:run(connection)
     end
 end
 --- sendEvent called when event wants to be sent.
---@param.
+--@param hub is the drone hub which drone will be unlinked from.
+--@param slotIndex is the index of slot which unlinking from.
 function UnLinkDroneEvent.sendEvent(hub,slotIndex)
     if hub == nil or slotIndex == nil then
         return

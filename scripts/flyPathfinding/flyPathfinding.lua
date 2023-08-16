@@ -86,6 +86,12 @@ end
 function FlyPathfinding:loadMapData(xmlFile)
 
     if g_currentMission ~= nil and g_server ~= nil then
+
+        addConsoleCommand( 'AStarFlypathfindingDebugDrone', 'toggle debugging for AStar pathfinding', 'aStarDebugToggle', AStar)
+        addConsoleCommand( 'AStarFlypathfindingDebugPathCreateDrone', 'Given two vector positions creates a debug path between those', 'aStarDebugPathCreate', AStarDebug)
+        addConsoleCommand( 'CatmullRomDebugDrone', 'toggle debugging for catmullrom', 'catmullRomDebugToggle', CatmullRomSplineCreator)
+        addConsoleCommand( 'CatmullRomDebugSplineCreateDrone', 'given at least 2 x y z points creates a catmullrom', 'catmullRomDebugSplineCreate', CatmullRomDebug)
+
         if g_currentMission.gridMap3D == nil then
             g_currentMission.gridMap3D = GridMap3D.new(FlyPathfinding.requiredGridVersion)
             g_currentMission.gridMap3D:register(true)
@@ -94,12 +100,9 @@ function FlyPathfinding:loadMapData(xmlFile)
                 g_currentMission.gridMap3D = nil
                 return
             end
-            -- adds a debugging console command to be able to visualize the octree and A* pathfinding.
+
+            -- adds a debugging console command to be able to visualize the octree
             addConsoleCommand( 'GridMap3DOctreeDebug', 'toggle debugging for octree', 'octreeDebugToggle', g_currentMission.gridMap3D)
-            addConsoleCommand( 'AStarFlypathfindingDebug', 'toggle debugging for AStar pathfinding', 'aStarDebugToggle', AStar)
-            addConsoleCommand( 'AStarFlypathfindingDebugPathCreate', 'Given two vector positions creates a debug path between those', 'aStarDebugPathCreate', AStarDebug)
-            addConsoleCommand( 'CatmullRomDebug', 'toggle debugging for catmullrom', 'catmullRomDebugToggle', CatmullRomSplineCreator)
-            addConsoleCommand( 'CatmullRomDebugSplineCreate', 'given at least 2 x y z points creates a catmullrom', 'catmullRomDebugSplineCreate', CatmullRomDebug)
             FlyPathfinding.bPathfindingEnabled = true
         else
             Logging.info("Some other mod has created the pathfinding grid before this mod at: " .. FlyPathfinding.modDir)

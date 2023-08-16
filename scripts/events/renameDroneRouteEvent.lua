@@ -9,8 +9,10 @@ function RenameDroneRouteEvent.emptyNew()
     local self = Event.new(RenameDroneRouteEvent_mt)
     return self
 end
---- new creates a new event and saves object received as param.
---@param object is the drone hub object.
+--- new creates a new event.
+--@param hub is the drone hub which slot's route will be renamed.
+--@param slotIndex is the index of slot which to be renamed.
+--@param name is the string of new name.
 function RenameDroneRouteEvent.new(hub,slotIndex,name)
     local self = RenameDroneRouteEvent.emptyNew()
     self.hub = hub
@@ -32,7 +34,7 @@ function RenameDroneRouteEvent:writeStream(streamId, connection)
     streamWriteString(streamId, self.name)
 end
 
---- run
+--- run calls the renaming function on drone hub.
 function RenameDroneRouteEvent:run(connection)
 
     if self.hub ~= nil then
@@ -44,7 +46,9 @@ function RenameDroneRouteEvent:run(connection)
 end
 
 --- sendEvent called when event wants to be sent.
---@param.
+--@param hub is the drone hub which slot's route will be renamed.
+--@param slotIndex is the index of slot which to be renamed.
+--@param name is the string of new name.
 function RenameDroneRouteEvent.sendEvent(hub,slotIndex,name)
     if hub == nil or slotIndex == nil or name == nil then
         return

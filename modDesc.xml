@@ -70,7 +70,9 @@
 
     <storeItems>
         <storeItem xmlFilename="xml/novaW-4.xml"/>
+        <storeItem xmlFilename="xml/novaW-6.xml"/>
         <storeItem xmlFilename="xml/novaHub-X1.xml"/>
+        <storeItem xmlFilename="xml/customDeliveryPickupPoint.xml"/>
     </storeItems>
 
     <brands>
@@ -82,6 +84,7 @@
         <sourceFile filename="scripts/utility/pickupDeliveryHelper.lua" />
         <sourceFile filename="scripts/misc/droneHubDroneSlot.lua" />
         <sourceFile filename="scripts/misc/droneHubSlotConfig.lua" />
+        <sourceFile filename="scripts/misc/placeablesPointManager.lua" />
         <sourceFile filename="scripts/gui/droneHubScreen.lua" />
         <sourceFile filename="scripts/gui/droneHubListingScreen.lua" />
         <sourceFile filename="scripts/gui/droneHubConfigScreen.lua" />
@@ -91,6 +94,8 @@
         <sourceFile filename="scripts/events/renameDroneRouteEvent.lua" />
         <sourceFile filename="scripts/events/changeConfigEvent.lua" />
         <sourceFile filename="scripts/events/droneHubAccessedEvent.lua" />
+        <sourceFile filename="scripts/events/droneHubInvalidPlacementEvent.lua" />
+        <sourceFile filename="scripts/events/changeCustomPointScaleEvent.lua" />
         <sourceFile filename="scripts/flyPathfinding/flyPathfinding.lua" />
         <sourceFile filename="scripts/flyPathfinding/gridMap3D.lua" />
         <sourceFile filename="scripts/flyPathfinding/states/gridMap3DStates.lua" />
@@ -104,19 +109,19 @@
         <specialization name="customVehicleInfo" className="CustomVehicleInfo" filename="scripts/specializations/customVehicleInfo.lua"/>
         <specialization name="customDischarge" className="CustomDischarge" filename="scripts/specializations/customDischarge.lua"/>
         <specialization name="droneHub" className="DroneHub" filename="scripts/specializations/droneHub.lua"/>
+        <specialization name="customDeliveryPickupPoint" className="CustomDeliveryPickupPoint" filename="scripts/specializations/customDeliveryPickupPoint.lua"/>
         <specialization name="drone" className="Drone" filename="scripts/specializations/drone.lua"/>
     </specializations>
 
     <vehicleTypes>
         <type name="drone" className="Vehicle" filename="$dataS/scripts/vehicles/Vehicle.lua" >
-            <specialization name="fillUnit" />
-            <specialization name="fillVolume" />
-            <specialization name="fillTriggerVehicle" />
-            <specialization name="dischargeable" />
+            <specialization name="attacherJoints" />
             <specialization name="tensionBeltObject" />
-            <specialization name="customVehicleInfo" />
-            <specialization name="customDischarge" />
+            <specialization name="tensionBelts" />
+            <specialization name="dynamicMountAttacher" />
+            <specialization name="wearable" />
             <specialization name="drone" />
+            <specialization name="animatedVehicle" />
         </type>
     </vehicleTypes>
 

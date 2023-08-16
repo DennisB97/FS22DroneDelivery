@@ -1,5 +1,5 @@
 --[[
-This file is part of Bird feeder mod (https://github.com/DennisB97/FS22DroneDelivery)
+This file is part of Drone delivery mod (https://github.com/DennisB97/FS22DroneDelivery)
 
 Copyright (c) 2023 Dennis B
 
@@ -80,6 +80,12 @@ function DroneHub.registerFunctions(placeableType)
     SpecializationUtil.registerFunction(placeableType, "applyConfigSettings", DroneHub.applyConfigSettings)
     SpecializationUtil.registerFunction(placeableType, "setInUse", DroneHub.setInUse)
     SpecializationUtil.registerFunction(placeableType, "onExitingMenu", DroneHub.onExitingMenu)
+    SpecializationUtil.registerFunction(placeableType, "getEntrancePosition", DroneHub.getEntrancePosition)
+    SpecializationUtil.registerFunction(placeableType, "invalidPlacement", DroneHub.invalidPlacement)
+    SpecializationUtil.registerFunction(placeableType, "checkAccess", DroneHub.checkAccess)
+    SpecializationUtil.registerFunction(placeableType, "checkAccessNonInitCallback", DroneHub.checkAccessNonInitCallback)
+    SpecializationUtil.registerFunction(placeableType, "checkAccessInitCallback", DroneHub.checkAccessInitCallback)
+    SpecializationUtil.registerFunction(placeableType, "hasAnyLinkedDrones", DroneHub.hasAnyLinkedDrones)
 end
 
 --- registerEvents registers new events.
@@ -90,7 +96,7 @@ end
 
 --- registerOverwrittenFunctions register overwritten functions.
 function DroneHub.registerOverwrittenFunctions(placeableType)
---     SpecializationUtil.registerOverwrittenFunction(placeableType, "collectPickObjects", DroneHub.collectPickObjectsOW)
+    SpecializationUtil.registerOverwrittenFunction(placeableType, "canBeSold", DroneHub.canBeSold)
 
 end
 
@@ -102,12 +108,19 @@ function DroneHub:onLoad(savegame)
     local xmlFile = self.xmlFile
     local spec = self.spec_droneHub
     self.activateText = g_i18n:getText("droneHub_hubActivateText")
+    spec.bInvalid = false
     spec.droneSlots = {}
     spec.slotStateChangedListeners = {}
 
     if self.isServer then
-        spec.bSearchedDrones = false
+        spec.entrancePosition = {}
+        local entrance = xmlFile:getValue("placeable.droneHub#entrance",nil,self.components,self.i3dMappings)
+        if entrance == nil then
+            Logging.xmlWarning(self.xmlFile, "DroneHub:onLoad: entrance node missing from xml!")
+            spec.bInvalid = true
+        end
 
+        spec.entrancePosition.x, spec.entrancePosition.y, spec.entrancePosition.z = getWorldTranslation(entrance)
 
     end
 
@@ -130,6 +143,7 @@ function DroneHub:onLoad(savegame)
         end
     end
 
+
     spec.menuTrigger = xmlFile:getValue("placeable.droneHub#menuTrigger",nil,self.components,self.i3dMappings)
     if spec.menuTrigger ~= nil then
         if not CollisionFlag.getHasFlagSet(spec.menuTrigger, CollisionFlag.TRIGGER_PLAYER) then
@@ -137,6 +151,15 @@ function DroneHub:onLoad(savegame)
         end
     end
 
+end
+
+function DroneHub:canBeSold()
+
+    if self:hasAnyLinkedDrones() then
+        return false, g_i18n:getText("droneHub_unlinkBeforeSell")
+    end
+
+    return false, nil
 end
 
 --- onDelete when drone hub deleted, clean up the unloading station and storage and birds and others.
@@ -170,7 +193,6 @@ function DroneHub:onUpdate(dt)
     end
 
 
-
 end
 
 --- debugRender if debug is on for mod then debug renders some feeder variables.
@@ -192,11 +214,23 @@ function DroneHub:onFinalizePlacement()
     local spec = self.spec_droneHub
     local xmlFile = self.xmlFile
 
-    if self.isServer then
-        --@TODO: TEMP
-        self:initializeHub()
+    if self.isServer and not spec.bInvalid then
 
-        if FlyPathfinding and FlyPathfinding.bPathfindingEnabled then
+        -- set a limit how complex location the hub can be by adjusting how many closed nodes A* pathfinding can close before should stop search for a path to hub.
+        spec.maxAccessClosedNodes = 2000
+        -- adjust how fast it should A* pathfind to see if hub can be accessed
+        spec.accessSearchLoops = 10
+        spec.bSearchedDrones = false
+
+        if FlyPathfinding.bPathfindingEnabled then
+
+            -- create pathfinding class that will be used to check if the location of this hub is good after gridmap becomes available
+            spec.accessTester = AStar.new(self.isServer,self.isClient)
+            spec.accessTester:register(true)
+
+            -- add this hub to be ignored by the navigation grid as non solid.
+            g_currentMission.gridMap3D:addObjectIgnoreID(self.rootNode)
+
 
             if g_currentMission.gridMap3D:isAvailable() then
                 self:initializeHub()
@@ -204,9 +238,9 @@ function DroneHub:onFinalizePlacement()
                 g_messageCenter:subscribe(MessageType.GRIDMAP3D_GRID_GENERATED, self.onGridMapGenerated, self)
             end
         else
-
+            spec.bInvalid = true
             for _, slot in ipairs(spec.droneSlots) do
-                slot:changeState(slot.EDroneWorkStatus.INCOMPATIBLE)
+                slot:changeState(slot.EDroneWorkStatus.NOFLYPATHFINDING)
             end
 
         end
@@ -220,26 +254,45 @@ function DroneHub:onFinalizePlacement()
 end
 
 function DroneHub:onGridMapGenerated()
---     self:initializeHub()
+    self:initializeHub()
 end
 
 function DroneHub:initializeHub()
     local spec = self.spec_droneHub
-    local dirtyFlags = 0
+
+    local callback = function(aStarSearch) self:checkAccessInitCallback(aStarSearch) end
+    print("checkAccess returns: " .. tostring(self:checkAccess(callback)))
+end
+
+function DroneHub:setAllSlotsDirty()
+    local spec = self.spec_droneHub
     for _, slot in ipairs(spec.droneSlots) do
-        dirtyFlags = dirtyFlags + slot:initialize()
+        dirtyFlags = dirtyFlags +  slot:getDirtyFlag()
     end
 
     self:raiseDirtyFlags(dirtyFlags)
+end
+
+function DroneHub:hasAnyLinkedDrones()
+    local spec = self.spec_droneHub
+
+    for _, slot in ipairs(spec.droneSlots) do
+        if slot:isLinked() then
+            return true
+        end
+    end
+
+    return false
 end
 
 --- Registering
 function DroneHub.registerXMLPaths(schema, basePath)
     schema:setXMLSpecializationType("DroneHub")
     schema:register(XMLValueType.NODE_INDEX,        basePath .. ".droneHub#menuTrigger", "trigger used to be able to enter the menu of dronehub")
+    schema:register(XMLValueType.NODE_INDEX,        basePath .. ".droneHub#entrance", "Entrance node used for docking drones or leaving drones")
     schema:register(XMLValueType.NODE_INDEX,        basePath .. ".droneHub.drones.drone(?)#attachNode", "drone attach node on hub")
     DroneHubDroneSlot.registerXMLPaths(schema, basePath .. ".droneHub.drones.drone(?)")
---
+
     schema:setXMLSpecializationType()
 end
 
@@ -320,7 +373,7 @@ end
 function DroneHub:onWriteUpdateStream(streamId, connection, dirtyMask)
     if not connection:getIsServer() then
         local spec = self.spec_droneHub
-        print("write update stream")
+
         for _, slot in ipairs(spec.droneSlots) do
             slot:writeUpdateStream(streamId,connection,dirtyMask)
         end
@@ -331,6 +384,14 @@ function DroneHub:onWriteUpdateStream(streamId, connection, dirtyMask)
 
 end
 
+function DroneHub:getEntrancePosition()
+    local spec = self.spec_droneHub
+    if spec.entrancePosition == nil then
+        return nil
+    end
+
+    return {x=spec.entrancePosition.x, y=spec.entrancePosition.y,z=spec.entrancePosition.z}
+end
 -- --- collectPickObjectsOW overriden function for collecting pickable objects, avoiding error for trigger node getting added twice.
 -- --@param superFunc original function.
 -- --@param trigger node
@@ -371,7 +432,7 @@ function DroneHub:onMenuTriggerCallback(triggerId, otherId, onEnter, onLeave, on
     local spec = self.spec_droneHub
     local player = g_currentMission.players[otherId]
 
-    if player ~= nil and player.farmId == self:getOwnerFarmId() then
+    if player ~= nil and player.farmId == self:getOwnerFarmId() and g_currentMission.player == player then
 
         local playerFarm = g_farmManager:getFarmByUserId(player.userId)
 
@@ -456,11 +517,88 @@ function DroneHub:onSlotStateChange(slotIndex)
     end
 end
 
--- --- onGridMapGenerated bound function to the broadcast when gridmap has been generated.
--- -- server only.
--- function PlaceableFeeder:onGridMapGenerated()
---     self:initializeFeeder()
--- end
+--- checkAccess uses AStar pathfinder to check that the hub is placed in a suitable space.
+-- server only.
+--@param callback is the callback to call when AStar is done pathfinding with result.
+--@return true if could check feeder access which would mean it is not invalid placed already.
+function DroneHub:checkAccess(callback)
+    local spec = self.spec_droneHub
+    if callback == nil or spec.bInvalid then
+        return false
+    end
+
+    if FlyPathfinding.bPathfindingEnabled and spec.accessTester ~= nil and spec.accessTester:isPathfinding() == false then
+        -- pathfind down from the sky to the hub.
+        if spec.accessTester:find({x=0,y=2000,z=0},spec.entrancePosition,false,true,false,callback,nil,spec.accessSearchLoops,spec.maxAccessClosedNodes) == false then
+            callback({nil,false})
+        end
+    end
+    return true
+end
+
+--- checkAccessNonInitCallback a non initializing callback for the checkAccess, used when drone runs into an issue for getting to hub.
+-- server only.
+--@param aSearchResult is the result received from AStar class as type {path array of (x=,y=,z=},bWasGoal}.
+function DroneHub:checkAccessNonInitCallback(aSearchResult)
+    local spec = self.spec_droneHub
+    if spec.bInvalid then
+        return
+    end
+
+    -- second value is bool indicating if goal(hub) was reached or not
+    if not aSearchResult[2] then
+        self:invalidPlacement()
+        return
+    end
+end
+
+--- checkAccessInitCallback is callback used for checking hub access when initializing hub after grid is available.
+-- server only.
+--@param aSearchResult is the result received from AStar class as type {path array of (x=,y=,z=},bWasGoal}.
+function DroneHub:checkAccessInitCallback(aSearchResult)
+    local spec = self.spec_droneHub
+
+    -- second value is bool indicating if goal(hub) was reached or not
+    if not aSearchResult[2] then
+        self:invalidPlacement()
+        return
+    end
+
+
+    local dirtyFlags = 0
+    for _, slot in ipairs(spec.droneSlots) do
+        slot:initialize()
+        dirtyFlags = dirtyFlags + slot:getDirtyFlag()
+    end
+
+    self:raiseDirtyFlags(dirtyFlags)
+end
+
+
+function DroneHub:invalidPlacement()
+
+    local spec = self.spec_droneHub
+
+    DroneHubInvalidPlacementEvent.sendEvent(self)
+
+    if g_currentMission ~= nil and g_currentMission.player ~= nil and g_currentMission.player.farmId == self:getOwnerFarmId() then
+        g_currentMission.hud.sideNotifications:addNotification(g_i18n:getText("droneHub_noAccess"),{1,0,0,1},30000)
+    end
+
+    spec.bInvalid = true
+
+    if self.isServer then
+        local dirtyFlags = 0
+        for _, slot in ipairs(spec.droneSlots) do
+            slot:changeState(slot.EDroneWorkStatus.INCOMPATIBLEPLACEMENT)
+            dirtyFlags = dirtyFlags + slot:getDirtyFlag()
+        end
+
+        self:raiseDirtyFlags(dirtyFlags)
+    end
+
+end
+
 
 
 

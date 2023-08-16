@@ -84,9 +84,9 @@ function PickupDeliveryHelper.getFilltypeIds(placeable,bPickup)
 
         end
 
-        --@TODO: add custom drone point spec
-
-
+        if placeable.spec_customDeliveryPickupPoint ~= nil then
+            PickupDeliveryHelper.addCustomPointSupportedTypes(fillTypes)
+        end
 
     else
         -- can't deliver anything to a greenhouse so making sure greenhouse spec is nil
@@ -164,7 +164,10 @@ function PickupDeliveryHelper.getFilltypeIds(placeable,bPickup)
             end
         end
 
-        --@TODO: add custom drone point spec
+        -- custom delivery pickup point placeable
+        if placeable.spec_customDeliveryPickupPoint ~= nil then
+            PickupDeliveryHelper.addCustomPointSupportedTypes(fillTypes)
+        end
 
     end
 
@@ -193,6 +196,24 @@ function PickupDeliveryHelper.validateInputOutput(pickupFillTypeIds,deliveryFill
 
     return possibleFillIds
 end
+
+function PickupDeliveryHelper.addCustomPointSupportedTypes(fillTypes)
+
+    -- adds all bales and pallets as supported in the custom delivery pickup point
+    for name,_ in ipairs(PickupDeliveryHelper.allBaleNames) do
+        local fillType = g_fillTypeManager.nameToFillType[name]
+        fillTypes[fillType.index] = true
+    end
+
+    for name,_ in pairs(FillType) do
+        local fillType = g_fillTypeManager.nameToFillType[name]
+        if fillType ~= nil and (fillType.palletFilename ~= nil or PickupDeliveryHelper.isSpecialPalletFillType(fillType.name)) then
+            fillTypes[fillType.index] = true
+        end
+    end
+
+end
+
 
 function PickupDeliveryHelper.validatePickupAndDelivery(pickUp,delivery)
 

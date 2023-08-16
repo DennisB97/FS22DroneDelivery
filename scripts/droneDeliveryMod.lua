@@ -5,7 +5,8 @@ DroneDeliveryMod = {}
 DroneDeliveryMod.modName = g_currentModName;
 DroneDeliveryMod.modDir = g_currentModDirectory;
 DroneDeliveryMod.bRegistered = false
-DroneDeliveryMod.specFile = Utils.getFilename("scripts/specializations/droneHub.lua", DroneDeliveryMod.modDir)
+DroneDeliveryMod.hubSpecFile = Utils.getFilename("scripts/specializations/droneHub.lua", DroneDeliveryMod.modDir)
+DroneDeliveryMod.pointSpecFile = Utils.getFilename("scripts/specializations/customDeliveryPickupPoint.lua", DroneDeliveryMod.modDir)
 -- used for easily linking hubs and drones after loading through their ID's.
 DroneDeliveryMod.loadedLinkedDrones = {}
 
@@ -13,9 +14,7 @@ g_droneHubScreen = nil
 
 function DroneDeliveryMod:loadMap(filename)
 
-
     self:setupGui()
-
 
 end
 
@@ -34,7 +33,7 @@ end
 function DroneDeliveryMod.register(typeManager)
 
     if DroneDeliveryMod.bRegistered ~= true then
-        g_placeableSpecializationManager:addSpecialization("droneHub","DroneHub",DroneDeliveryMod.specFile)
+        g_placeableSpecializationManager:addSpecialization("droneHub","DroneHub",DroneDeliveryMod.hubSpecFile)
         g_placeableTypeManager:addType("droneHub","Placeable","dataS/scripts/placeables/Placeable.lua",nil,Placeable)
         g_placeableTypeManager:addSpecialization("droneHub","placement")
         g_placeableTypeManager:addSpecialization("droneHub","clearAreas")
@@ -42,6 +41,17 @@ function DroneDeliveryMod.register(typeManager)
         g_placeableTypeManager:addSpecialization("droneHub","tipOcclusionAreas")
         g_placeableTypeManager:addSpecialization("droneHub","droneHub")
         g_placeableTypeManager:addSpecialization("droneHub","infoTrigger")
+
+        g_placeableSpecializationManager:addSpecialization("customDeliveryPickupPoint","CustomDeliveryPickupPoint",DroneDeliveryMod.pointSpecFile)
+        g_placeableTypeManager:addType("customDeliveryPickupPoint","Placeable","dataS/scripts/placeables/Placeable.lua",nil,Placeable)
+        g_placeableTypeManager:addSpecialization("customDeliveryPickupPoint","placement")
+        g_placeableTypeManager:addSpecialization("customDeliveryPickupPoint","clearAreas")
+        g_placeableTypeManager:addSpecialization("customDeliveryPickupPoint","leveling")
+        g_placeableTypeManager:addSpecialization("customDeliveryPickupPoint","tipOcclusionAreas")
+        g_placeableTypeManager:addSpecialization("customDeliveryPickupPoint","customDeliveryPickupPoint")
+        g_placeableTypeManager:addSpecialization("customDeliveryPickupPoint","infoTrigger")
+
+
         DroneDeliveryMod.bRegistered = true
     end
 end

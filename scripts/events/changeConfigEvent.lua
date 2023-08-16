@@ -11,7 +11,10 @@ function ChangeConfigEvent.emptyNew()
     return self
 end
 --- new creates a new event and saves object received as param.
---@param object is the drone hub object.
+--@param hub is the drone hub which slot's route will be renamed.
+--@param slotIndex is the index of slot which to be renamed.
+--@param pickUpPointCopy is the copy of DroneWorkPoint settings for pickup from the GUI.
+--@param deliveryPointCopy is the copy of DroneWorkPoint settings for delivery from the GUI.
 function ChangeConfigEvent.new(hub,slotIndex,pickUpPointCopy,deliveryPointCopy)
     local self = ChangeConfigEvent.emptyNew()
     self.hub = hub
@@ -90,7 +93,7 @@ function ChangeConfigEvent:readStream(streamId, connection)
         self.pickUpPointCopy:restrictFilltypes(fillTypes)
     end
 
-
+    -- always receives bool price limit
     self.pickUpPointCopy:setHasPriceLimit(streamReadBool(streamId))
 
     -- if price limit was dirty
@@ -98,6 +101,7 @@ function ChangeConfigEvent:readStream(streamId, connection)
         self.pickUpPointCopy:setPriceLimit(streamReadInt32(streamId))
     end
 
+    -- always receives fill type index
     self.pickUpPointCopy:setFillTypeIndex(streamReadInt8(streamId))
 
     self:run(connection)
@@ -107,6 +111,7 @@ function ChangeConfigEvent:writeStream(streamId, connection)
     NetworkUtil.writeNodeObject(streamId, self.hub)
     streamWriteInt8(streamId, self.slotIndex)
 
+    -- write bool if pickup placeable should be sent or not
     if streamWriteBool(streamId,self.pickUpPointCopy:getPlaceable() ~= nil) then
         NetworkUtil.writeNodeObject(streamId, self.pickUpPointCopy:getPlaceable())
 
@@ -126,6 +131,7 @@ function ChangeConfigEvent:writeStream(streamId, connection)
         streamWriteString(streamId,fillTypesString)
     end
 
+    -- write bool if delivery placeable should be sent or not
     if streamWriteBool(streamId,self.deliveryPointCopy:getPlaceable() ~= nil) then
 
         NetworkUtil.writeNodeObject(streamId, self.deliveryPointCopy:getPlaceable())
@@ -145,34 +151,34 @@ function ChangeConfigEvent:writeStream(streamId, connection)
         streamWriteString(streamId,fillTypesString)
     end
 
+    -- always sends price limit bool
     streamWriteBool(streamId,self.pickUpPointCopy:hasPriceLimit())
 
     if streamWriteBool(streamId,self.pickUpPointCopy:getPriceLimit() ~= nil) then
         streamWriteInt32(streamId,self.pickUpPointCopy:getPriceLimit())
     end
 
+    -- always sends fill type index
     streamWriteInt8(streamId,self.pickUpPointCopy:getFillTypeIndex())
 
 end
 
---- run
+--- run calls on hub to apply the received config values.
 function ChangeConfigEvent:run(connection)
-
-    print("run running")
-    DebugUtil.printTableRecursively(self.pickUpPointCopy,"run pickup: ",0,0)
-    DebugUtil.printTableRecursively(self.deliveryPointCopy,"run delivery: ",0,0)
 
     if self.hub ~= nil then
         self.hub:applyConfigSettings(self.slotIndex,self.pickUpPointCopy,self.deliveryPointCopy)
     end
 
     if not connection:getIsServer() then
-        print("run event connection is not getIsServer")
         g_server:broadcastEvent(ChangeConfigEvent.new(self.hub,self.slotIndex,self.pickUpPointCopy,self.deliveryPointCopy), nil, nil, self.hub)
     end
 end
 --- sendEvent called when event wants to be sent.
---@param.
+--@param hub is the drone hub which slot's route will be renamed.
+--@param slotIndex is the index of slot which to be renamed.
+--@param pickUpPointCopy is the copy of DroneWorkPoint settings for pickup from the GUI.
+--@param deliveryPointCopy is the copy of DroneWorkPoint settings for delivery from the GUI.
 function ChangeConfigEvent.sendEvent(hub,slotIndex,pickUpPointCopy,deliveryPointCopy)
     if hub == nil or slotIndex == nil or pickUpPointCopy == nil or deliveryPointCopy == nil then
         return
@@ -183,9 +189,6 @@ function ChangeConfigEvent.sendEvent(hub,slotIndex,pickUpPointCopy,deliveryPoint
         -- if server doing event then need to run function here because broadcast will only be to clients
         hub:applyConfigSettings(slotIndex,pickUpPointCopy,deliveryPointCopy)
     else
-        print("client sending the event")
-        DebugUtil.printTableRecursively(pickUpPointCopy,"pickup: ",0,0)
-        DebugUtil.printTableRecursively(deliveryPointCopy,"delivery: ",0,0)
         g_client:getServerConnection():sendEvent(ChangeConfigEvent.new(hub,slotIndex,pickUpPointCopy,deliveryPointCopy))
     end
 

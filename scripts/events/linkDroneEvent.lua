@@ -10,7 +10,10 @@ function LinkDroneEvent.emptyNew()
     return self
 end
 --- new creates a new event and saves object received as param.
---@param object is the drone hub object.
+--@param hub is the drone hub which drone will be linked to.
+--@param drone is the drone to be linked.
+--@param id is the string of new ID to link drone and hub.
+--@param slotIndex is the index of slot which linking occurs on.
 function LinkDroneEvent.new(hub,drone,id,slotIndex)
     local self = LinkDroneEvent.emptyNew()
     self.hub = hub
@@ -35,7 +38,7 @@ function LinkDroneEvent:writeStream(streamId, connection)
     streamWriteInt8(streamId, self.slotIndex)
 end
 
---- run
+--- run calls on hub to link the received drone and string on the given slotIndex
 function LinkDroneEvent:run(connection)
 
     if self.hub ~= nil then
@@ -46,7 +49,10 @@ function LinkDroneEvent:run(connection)
     end
 end
 --- sendEvent called when event wants to be sent.
---@param.
+--@param hub is the drone hub which drone will be linked to.
+--@param drone is the drone to be linked.
+--@param id is the string of new ID to link drone and hub.
+--@param slotIndex is the index of slot which linking occurs on.
 function LinkDroneEvent.sendEvent(hub,drone,id,slotIndex)
     if hub == nil or drone == nil or id == nil or slotIndex == nil then
         return

@@ -1,6 +1,6 @@
 
 
---- UnLinkDroneEvent is used for linking a hub and a drone together.
+--- DroneHubAccessedEvent is used to signal a drone hub has been accessed by another player, so that interaction can be limited to one player at a time.
 DroneHubAccessedEvent = {}
 DroneHubAccessedEvent_mt = Class(DroneHubAccessedEvent,Event)
 InitEventClass(DroneHubAccessedEvent, "DroneHubAccessedEvent")
@@ -11,13 +11,15 @@ function DroneHubAccessedEvent.emptyNew()
     return self
 end
 --- new creates a new event and saves object received as param.
---@param object is the drone hub object.
+--@param hub is the drone hub object which should be set in use or not.
+--@param isUsing bool which indicates if hub is used by someone or not.
 function DroneHubAccessedEvent.new(hub,isUsing)
     local self = DroneHubAccessedEvent.emptyNew()
     self.hub = hub
     self.bUsing = isUsing
     return self
 end
+
 --- readStream syncs the object to clients.
 function DroneHubAccessedEvent:readStream(streamId, connection)
     self.hub = NetworkUtil.readNodeObject(streamId)
@@ -30,7 +32,7 @@ function DroneHubAccessedEvent:writeStream(streamId, connection)
     streamWriteBool(streamId, self.bUsing)
 end
 
---- run
+--- run sets the drone hub in use or not in use.
 function DroneHubAccessedEvent:run(connection)
 
     if self.hub ~= nil then
@@ -42,7 +44,8 @@ function DroneHubAccessedEvent:run(connection)
 end
 
 --- sendEvent called when event wants to be sent.
---@param.
+--@param hub is the drone hub object which should be set in use or not.
+--@param isUsing bool which indicates if hub is used by someone or not.
 function DroneHubAccessedEvent.sendEvent(hub,isUsing)
     if hub == nil then
         return

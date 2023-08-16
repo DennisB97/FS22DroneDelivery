@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+
+<i3D name="novaW-6.i3d" version="1.6" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://i3d.giants.ch/schema/i3d-1.6.xsd">
+  <Asset>
+    <Export program="GIANTS Editor 64bit" version="9.0.4"/>
+  </Asset>
+
+  <Files>
+  </Files>
+
+
+  <Materials>
+    <Material name="default" materialId="5" diffuseColor="0.8 0.8 0.8 1" specularColor="0.494118 1 0">
+    </Material>
+    <Material name="UnnamedMaterial" materialId="6" diffuseColor="1 1 1 1">
+    </Material>
+  </Materials>
+
+
+  <Shapes externalShapesFile="novaW-6.i3d.shapes">
+  </Shapes>
+
+
+  <Dynamics>
+  </Dynamics>
+
+  <Scene>
+      <Shape shapeId="1" name="NovaW-6_main_component1" rotation="-6.83019e-06 -0 0" dynamic="true" compound="true" collisionMask="2109442" staticFriction="1" dynamicFriction="1" clipDistance="300" nodeId="23" materialIds="5" castsShadows="true" receiveShadows="true" nonRenderable="true">
+        <Shape shapeId="2" name="NovaW-6_vis" rotation="-6.83019e-06 -0 0" clipDistance="300" nodeId="24" materialIds="5" castsShadows="true" receiveShadows="true">
+          <Shape shapeId="3" name="dynamicMountTrigger" translation="0 0.128526 0" scale="0.700348 0.187564 2.06748" kinematic="true" trigger="true" collisionMask="134217728" nodeId="25" materialIds="6" castsShadows="true" receiveShadows="true" nonRenderable="true"/>
+          <Shape shapeId="4" name="bigBagHookHolder" translation="-0.000420211 0.216378 -0.305721" rotation="-6.83019e-06 -0 0" clipDistance="300" nodeId="26" materialIds="5" castsShadows="true" receiveShadows="true"/>
+          <Shape shapeId="5" name="leftLeg" translation="0.48728 0.24772 -0.598698" rotation="-6.83019e-06 -0 0" clipDistance="300" nodeId="27" materialIds="5" castsShadows="true" receiveShadows="true"/>
+          <Shape shapeId="6" name="palletHolder1" translation="-0.241039 0.224287 -0.281052" rotation="-6.83019e-06 -0 0" clipDistance="300" nodeId="28" materialIds="5" castsShadows="true" receiveShadows="true"/>
+          <Shape shapeId="7" name="palletHolder2" translation="0.240334 0.224287 -0.281052" rotation="-6.83019e-06 -0 0" clipDistance="300" nodeId="29" materialIds="5" castsShadows="true" receiveShadows="true"/>
+          <Shape shapeId="8" name="rightLeg" translation="-0.48728 0.24772 -0.598698" rotation="-6.83019e-06 -0 0" clipDistance="300" nodeId="30" materialIds="5" castsShadows="true" receiveShadows="true"/>
+          <Shape shapeId="9" name="rotor1" translation="0.747101 0.678411 1.25955" rotation="-6.83019e-06 -0 0" nodeId="31" materialIds="5"/>
+          <Shape shapeId="10" name="rotor2" translation="0.747101 0.678411 -1.25955" rotation="-6.83019e-06 -0 0" nodeId="32" materialIds="5"/>
+          <Shape shapeId="11" name="rotor5" translation="-0.747083 0.678411 -1.25963" rotation="-6.83019e-06 -0 0" nodeId="33" materialIds="5"/>
+          <Shape shapeId="12" name="rotor6" translation="-0.747182 0.678411 1.25949" rotation="-6.83019e-06 -0 0" nodeId="34" materialIds="5"/>
+          <TransformGroup name="tensionBelts" nodeId="41">
+            <TransformGroup name="startPoint01" translation="0.242 0.048 -0.145" rotation="180 90 0" nodeId="42">
+              <TransformGroup name="tensionBelt01Intersection01" translation="0 0.055 0" nodeId="43"/>
+              <TransformGroup name="tensionBelt01Intersection02" translation="0 0.055 0.484" nodeId="44"/>
+              <TransformGroup name="startPoint01End" translation="0 0 0.484" nodeId="45"/>
+            </TransformGroup>
+          </TransformGroup>
+          <TransformGroup name="attachable" nodeId="47">
+            <TransformGroup name="bigBagJoint" translation="0 -0.036 0.077" rotation="90 0 -90" nodeId="46"/>
+          </TransformGroup>
+          <Shape shapeId="13" name="rotor3" translation="0.961266 0.678411 -0.00129741" rotation="-6.83019e-06 -0 0" nodeId="35" materialIds="5"/>
+          <Shape shapeId="14" name="rotor4" translation="-0.964516 0.678411 -0.00182183" rotation="-6.83019e-06 -0 0" nodeId="36" materialIds="5"/>
+          <TransformGroup name="collisions" nodeId="37">
+            <Shape shapeId="15" name="rightLegCollision" translation="-0.454499 0.00117118 -5.11938e-11" rotation="-6.83019e-06 -0 0" static="true" compoundChild="true" collisionMask="16781578" staticFriction="1" dynamicFriction="1" density="0.001" clipDistance="300" nodeId="38" materialIds="5" castsShadows="true" receiveShadows="true" nonRenderable="true"/>
+            <Shape shapeId="15" name="leftLegCollision" translation="0.456298 0.00117118 -5.11938e-11" rotation="-6.83019e-06 -0 0" static="true" compoundChild="true" staticFriction="1" dynamicFriction="1" density="0.001" clipDistance="300" nodeId="39" materialIds="5" castsShadows="true" receiveShadows="true" nonRenderable="true"/>
+          </TransformGroup>
+        </Shape>
+      </Shape>
+  </Scene>
+
+</i3D>

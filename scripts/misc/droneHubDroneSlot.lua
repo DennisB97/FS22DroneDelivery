@@ -14,9 +14,8 @@ function DroneHubDroneSlot.new(hubOwner,inSlotIndex,inPosition,inRotation)
     self.hubOwner = hubOwner
     self.name = ""
     self.slotIndex = inSlotIndex
-    self.EDroneWorkStatus = {NOLINK = 0, IDLE = 1, CHARGING = 2, PICKING_UP = 3, DELIVERING = 4, LINKCHANGING = 5, BOOTING = 6, INCOMPATIBLE = 7}
-    self.currentState = self.EDroneWorkStatus.NOLINK
-    self.loadedState = nil
+    self.EDroneWorkStatus = {NOLINK = 0,LINKED = 1, LINKCHANGING = 2, BOOTING = 3, INCOMPATIBLEPLACEMENT = 4, NOFLYPATHFINDING = 5, APPLYINGSETTINGS = 6}
+    self.currentState = self.EDroneWorkStatus.BOOTING
     self.slot = {}
     self.slot.position = inPosition
     self.slot.rotation = inRotation
@@ -31,12 +30,10 @@ function DroneHubDroneSlot:saveToXMLFile(xmlFile, key, usedModNames)
 
     xmlFile:setValue(key.."#droneID", self.linkedDroneID)
     xmlFile:setValue(key.."#name", self.name)
-    xmlFile:setValue(key.."#state", self.currentState)
 
     if self.slotConfig ~= nil then
         self.slotConfig:saveToXMLFile(xmlFile,key,usedModNames)
     end
-
 end
 
 --- On loading
@@ -44,7 +41,6 @@ function DroneHubDroneSlot:loadFromXMLFile(xmlFile, key)
 
     self.linkedDroneID = Utils.getNoNil(xmlFile:getValue(key.."#droneID"),"")
     self.name = Utils.getNoNil(xmlFile:getValue(key.."#name"),"")
-    self.loadedState = Utils.getNoNil(xmlFile:getValue(key.."#state"),self.EDroneWorkStatus.NOLINK)
 
     if self.slotConfig ~= nil then
         self.slotConfig:loadFromXMLFile(xmlFile,key)
@@ -64,7 +60,6 @@ end
 function DroneHubDroneSlot.registerSavegameXMLPaths(schema, basePath)
     schema:register(XMLValueType.STRING,        basePath .. "#droneID", "Drone and slot unique ID")
     schema:register(XMLValueType.STRING,        basePath .. "#name", "Drone route name")
-    schema:register(XMLValueType.INT,        basePath .. "#state", "Drone state")
     DroneHubSlotConfig.registerSavegameXMLPaths(schema,basePath)
 end
 
@@ -73,8 +68,8 @@ function DroneHubDroneSlot:readStream(streamId,connection)
     self.linkedDroneID = streamReadString(streamId)
     self.name = streamReadString(streamId)
     self.linkedDrone = NetworkUtil.readNodeObject(streamId)
-    local loadedState = streamReadInt8(streamId)
-    self:changeState(loadedState)
+    local state = streamReadInt8(streamId)
+    self:changeState(state)
 
     if self.slotConfig ~= nil then
         self.slotConfig:readStream(streamId,connection)
@@ -98,13 +93,10 @@ end
 function DroneHubDroneSlot:readUpdateStream(streamId, timestamp, connection)
     if connection:getIsServer() then
 
-        print("read update stream for slot: " .. tostring(self.slotIndex))
-
         if streamReadBool(streamId) then
             local state = streamReadInt8(streamId)
             self:changeState(state)
         end
-
 
     end
 end
@@ -113,8 +105,6 @@ end
 function DroneHubDroneSlot:writeUpdateStream(streamId, connection, dirtyMask)
     if not connection:getIsServer() then
 
-        print("write update stream for slot: " .. tostring(self.slotIndex))
-
         if streamWriteBool(streamId,bitAND(dirtyMask,self.stateDirtyFlag) ~= 0) then
             streamWriteInt8(streamId,self.currentState)
         end
@@ -122,12 +112,19 @@ function DroneHubDroneSlot:writeUpdateStream(streamId, connection, dirtyMask)
     end
 end
 
+function DroneHubDroneSlot:getDirtyFlag()
+    return self.stateDirtyFlag
+end
+
 function DroneHubDroneSlot:initialize()
 
-    self:changeState(self.loadedState)
-    self.loadedState = nil
+    if self.linkedDrone ~= nil then
+        state = self.EDroneWorkStatus.LINKED
+    else
+        state = self.EDroneWorkStatus.NOLINK
+    end
 
-    return self.stateDirtyFlag
+    self:changeState(state)
 end
 
 function DroneHubDroneSlot:changeState(newState)
@@ -139,6 +136,11 @@ function DroneHubDroneSlot:changeState(newState)
     self.currentState = newState
 
     self.hubOwner:onSlotStateChange(self.slotIndex)
+
+    if self.hubOwner.isServer and newState == self.EDroneWorkStatus.INCOMPATIBLEPLACEMENT or newState == self.EDroneWorkStatus.NOFLYPATHFINDING then
+        self:emergencyUnlink()
+    end
+
 end
 
 function DroneHubDroneSlot:searchDrone()
@@ -157,7 +159,6 @@ function DroneHubDroneSlot:searchDrone()
     -- shouldn't happen, save file edited?
     self.linkedDroneID = ""
     self.name = ""
-    self.loadedState = self.EDroneWorkStatus.NOLINK
     self.slotConfig:clearConfig()
     self:changeState(self.EDroneWorkStatus.NOLINK)
 end
@@ -184,7 +185,7 @@ end
 
 
 function DroneHubDroneSlot:tryUnLinkDrone()
-    if (self.currentState ~= self.EDroneWorkStatus.CHARGING and self.currentState ~= self.EDroneWorkStatus.IDLE) or self.linkedDrone == nil then
+    if self.currentState ~= self.EDroneWorkStatus.LINKED or self.linkedDrone == nil then
         return false
     end
 
@@ -238,25 +239,26 @@ function DroneHubDroneSlot:getConfig()
     return self.slotConfig
 end
 
+function DroneHubDroneSlot:isLinked()
+    return self.linkedDrone ~= nil
+end
+
+
 function DroneHubDroneSlot:getCurrentStateName()
     local stateName = ""
 
     if self.currentState == self.EDroneWorkStatus.NOLINK then
-        stateName = g_i18n:getText("listingGUI_droneNotLinked")
-    elseif self.currentState == self.EDroneWorkStatus.IDLE then
-        stateName = g_i18n:getText("listingGUI_droneIdle")
-    elseif self.currentState == self.EDroneWorkStatus.CHARGING then
-        stateName = g_i18n:getText("listingGUI_droneCharging")
-    elseif self.currentState == self.EDroneWorkStatus.PICKING_UP then
-        stateName = g_i18n:getText("listingGUI_dronePicking")
-    elseif self.currentState == self.EDroneWorkStatus.DELIVERING then
-        stateName = g_i18n:getText("listingGUI_droneDelivering")
+        stateName = g_i18n:getText("droneHub_droneNotLinked")
+    elseif self.currentState == self.EDroneWorkStatus.LINKED then
+        stateName = g_i18n:getText("droneHub_droneLinked")
     elseif self.currentState == self.EDroneWorkStatus.LINKCHANGING then
-        stateName = ""
+        stateName = g_i18n:getText("droneHub_droneLinking")
     elseif self.currentState == self.EDroneWorkStatus.BOOTING then
-        stateName = g_i18n:getText("listingGUI_droneBooting")
-    elseif self.currentState == self.EDroneWorkStatus.INCOMPATIBLE then
-        stateName = g_i18n:getText("listingGUI_droneIncompatible")
+        stateName = g_i18n:getText("droneHub_Booting")
+    elseif self.currentState == self.EDroneWorkStatus.INCOMPATIBLEPLACEMENT then
+        stateName = g_i18n:getText("droneHub_IncompatiblePlacement")
+    elseif self.currentState == self.EDroneWorkStatus.NOFLYPATHFINDING then
+        stateName = g_i18n:getText("droneHub_NoFlyPathfinding")
     end
 
     return stateName
@@ -304,6 +306,19 @@ function DroneHubDroneSlot:generateUniqueID()
     return id
 end
 
+--- emergencyUnlink used in a case where a drone is linked but pathfinding is not available suddenly in loaded save, or hub has been obstructed by some static buildings.
+function DroneHubDroneSlot:emergencyUnlink()
+    if not self:isLinked() then
+        return
+    end
+
+    self.linkedDroneID = ""
+    self.name = ""
+    self.slotConfig:clearConfig()
+    self.linkedDrone:changeState(self.linkedDrone.spec_drone.EDroneStates.EMERGENCYUNLINK)
+    self.linkedDrone = nil
+end
+
 function DroneHubDroneSlot:finalizeLinking(drone,id)
     if drone == nil then
         return
@@ -314,7 +329,7 @@ function DroneHubDroneSlot:finalizeLinking(drone,id)
     self.linkedDrone:setLinkID(id)
     self.linkedDrone:setPositionAndRotation(self.slot.position,self.slot.rotation,false)
     self.name = drone:getName()
-    self:changeState(self.EDroneWorkStatus.IDLE)
+    self:changeState(self.EDroneWorkStatus.LINKED)
 end
 
 function DroneHubDroneSlot:finalizeUnlinking()

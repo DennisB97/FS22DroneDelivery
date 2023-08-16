@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8" standalone="no" ?>
+<vehicle type="drone" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../../shared/xml/schema/vehicle.xsd">
+    <parentFile xmlFilename="xml/novaW-4.xml">
+        <attributes>
+            <set path="vehicle.storeData.name" value="NovaW-6"/>
+            <set path="vehicle.storeData.price" value="200000"/>
+            <set path="vehicle.storeData.image" value="images/store_birdSeed.dds"/>
+            <set path="vehicle.base.components.component(0)#mass" value="350"/>
+            <set path="vehicle.base.filename" value="models/novaW-6.i3d"/>
+            <set path="vehicle.animations.animation(1).part(4)#startTime" value="0"/>
+            <set path="vehicle.animations.animation(1).part(4)#duration" value="0.02"/>
+            <set path="vehicle.animations.animation(1).part(4)#startRot" value="0 0 0"/>
+            <set path="vehicle.animations.animation(1).part(4)#endRot" value="0 360 0"/>
+            <set path="vehicle.animations.animation(1).part(4)#node" value="0>0|12"/>
+
+            <set path="vehicle.animations.animation(1).part(5)#startTime" value="0"/>
+            <set path="vehicle.animations.animation(1).part(5)#duration" value="0.02"/>
+            <set path="vehicle.animations.animation(1).part(5)#startRot" value="0 0 0"/>
+            <set path="vehicle.animations.animation(1).part(5)#endRot" value="0 360 0"/>
+            <set path="vehicle.animations.animation(1).part(5)#node" value="0>0|13"/>
+
+         </attributes>
+    </parentFile>
+
+
+
+
+    <storeData>
+        <name>NovaW-6</name>
+        <image>images/store_birdSeed.dds</image>
+        <brand>NovaFlyFast</brand>
+        <category>miscVehicles</category>
+    </storeData>
+
+    <i3dMappings>
+        <i3dMapping id="rotor3" node="0>0|12" />
+        <i3dMapping id="rotor4" node="0>0|13" />
+    </i3dMappings>
+
+</vehicle>
