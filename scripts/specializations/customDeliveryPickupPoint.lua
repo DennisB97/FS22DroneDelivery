@@ -64,6 +64,8 @@ function CustomDeliveryPickupPoint.registerFunctions(placeableType)
     SpecializationUtil.registerFunction(placeableType, "serverReceiveScaled", CustomDeliveryPickupPoint.serverReceiveScaled)
     SpecializationUtil.registerFunction(placeableType, "constructBinding", CustomDeliveryPickupPoint.constructBinding)
     SpecializationUtil.registerFunction(placeableType, "onCheckScaledOverlap", CustomDeliveryPickupPoint.onCheckScaledOverlap)
+    SpecializationUtil.registerFunction(placeableType, "getScale", CustomDeliveryPickupPoint.getScale)
+    SpecializationUtil.registerFunction(placeableType, "getDefaultSize", CustomDeliveryPickupPoint.getDefaultSize)
 end
 
 --- registerEvents registers new events.
@@ -94,6 +96,7 @@ function CustomDeliveryPickupPoint:onLoad(savegame)
     spec.infoTrigger = xmlFile:getValue("placeable.customDeliveryPickupPoint#infoTrigger",nil,self.components,self.i3dMappings)
     spec.scaleTriggers = xmlFile:getValue("placeable.customDeliveryPickupPoint#scaleTriggers",nil,self.components,self.i3dMappings)
     spec.scale = 1
+    spec.defaultSize = 2
 
     local stripes = xmlFile:getValue("placeable.customDeliveryPickupPoint#stripes",nil,self.components,self.i3dMappings)
     spec.allStripes = {}
@@ -123,7 +126,7 @@ function CustomDeliveryPickupPoint:onLoad(savegame)
     spec.allStripes.rightDirection.x, spec.allStripes.rightDirection.y, spec.allStripes.rightDirection.z = MathUtil.vector3Normalize(
         spec.allStripes.leftTopPosition.x - spec.allStripes.rightTopPosition.x,spec.allStripes.leftTopPosition.y - spec.allStripes.rightTopPosition.y,spec.allStripes.leftTopPosition.z - spec.allStripes.rightTopPosition.z)
 
-    spec.allStripes.size = 2
+    spec.allStripes.size = spec.defaultSize
 
 
     if self.isServer and savegame == nil then
@@ -275,6 +278,14 @@ function CustomDeliveryPickupPoint:onScalePoint(_,_,_,_,_,_,actionTable)
     self:scaleAll()
 end
 
+function CustomDeliveryPickupPoint:getScale()
+    return self.spec_customDeliveryPickupPoint.scale
+end
+
+function CustomDeliveryPickupPoint:getDefaultSize()
+    return self.spec_customDeliveryPickupPoint.defaultSize
+end
+
 function CustomDeliveryPickupPoint:scaleAll()
     local spec = self.spec_customDeliveryPickupPoint
 
@@ -333,8 +344,8 @@ function CustomDeliveryPickupPoint:scaleAll()
         setTranslation(spec.allStripes.leftBottom,newLocalPositionX,spec.allStripes.leftBottomPosition.y,newLocalPositionZ)
     end
 
-    -- save the size for later use when default is 2m
-    spec.allStripes.size = 2 * spec.scale
+    -- save the size for later use
+    spec.allStripes.size = spec.defaultSize * spec.scale
 
 
 end

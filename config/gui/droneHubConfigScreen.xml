@@ -29,7 +29,6 @@
 
                     </GuiElement>
 
-
                     <GuiElement type="flowLayout" size="1000px 200px" anchors="0 0 1 1" margin="0px 50px 0px 0px" id="flowLayout">
                         <GuiElement type="empty" size="200px 200px" anchors="0 0 1 1" />
                         <GuiElement type="boxLayout" size="600px 200px" anchors="0 0 1 1">
@@ -56,14 +55,12 @@
 
                             <!-- Text input for price limit -->
                             <GuiElement type="empty" size="600px 50px" anchors="0 0 1 1" position="0px -50px" id="priceLimitOption">
-                                <!-- <GuiElement type="text" textMaxWidth="250px" profile="multiTextOptionSettingsTitle" text="$l10n_configGUI_price"  anchors="0 0 1 1" position="0px 0px" margin="0px 0px 0px 0px"/> -->
                                 <GuiElement type="text" size="300px 50px" textSize="0.02" textBold="true" textAlignment="center" textVerticalAlignment="middle" anchors="0 0 1 1" position="250px 0px" margin="0px 0px 0px 0px"/>
                                 <GuiElement type="bitmap" profile="multiTextOptionSettingsBg"  size="300px 50px" anchors="0 0 1 1" position="250px 0px" margin="0px 0px 0px 0px"/>
                                 <GuiElement type="button" size="50px 50px" anchors="0 0 1 1" position="550px 0px" imageColor="0.164 0.756 0.929 1" imageFocusedColor="1 1 1 1" imageHighlightedColor="1 1 1 1">
                                     <GuiElement type="bitmap" handleFocus="false"  size="50px 50px" imageColor="0.164 0.756 0.929 1" imageFocusedColor="1 1 1 1" imageHighlightedColor="1 1 1 1" anchors="0.5 0.5 0.5 0.5"/>
                                 </GuiElement>
                             </GuiElement>
-
 
 
                         </GuiElement>

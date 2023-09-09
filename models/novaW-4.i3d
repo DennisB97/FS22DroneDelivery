@@ -6,13 +6,21 @@
   </Asset>
 
   <Files>
+    <File fileId="3" filename="textures/novaDrone_mat_diffuse.dds"/>
+    <File fileId="4" filename="textures/novaDrone_mat_normal.dds"/>
+    <File fileId="5" filename="textures/novaDrone_mat_specular.dds"/>
   </Files>
 
 
   <Materials>
-    <Material name="default" materialId="5" diffuseColor="0.8 0.8 0.8 1" specularColor="0.494118 1 0">
+    <Material name="default" materialId="5">
+      <Texture fileId="3"/>
+      <Normalmap fileId="4"/>
+      <Glossmap fileId="5"/>
     </Material>
-    <Material name="UnnamedMaterial" materialId="6" diffuseColor="1 1 1 1">
+    <Material name="default" materialId="6" diffuseColor="0.8 0.8 0.8 1" specularColor="0.494118 1 0">
+    </Material>
+    <Material name="UnnamedMaterial" materialId="7" diffuseColor="1 1 1 1">
     </Material>
   </Materials>
 
@@ -25,31 +33,31 @@
   </Dynamics>
 
   <Scene>
-      <Shape shapeId="1" name="NovaW-4_main_component1" rotation="-6.83019e-06 -0 0" dynamic="true" compound="true" collisionMask="2109442" staticFriction="1" dynamicFriction="1" clipDistance="300" nodeId="21" materialIds="5" castsShadows="true" receiveShadows="true" nonRenderable="true">
-        <Shape shapeId="2" name="NovaW-4_vis" rotation="-6.83019e-06 -0 0" clipDistance="300" nodeId="22" materialIds="5" castsShadows="true" receiveShadows="true">
-          <Shape shapeId="3" name="dynamicMountTrigger" translation="0 0.13372 0" scale="0.779036 0.189893 1.77265" kinematic="true" trigger="true" collisionMask="134217728" nodeId="23" materialIds="6" castsShadows="true" receiveShadows="true" nonRenderable="true"/>
-          <Shape shapeId="4" name="bigBagHookHolder" translation="-0.000420211 0.216378 -0.305721" rotation="-6.83019e-06 -0 0" clipDistance="300" nodeId="24" materialIds="5" castsShadows="true" receiveShadows="true"/>
-          <Shape shapeId="5" name="leftLeg" translation="0.48728 0.24772 -0.424599" rotation="-6.83019e-06 -0 0" clipDistance="300" nodeId="25" materialIds="5" castsShadows="true" receiveShadows="true"/>
-          <Shape shapeId="6" name="palletHolder1" translation="-0.241039 0.224287 -0.281052" clipDistance="300" nodeId="26" materialIds="5" castsShadows="true" receiveShadows="true"/>
-          <Shape shapeId="7" name="palletHolder2" translation="0.240334 0.224287 -0.281052" rotation="-6.83019e-06 -0 0" clipDistance="300" nodeId="27" materialIds="5" castsShadows="true" receiveShadows="true"/>
-          <Shape shapeId="8" name="rightLeg" translation="-0.48728 0.248889 -0.424599" rotation="-6.83019e-06 -0 0" clipDistance="300" nodeId="28" materialIds="5" castsShadows="true" receiveShadows="true"/>
-          <Shape shapeId="9" name="rotor1" translation="0.747083 0.678411 1.07763" rotation="-6.83019e-06 -0 0" nodeId="29" materialIds="5"/>
-          <Shape shapeId="10" name="rotor2" translation="0.747101 0.678411 -1.07843" rotation="-6.83019e-06 -0 0" nodeId="30" materialIds="5"/>
-          <Shape shapeId="11" name="rotor5" translation="-0.747083 0.678411 -1.07807" rotation="-6.83019e-06 -0 0" nodeId="31" materialIds="5"/>
-          <Shape shapeId="12" name="rotor6" translation="-0.747182 0.678411 1.07801" rotation="-6.83019e-06 -0 0" nodeId="32" materialIds="5"/>
-          <TransformGroup name="tensionBelts" nodeId="37">
-            <TransformGroup name="startPoint01" translation="0.24172 0.0481824 -0.14545" rotation="180 90 0" nodeId="38">
-              <TransformGroup name="tensionBelt01Intersection01" translation="0 0.0547722 0" nodeId="39"/>
-              <TransformGroup name="tensionBelt01Intersection02" translation="0 0.055 0.484" nodeId="40"/>
-              <TransformGroup name="startPoint01End" translation="0 0 0.483967" nodeId="41"/>
+      <Shape shapeId="1" name="NovaW-4_main_component1" dynamic="true" compound="true" collisionMask="2109442" staticFriction="1" dynamicFriction="1" clipDistance="300" nodeId="23" materialIds="6" castsShadows="true" receiveShadows="true" nonRenderable="true">
+        <Shape shapeId="2" name="NovaW-4_vis" clipDistance="300" nodeId="24" materialIds="5" castsShadows="true" receiveShadows="true">
+          <Shape shapeId="3" name="dynamicMountTrigger" scale="0.779036 0.189893 1.77265" kinematic="true" trigger="true" collisionMask="134217728" nodeId="25" materialIds="7" castsShadows="true" receiveShadows="true" nonRenderable="true"/>
+          <Shape shapeId="4" name="bigBagHookHolder" translation="-0.000420303 0.216378 -0.305721" rotation="-6.83019e-06 -0 0" clipDistance="150" nodeId="26" materialIds="5" castsShadows="true" receiveShadows="true"/>
+          <Shape shapeId="5" name="leftLeg" translation="0.48728 0.24772 -0.424599" rotation="-6.83019e-06 -0 0" clipDistance="150" nodeId="27" materialIds="5" castsShadows="true" receiveShadows="true"/>
+          <Shape shapeId="6" name="palletHolder1" translation="-0.241039 0.224287 -0.281052" rotation="-6.83019e-06 -0 0" clipDistance="150" nodeId="28" materialIds="5" castsShadows="true" receiveShadows="true"/>
+          <Shape shapeId="7" name="palletHolder2" translation="0.240334 0.224287 -0.281052" rotation="-6.83019e-06 -0 0" clipDistance="150" nodeId="29" materialIds="5" castsShadows="true" receiveShadows="true"/>
+          <Shape shapeId="8" name="rightLeg" translation="-0.48728 0.248889 -0.424599" rotation="-6.83019e-06 -0 0" clipDistance="150" nodeId="30" materialIds="5" castsShadows="true" receiveShadows="true"/>
+          <Shape shapeId="9" name="rotor1" translation="0.747083 0.678411 1.07763" rotation="-6.83019e-06 -0 0" clipDistance="150" nodeId="31" materialIds="5" castsShadows="true" receiveShadows="true"/>
+          <Shape shapeId="10" name="rotor2" translation="0.747101 0.678411 -1.07843" rotation="-6.83019e-06 -0 0" clipDistance="150" nodeId="32" materialIds="5" castsShadows="true" receiveShadows="true"/>
+          <Shape shapeId="11" name="rotor5" translation="-0.747083 0.678411 -1.07807" rotation="-6.83019e-06 -0 0" clipDistance="150" nodeId="33" materialIds="5" castsShadows="true" receiveShadows="true"/>
+          <Shape shapeId="12" name="rotor6" translation="-0.747182 0.678411 1.07801" rotation="-6.83019e-06 -0 0" clipDistance="150" nodeId="34" materialIds="5" castsShadows="true" receiveShadows="true"/>
+          <TransformGroup name="tensionBelts" nodeId="35">
+            <TransformGroup name="startPoint01" nodeId="36">
+              <TransformGroup name="tensionBelt01Intersection01" nodeId="37"/>
+              <TransformGroup name="tensionBelt01Intersection02" nodeId="38"/>
+              <TransformGroup name="startPoint01End" nodeId="39"/>
             </TransformGroup>
           </TransformGroup>
-          <TransformGroup name="attachable" nodeId="43">
-            <TransformGroup name="bigBagJoint" translation="-3.65716e-08 -0.0355744 0.076663" rotation="90 0 -90" nodeId="42"/>
+          <TransformGroup name="attachable" nodeId="40">
+            <TransformGroup name="bigBagJoint" nodeId="41"/>
           </TransformGroup>
-          <TransformGroup name="collisions" nodeId="33">
-            <Shape shapeId="13" name="rightLegCollision" translation="-0.454499 0.00117118 -5.11938e-11" rotation="-6.83019e-06 -0 0" static="true" compoundChild="true" collisionMask="16781578" staticFriction="1" dynamicFriction="1" density="0.001" clipDistance="300" nodeId="34" materialIds="5" castsShadows="true" receiveShadows="true" nonRenderable="true"/>
-            <Shape shapeId="13" name="leftLegCollision" translation="0.456298 0.00117118 -5.11938e-11" rotation="-6.83019e-06 -0 0" static="true" compoundChild="true" collisionMask="16781578" staticFriction="1" dynamicFriction="1" density="0.001" clipDistance="300" nodeId="35" materialIds="5" castsShadows="true" receiveShadows="true" nonRenderable="true"/>
+          <TransformGroup name="collisions" nodeId="42">
+            <Shape shapeId="13" name="rightLegCollision" compoundChild="true" collisionMask="16781578" staticFriction="1" dynamicFriction="1" density="0.0001" clipDistance="300" nodeId="43" materialIds="6" castsShadows="true" receiveShadows="true" nonRenderable="true"/>
+            <Shape shapeId="14" name="leftLegCollision" compoundChild="true" collisionMask="16781578" staticFriction="1" dynamicFriction="1" density="0.0001" clipDistance="300" nodeId="44" materialIds="6" castsShadows="true" receiveShadows="true" nonRenderable="true"/>
           </TransformGroup>
         </Shape>
       </Shape>

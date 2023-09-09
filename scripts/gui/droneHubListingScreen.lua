@@ -32,29 +32,13 @@ function DroneHubListingScreen:onClose(element)
     self:clearDroneButtons()
 end
 
+
 --- onOpen prepares button callbacks, image files and UV's and focus.
 function DroneHubListingScreen:onOpen()
     DroneHubListingScreen:superClass().onOpen(self)
 
     if self.buttonLayout ~= nil then
-        local function mouseEvent(element,superFunc,posX, posY, isDown, isUp, button, eventUsed)
-            if eventUsed == nil then
-                eventUsed = false
-            end
-            if self.buttonLayout.visible then
-                for i=#self.buttonLayout.elements, 1, -1 do
-                local v = self.buttonLayout.elements[i]
-                -- only custom added nil check here, as encountered when updateListingScreen() called when two buttons in self.droneButtons?
-                if v ~= nil then
-                    if v:mouseEvent(posX, posY, isDown, isUp, button, eventUsed) then
-                        eventUsed = true
-                    end
-                end
-            end
-        end
-            return eventUsed
-        end
-        self.buttonLayout.mouseEvent = Utils.overwrittenFunction(self.buttonLayout.mouseEvent, mouseEvent)
+        self.buttonLayout.mouseEvent = Utils.overwrittenFunction(self.buttonLayout.mouseEvent, DroneHubScreen.mouseEventFix)
     end
 
     if self.droneIdentity ~= nil and self.droneSlot ~= nil then
@@ -158,11 +142,7 @@ function DroneHubListingScreen:updateListingScreen()
 
     -- clear the error/message text after update requested or if linkchanging in progress show that message.
     if self.linkErrorText ~= nil then
-        if self.droneSlot.currentState == self.droneSlot.EDroneWorkStatus.LINKCHANGING then
-            self:showMessage(g_i18n:getText("listingGUI_linkingChange"))
-        else
-            self.linkErrorText:setText("")
-        end
+        self.linkErrorText:setText("")
     end
 
     -- only update focus if active
@@ -211,12 +191,10 @@ function DroneHubListingScreen:updateIdentity()
 
     local name = self.droneSlot.name
     self.droneIdentity.elements[2]:setVisible(true)
-    if self.droneSlot.currentState == self.droneSlot.EDroneWorkStatus.NOLINK or self.droneSlot.currentState == self.droneSlot.EDroneWorkStatus.LINKCHANGING then
+    if self.droneSlot.currentState == self.droneSlot.ESlotState.NOLINK or self.droneSlot.currentState == self.droneSlot.ESlotState.LINKCHANGING then
         name = g_i18n:getText("listingGUI_droneNotLinked")
         self.droneIdentity.elements[2]:setVisible(false)
-    elseif self.droneSlot.currentState == self.droneSlot.EDroneWorkStatus.INCOMPATIBLEPLACEMENT or self.droneSlot.currentState == self.droneSlot.EDroneWorkStatus.BOOTING
-            or self.droneSlot.currentState == self.droneSlot.EDroneWorkStatus.NOFLYPATHFINDING then
-        name = ""
+    elseif self.droneSlot:isInteractionDisabled() or not self.droneSlot:isDroneAtSlot() then
         self.droneIdentity.elements[2]:setVisible(false)
     end
 
@@ -260,13 +238,7 @@ function DroneHubListingScreen:updateStateText()
     local stateText = ""
 
     if self.droneSlot ~= nil then
-
-        if self.droneSlot:isLinked() and self.droneSlot.currentState ~= self.droneSlot.EDroneWorkStatus.BOOTING then
-            stateText = self.droneSlot:getDrone():getCurrentStateName()
-        else
-            stateText = self.droneSlot:getCurrentStateName()
-        end
-
+        stateText = self.droneSlot:getStateText()
     end
 
     if self.status ~= nil then
@@ -356,7 +328,7 @@ function DroneHubListingScreen:setDroneButtons()
     self:clearDroneButtons()
 
     -- if booting or incompatible then no buttons should be shown
-    if self.droneSlot.currentState == self.droneSlot.EDroneWorkStatus.BOOTING or self.droneSlot.currentState == self.droneSlot.EDroneWorkStatus.INCOMPATIBLEPLACEMENT or self.droneSlot.currentState == self.droneSlot.EDroneWorkStatus.NOFLYPATHFINDING then
+    if self.droneSlot:isInteractionDisabled() then
         self.buttonLayout:invalidateLayout()
         return
     end
@@ -364,7 +336,7 @@ function DroneHubListingScreen:setDroneButtons()
     self.droneButtons = {}
 
     -- if no link then adds just the linking button
-    if self.droneSlot.currentState == self.droneSlot.EDroneWorkStatus.NOLINK then
+    if self.droneSlot.currentState == self.droneSlot.ESlotState.NOLINK then
         local linkButton = ButtonElement.new(self.target)
         linkButton:loadProfile(g_gui:getProfile("textButton"),true)
         linkButton.onClickCallback = function() self:onLinkDrone() end
@@ -372,7 +344,7 @@ function DroneHubListingScreen:setDroneButtons()
         table.insert(self.droneButtons,linkButton)
         FocusManager:loadElementFromCustomValues(linkButton)
     -- if drone already linked shows configure and unlink buttons
-    elseif self.droneSlot.currentState ~= self.droneSlot.EDroneWorkStatus.LINKCHANGING then
+    else
 
         local configureButton = ButtonElement.new(self.target)
         local unLinkButton = ButtonElement.new(self.target)
@@ -390,6 +362,14 @@ function DroneHubListingScreen:setDroneButtons()
         table.insert(self.droneButtons,unLinkButton)
         FocusManager:loadElementFromCustomValues(configureButton)
         FocusManager:loadElementFromCustomValues(unLinkButton)
+
+        if self.droneSlot:isInteractionDisabled() then
+            configureButton:setVisible(false)
+            unLinkButton:setVisible(false)
+        elseif not self.droneSlot:isDroneAtSlot() then
+            unLinkButton:setDisabled(true)
+        end
+
     end
 
     for _,button in ipairs(self.droneButtons) do

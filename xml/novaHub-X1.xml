@@ -40,7 +40,7 @@
 
     <leveling requireLeveling="true" maxSmoothDistance="1" maxSlope="75" maxEdgeAngle="30">
         <levelAreas>
-            <levelArea startNode="levelAreaStart" widthNode="levelAreaWidth" heightNode="levelAreaHeight" groundType="grass"/>
+            <levelArea startNode="levelAreaStart" widthNode="levelAreaWidth" heightNode="levelAreaHeight" groundType="asphalt"/>
         </levelAreas>
     </leveling>
 
@@ -50,15 +50,46 @@
         </drones>
     </droneHub>
 
+    <animatedObjects>
+        <animatedObject saveId="novaHubChargeCover1" >
+            <animation duration="1">
+                <part node="0>0|0|0|0">
+                    <Keyframe time="0" translation="-0.465 0.395 -0.132" rotation="0 -180 0"/>
+                    <Keyframe time="0.500" translation="-0.448 0.395 -0.132" rotation="0 -180 0"/>
+                    <Keyframe time="1.000" translation="-0.431 0.395 -0.132" rotation="0 -180 0"/>
+                </part>
+                <part node="0>0|0|0|1">
+                    <Keyframe time="0" translation="0.465 0.395 -0.132" rotation="0 0 0"/>
+                    <Keyframe time="0.500" translation="0.448 0.395 -0.132" rotation="0 0 0"/>
+                    <Keyframe time="1.000" translation="0.431 0.395 -0.132" rotation="0 0 0"/>
+                </part>
+            </animation>
+            <sounds>
+            </sounds>
+        </animatedObject>
+    </animatedObjects>
+
+    <ai>
+        <updateAreas>
+            <updateArea startNode="tipOcclusionUpdateArea1Start" endNode="tipOcclusionUpdateArea1End" />
+        </updateAreas>
+    </ai>
 
     <tipOcclusionUpdateAreas>
         <tipOcclusionUpdateArea startNode="tipOcclusionUpdateArea1Start" endNode="tipOcclusionUpdateArea1End" />
     </tipOcclusionUpdateAreas>
 
+    <hotspots>
+        <hotspot type="ELECTRICITY" linkNode="novaSingleHub" teleportNode="teleportPosition"/>
+    </hotspots>
+
+    <indoorAreas>
+        <indoorArea startNode="indoorArea1Start" widthNode="indoorArea1Width" heightNode="indoorArea1Height" />
+    </indoorAreas>
 
     <i3dMappings>
         <i3dMapping id="novaSingleHub" node="0>" />
-        <i3dMapping id="novaSingleHub_vis" node="0>0|0|0" />
+        <i3dMapping id="novaSingleHub_vis" node="0>0|0" />
         <i3dMapping id="novaSingleHub_col" node="0>5|0" />
         <i3dMapping id="mapPosition" node="0>1|0" />
         <i3dMapping id="teleportPosition" node="0>1|1" />
@@ -75,5 +106,8 @@
         <i3dMapping id="levelAreaStart" node="0>6|0" />
         <i3dMapping id="levelAreaWidth" node="0>6|1" />
         <i3dMapping id="levelAreaHeight" node="0>6|2" />
+        <i3dMapping id="indoorArea1Start" node="0>7|0" />
+        <i3dMapping id="indoorArea1Width" node="0>7|0|0" />
+        <i3dMapping id="indoorArea1Height" node="0>7|0|1" />
     </i3dMappings>
 </placeable>

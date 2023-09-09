@@ -36,6 +36,24 @@ function DroneHubScreen.new()
     return self
 end
 
+function DroneHubScreen.mouseEventFix(self,superFunc,posX, posY, isDown, isUp, button, eventUsed)
+    if eventUsed == nil then
+        eventUsed = false
+        end
+        if self.visible then
+            for i=#self.elements, 1, -1 do
+                local v = self.elements[i]
+                -- only custom added nil check here, as encountered issues
+                if v ~= nil then
+                    if v:mouseEvent(posX, posY, isDown, isUp, button, eventUsed) then
+                        eventUsed = true
+                    end
+                end
+            end
+        end
+    return eventUsed
+end
+
 --- onClickBack called when completely exiting the drone hub menu.
 function DroneHubScreen:onClickBack()
     -- clicking esc when loading into game map will have back in this screen called ??
@@ -55,7 +73,7 @@ function DroneHubScreen:onClickBack()
 
 
     if self.controller ~= nil then
-        self.controller:removeOnSlotStateChangedListeners(self.updateListCallback)
+        self.controller:removeOnDataChangedListeners(self.updateListCallback)
     end
 
     self:changeScreen(nil)
@@ -77,12 +95,59 @@ end
 function DroneHubScreen:onOpen()
     DroneHubScreen:superClass().onOpen(self)
 
+
+
+
     -- sets header to the name of the hub
     if self.header ~= nil then
         self.header:setText(self.controller:getName())
     end
 
     if self.droneList ~= nil and self.controller ~= nil then
+
+        local function mouseEvent(self,superFunc,posX, posY, isDown, isUp, button, eventUsed)
+                if self:getIsActive() and not self.ignoreMouse then
+                    if DroneHubScreen.mouseEventFix(self,nil, posX, posY, isDown, isUp, button, eventUsed) then
+                        eventUsed = true
+                    end
+                    self.mouseRow = 0
+                    self.mouseCol = 0
+                    if not eventUsed and GuiUtils.checkOverlayOverlap(posX, posY, self.absPosition[1], self.absPosition[2], self.absSize[1], self.absSize[2]) then
+                        self.mouseRow, self.mouseCol = self:getRowColumnForScreenPosition(posX, posY)
+                        if isDown then
+                            if button == Input.MOUSE_BUTTON_LEFT then
+                                self:onMouseDown()
+                                eventUsed = true
+                            end
+                            if self.supportsMouseScrolling then
+                                local deltaIndex = 0
+                                if Input.isMouseButtonPressed(Input.MOUSE_BUTTON_WHEEL_UP) then
+                                    deltaIndex = -1
+                                elseif Input.isMouseButtonPressed(Input.MOUSE_BUTTON_WHEEL_DOWN) then
+                                    deltaIndex = 1
+                                end
+                                if deltaIndex ~= 0 then
+                                    eventUsed = true
+                                    if self.selectOnScroll then
+                                        -- clamp the new index to an always valid range for scrolling, setSelectedIndex would also
+                                        -- allow an index value of 0 meaning "no selection"
+                                        local newIndex = MathUtil.clamp(self.selectedIndex + deltaIndex, 1, self:getItemCount())
+                                        self:setSelectedIndex(newIndex, nil, deltaIndex)
+                                    else
+                                        self:scrollList(deltaIndex)
+                                    end
+                                end
+                            end
+                        end
+                        if isUp and button == Input.MOUSE_BUTTON_LEFT and self.mouseDown then
+                            self:onMouseUp()
+                            eventUsed = true
+                        end
+                    end
+                end
+                return eventUsed
+            end
+        self.droneList.mouseEvent = Utils.overwrittenFunction(self.droneList.mouseEvent, mouseEvent)
 
         for i,droneSlot in ipairs(self.controller.spec_droneHub.droneSlots) do
             local clonedUI = self.droneListScreen:clone(self,true)
@@ -128,18 +193,8 @@ function DroneHubScreen:setController(inController)
     end
 
     self.controller = inController
-    self.controller:addOnSlotStateChangedListeners(self.updateListCallback)
+    self.controller:addOnDataChangedListeners(self.updateListCallback)
 end
 
---- onAppliedSettings will be called from the drone hub when it actually applied some settings when ChangeConfigEvent was run.
-function DroneHubScreen:onAppliedSettings()
-    if self.droneConfigScreen == nil then
-        return
-    end
 
-    -- as all clients will get the event, only the user who triggered it within the GUI needs an update
-    if self.droneConfigScreen.currentState == self.droneConfigScreen.EConfigScreenStates.APPLYING then
-        self.droneConfigScreen:onSettingsApplied()
-    end
-end
 

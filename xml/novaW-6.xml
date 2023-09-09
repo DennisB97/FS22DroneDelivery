@@ -11,13 +11,13 @@
             <set path="vehicle.animations.animation(1).part(4)#duration" value="0.02"/>
             <set path="vehicle.animations.animation(1).part(4)#startRot" value="0 0 0"/>
             <set path="vehicle.animations.animation(1).part(4)#endRot" value="0 360 0"/>
-            <set path="vehicle.animations.animation(1).part(4)#node" value="0>0|12"/>
+            <set path="vehicle.animations.animation(1).part(4)#node" value="0>0|13"/>
 
             <set path="vehicle.animations.animation(1).part(5)#startTime" value="0"/>
             <set path="vehicle.animations.animation(1).part(5)#duration" value="0.02"/>
             <set path="vehicle.animations.animation(1).part(5)#startRot" value="0 0 0"/>
             <set path="vehicle.animations.animation(1).part(5)#endRot" value="0 360 0"/>
-            <set path="vehicle.animations.animation(1).part(5)#node" value="0>0|13"/>
+            <set path="vehicle.animations.animation(1).part(5)#node" value="0>0|14"/>
 
          </attributes>
     </parentFile>
@@ -33,8 +33,8 @@
     </storeData>
 
     <i3dMappings>
-        <i3dMapping id="rotor3" node="0>0|12" />
-        <i3dMapping id="rotor4" node="0>0|13" />
+        <i3dMapping id="rotor3" node="0>0|13" />
+        <i3dMapping id="rotor4" node="0>0|14" />
     </i3dMappings>
 
 </vehicle>

@@ -28,7 +28,6 @@ end
 
 
 
-
 --- The register function takes care of adding new placeable specialization and type
 function DroneDeliveryMod.register(typeManager)
 
@@ -41,6 +40,9 @@ function DroneDeliveryMod.register(typeManager)
         g_placeableTypeManager:addSpecialization("droneHub","tipOcclusionAreas")
         g_placeableTypeManager:addSpecialization("droneHub","droneHub")
         g_placeableTypeManager:addSpecialization("droneHub","infoTrigger")
+        g_placeableTypeManager:addSpecialization("droneHub","animatedObjects")
+        g_placeableTypeManager:addSpecialization("droneHub","hotspots")
+        g_placeableTypeManager:addSpecialization("droneHub","indoorAreas")
 
         g_placeableSpecializationManager:addSpecialization("customDeliveryPickupPoint","CustomDeliveryPickupPoint",DroneDeliveryMod.pointSpecFile)
         g_placeableTypeManager:addType("customDeliveryPickupPoint","Placeable","dataS/scripts/placeables/Placeable.lua",nil,Placeable)
@@ -50,7 +52,9 @@ function DroneDeliveryMod.register(typeManager)
         g_placeableTypeManager:addSpecialization("customDeliveryPickupPoint","tipOcclusionAreas")
         g_placeableTypeManager:addSpecialization("customDeliveryPickupPoint","customDeliveryPickupPoint")
         g_placeableTypeManager:addSpecialization("customDeliveryPickupPoint","infoTrigger")
+        g_placeableTypeManager:addSpecialization("customDeliveryPickupPoint","hotspots")
 
+        DroneActionManager.registerSavegameXMLPaths(Placeable.xmlSchemaSavegame,"placeable.placeables(?)")
 
         DroneDeliveryMod.bRegistered = true
     end

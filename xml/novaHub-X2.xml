@@ -1,0 +1,77 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="no" ?>
+<placeable type="droneHub" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../../shared/xml/schema/placeable.xsd">
+
+    <parentFile xmlFilename="xml/novaHub-X1.xml">
+        <attributes>
+            <set path="placeable.storeData.name" value="NovaHub-X2"/>
+            <set path="placeable.storeData.price" value="25000"/>
+            <set path="placeable.storeData.image" value="images/store_birdSeed.dds"/>
+            <set path="placeable.droneHub.drones.drone(1)#attachNode" value="0>1|2|1"/>
+            <set path="placeable.base.filename" value="models/novaHub-X2.i3d"/>
+
+            <set path="placeable.animatedObjects.animatedObject(0)#saveId" value="novaHubChargeCover2"/>
+            <set path="placeable.animatedObjects.animatedObject(0).animation#duration" value="1"/>
+            <set path="placeable.animatedObjects.animatedObject(0).animation.part(0)#node" value="0>0|0|0|0"/>
+            <set path="placeable.animatedObjects.animatedObject(0).animation.part(0).Keyframe(0)#time" value="0"/>
+            <set path="placeable.animatedObjects.animatedObject(0).animation.part(0).Keyframe(0)#translation" value="-1.602 0.395 -0.036"/>
+            <set path="placeable.animatedObjects.animatedObject(0).animation.part(0).Keyframe(0)#rotation" value="0 -180 0"/>
+            <set path="placeable.animatedObjects.animatedObject(0).animation.part(0).Keyframe(1)#time" value="0.5"/>
+            <set path="placeable.animatedObjects.animatedObject(0).animation.part(0).Keyframe(1)#translation" value="-1.585 0.395 -0.036"/>
+            <set path="placeable.animatedObjects.animatedObject(0).animation.part(0).Keyframe(1)#rotation" value="0 -180 0"/>
+            <set path="placeable.animatedObjects.animatedObject(0).animation.part(0).Keyframe(2)#time" value="1"/>
+            <set path="placeable.animatedObjects.animatedObject(0).animation.part(0).Keyframe(2)#translation" value="-1.567 0.395 -0.036"/>
+            <set path="placeable.animatedObjects.animatedObject(0).animation.part(0).Keyframe(2)#rotation" value="0 -180 0"/>
+
+            <set path="placeable.animatedObjects.animatedObject(0).animation.part(1)#node" value="0>0|0|0|1"/>
+            <set path="placeable.animatedObjects.animatedObject(0).animation.part(1).Keyframe(0)#time" value="0"/>
+            <set path="placeable.animatedObjects.animatedObject(0).animation.part(1).Keyframe(0)#translation" value="-0.671 0.395 -0.036"/>
+            <set path="placeable.animatedObjects.animatedObject(0).animation.part(1).Keyframe(0)#rotation" value="0 0 0"/>
+            <set path="placeable.animatedObjects.animatedObject(0).animation.part(1).Keyframe(1)#time" value="0.5"/>
+            <set path="placeable.animatedObjects.animatedObject(0).animation.part(1).Keyframe(1)#translation" value="-0.688 0.395 -0.036"/>
+            <set path="placeable.animatedObjects.animatedObject(0).animation.part(1).Keyframe(1)#rotation" value="0 0 0"/>
+            <set path="placeable.animatedObjects.animatedObject(0).animation.part(1).Keyframe(2)#time" value="1"/>
+            <set path="placeable.animatedObjects.animatedObject(0).animation.part(1).Keyframe(2)#translation" value="-0.706 0.395 -0.036"/>
+            <set path="placeable.animatedObjects.animatedObject(0).animation.part(1).Keyframe(2)#rotation" value="0 0 0"/>
+
+
+            <set path="placeable.animatedObjects.animatedObject(1)#saveId" value="novaHubChargeCover2"/>
+            <set path="placeable.animatedObjects.animatedObject(1).animation#duration" value="1"/>
+            <set path="placeable.animatedObjects.animatedObject(1).animation.part(0)#node" value="0>0|0|0|2"/>
+            <set path="placeable.animatedObjects.animatedObject(1).animation.part(0).Keyframe(0)#time" value="0"/>
+            <set path="placeable.animatedObjects.animatedObject(1).animation.part(0).Keyframe(0)#translation" value="0.672 0.395 -0.036"/>
+            <set path="placeable.animatedObjects.animatedObject(1).animation.part(0).Keyframe(0)#rotation" value="0 -180 0"/>
+            <set path="placeable.animatedObjects.animatedObject(1).animation.part(0).Keyframe(1)#time" value="0.5"/>
+            <set path="placeable.animatedObjects.animatedObject(1).animation.part(0).Keyframe(1)#translation" value="0.689 0.395 -0.036"/>
+            <set path="placeable.animatedObjects.animatedObject(1).animation.part(0).Keyframe(1)#rotation" value="0 -180 0"/>
+            <set path="placeable.animatedObjects.animatedObject(1).animation.part(0).Keyframe(2)#time" value="1"/>
+            <set path="placeable.animatedObjects.animatedObject(1).animation.part(0).Keyframe(2)#translation" value="0.706 0.395 -0.036"/>
+            <set path="placeable.animatedObjects.animatedObject(1).animation.part(0).Keyframe(2)#rotation" value="0 -180 0"/>
+
+            <set path="placeable.animatedObjects.animatedObject(1).animation.part(1)#node" value="0>0|0|0|3"/>
+            <set path="placeable.animatedObjects.animatedObject(1).animation.part(1).Keyframe(0)#time" value="0"/>
+            <set path="placeable.animatedObjects.animatedObject(1).animation.part(1).Keyframe(0)#translation" value="1.602 0.395 -0.036"/>
+            <set path="placeable.animatedObjects.animatedObject(1).animation.part(1).Keyframe(0)#rotation" value="0 -180 0"/>
+            <set path="placeable.animatedObjects.animatedObject(1).animation.part(1).Keyframe(1)#time" value="0.5"/>
+            <set path="placeable.animatedObjects.animatedObject(1).animation.part(1).Keyframe(1)#translation" value="1.582 0.395 -0.036"/>
+            <set path="placeable.animatedObjects.animatedObject(1).animation.part(1).Keyframe(1)#rotation" value="0 -180 0"/>
+            <set path="placeable.animatedObjects.animatedObject(1).animation.part(1).Keyframe(2)#time" value="1"/>
+            <set path="placeable.animatedObjects.animatedObject(1).animation.part(1).Keyframe(2)#translation" value="1.567 0.395 -0.036"/>
+            <set path="placeable.animatedObjects.animatedObject(1).animation.part(1).Keyframe(2)#rotation" value="0 -180 0"/>
+
+         </attributes>
+    </parentFile>
+
+    <storeData>
+        <name>NovaHub-X2</name>
+        <image>images/store_birdSeed.dds</image>
+        <brand>NovaFlyFast</brand>
+        <species>placeable</species>
+        <category>placeableMisc</category>
+        <brush>
+            <type>placeable</type>
+            <category>buildings</category>
+            <tab>tools</tab>
+        </brush>
+    </storeData>
+
+</placeable>

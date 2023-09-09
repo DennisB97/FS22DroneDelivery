@@ -54,7 +54,9 @@
         levelAreas="levelAreas" stripes="customDeliveryPickupPoint_vis" infoTrigger="infoTrigger" scaleTriggers="scaleTriggers" />
 
 
-
+    <hotspots>
+        <hotspot type="LOADING" linkNode="customDeliveryPickupPoint" />
+    </hotspots>
 
 
     <i3dMappings>

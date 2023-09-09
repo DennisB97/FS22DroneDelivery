@@ -36,6 +36,10 @@ function DroneHub.prerequisitesPresent(specializations)
     return true;
 end
 
+function DroneHub.initSpecialization()
+
+end
+
 
 --- registerEventListeners registers all needed FS events.
 function DroneHub.registerEventListeners(placeableType)
@@ -71,13 +75,14 @@ function DroneHub.registerFunctions(placeableType)
     SpecializationUtil.registerFunction(placeableType, "run", DroneHub.run)
     SpecializationUtil.registerFunction(placeableType, "linkDrone", DroneHub.linkDrone)
     SpecializationUtil.registerFunction(placeableType, "unLinkDrone", DroneHub.unLinkDrone)
-    SpecializationUtil.registerFunction(placeableType, "addOnSlotStateChangedListeners", DroneHub.addOnSlotStateChangedListeners)
-    SpecializationUtil.registerFunction(placeableType, "removeOnSlotStateChangedListeners", DroneHub.removeOnSlotStateChangedListeners)
-    SpecializationUtil.registerFunction(placeableType, "onSlotStateChange", DroneHub.onSlotStateChange)
+    SpecializationUtil.registerFunction(placeableType, "addOnDataChangedListeners", DroneHub.addOnDataChangedListeners)
+    SpecializationUtil.registerFunction(placeableType, "removeOnDataChangedListeners", DroneHub.removeOnDataChangedListeners)
+    SpecializationUtil.registerFunction(placeableType, "onDataChange", DroneHub.onDataChange)
     SpecializationUtil.registerFunction(placeableType, "renameDroneRoute", DroneHub.renameDroneRoute)
     SpecializationUtil.registerFunction(placeableType, "onGridMapGenerated", DroneHub.onGridMapGenerated)
     SpecializationUtil.registerFunction(placeableType, "initializeHub", DroneHub.initializeHub)
-    SpecializationUtil.registerFunction(placeableType, "applyConfigSettings", DroneHub.applyConfigSettings)
+    SpecializationUtil.registerFunction(placeableType, "receiveConfigSettings", DroneHub.receiveConfigSettings)
+    SpecializationUtil.registerFunction(placeableType, "validatedSlotSettings", DroneHub.validatedSlotSettings)
     SpecializationUtil.registerFunction(placeableType, "setInUse", DroneHub.setInUse)
     SpecializationUtil.registerFunction(placeableType, "onExitingMenu", DroneHub.onExitingMenu)
     SpecializationUtil.registerFunction(placeableType, "getEntrancePosition", DroneHub.getEntrancePosition)
@@ -86,6 +91,9 @@ function DroneHub.registerFunctions(placeableType)
     SpecializationUtil.registerFunction(placeableType, "checkAccessNonInitCallback", DroneHub.checkAccessNonInitCallback)
     SpecializationUtil.registerFunction(placeableType, "checkAccessInitCallback", DroneHub.checkAccessInitCallback)
     SpecializationUtil.registerFunction(placeableType, "hasAnyLinkedDrones", DroneHub.hasAnyLinkedDrones)
+    SpecializationUtil.registerFunction(placeableType, "toggleChargeCoverAnimation", DroneHub.toggleChargeCoverAnimation)
+    SpecializationUtil.registerFunction(placeableType, "getDroneHandler", DroneHub.getDroneHandler)
+    SpecializationUtil.registerFunction(placeableType, "setSlotDirty", DroneHub.setSlotDirty)
 end
 
 --- registerEvents registers new events.
@@ -100,6 +108,8 @@ function DroneHub.registerOverwrittenFunctions(placeableType)
 
 end
 
+
+
 --- onLoad loading creates the
 --@param savegame loaded savegame.
 function DroneHub:onLoad(savegame)
@@ -110,7 +120,9 @@ function DroneHub:onLoad(savegame)
     self.activateText = g_i18n:getText("droneHub_hubActivateText")
     spec.bInvalid = false
     spec.droneSlots = {}
-    spec.slotStateChangedListeners = {}
+    spec.dataChangedListeners = {}
+    spec.uiSlotDataDirtyFlag = self:getNextDirtyFlag()
+    spec.uiSlotDirtyIndex = -1
 
     if self.isServer then
         spec.entrancePosition = {}
@@ -133,11 +145,16 @@ function DroneHub:onLoad(savegame)
         else
 
             local slotNode = xmlFile:getValue(droneKey .. "#attachNode",nil,self.components,self.i3dMappings)
+            if not slotNode then
+                Logging.xmlWarning(self.xmlFile, "DroneHub:onLoad: attach node not found from: %s",droneKey)
+                return
+            end
+
             local position = {}
             position.x,position.y,position.z = getWorldTranslation(slotNode)
             local rotation = {}
             rotation.x, rotation.y,rotation.z = getWorldRotation(slotNode)
-            local droneSlot = DroneHubDroneSlot.new(self,i+1,position,rotation)
+            local droneSlot = DroneHubDroneSlot.new(self,i+1,position,rotation,self.isServer,self.isClient)
             table.insert(spec.droneSlots,droneSlot)
             i = i + 1
         end
@@ -159,7 +176,7 @@ function DroneHub:canBeSold()
         return false, g_i18n:getText("droneHub_unlinkBeforeSell")
     end
 
-    return false, nil
+    return true, nil
 end
 
 --- onDelete when drone hub deleted, clean up the unloading station and storage and birds and others.
@@ -170,6 +187,15 @@ function DroneHub:onDelete()
         g_messageCenter:unsubscribe(MessageType.GRIDMAP3D_GRID_GENERATED,self)
     end
 
+    for _, slot in ipairs(spec.droneSlots) do
+        slot:onDelete()
+    end
+
+    if self.droneHandler ~= nil then
+        self.droneHandler:delete()
+        self.droneHandler = nil
+    end
+
     if spec.menuTrigger ~= nil then
         removeTrigger(spec.menuTrigger)
         spec.menuTrigger = nil
@@ -177,22 +203,54 @@ function DroneHub:onDelete()
 
 end
 
+
+
 --- onUpdate update function, called when raiseActive called and initially.
 function DroneHub:onUpdate(dt)
     local spec = self.spec_droneHub
 
     -- initial update, search through the world to find all drones in the world and check if any belong linked to this hub
     if self.isServer and not spec.bSearchedDrones then
-
         for _, slot in ipairs(spec.droneSlots) do
             slot:searchDrone()
         end
 
         spec.bSearchedDrones = true
-
     end
 
+--     self:raiseActive()
+--     spec.test = spec.test + (dt/1000)
+--
+--     if spec.test > 30 then
+--         spec.test = 0
+--         local firstSlotAnimatedObject = self.spec_animatedObjects.animatedObjects[1]
+--         if firstSlotAnimatedObject ~= nil and firstSlotAnimatedObject.activatable ~= nil then
+--             firstSlotAnimatedObject.activatable:onAnimationInputToggle()
+--         end
+--
+--         local secondSlotAnimatedObject = self.spec_animatedObjects.animatedObjects[2]
+--         if secondSlotAnimatedObject ~= nil and secondSlotAnimatedObject.activatable ~= nil then
+--             secondSlotAnimatedObject.activatable:onAnimationInputToggle()
+--         end
+--
+--         local thirdSlotAnimatedObject = self.spec_animatedObjects.animatedObjects[3]
+--         if thirdSlotAnimatedObject ~= nil and thirdSlotAnimatedObject.activatable ~= nil then
+--             thirdSlotAnimatedObject.activatable:onAnimationInputToggle()
+--         end
+--
+--     end
 
+end
+
+function DroneHub:toggleChargeCoverAnimation(slotIndex)
+    if self.spec_animatedObjects == nil or self.spec_animatedObjects.animatedObjects[slotIndex] == nil then
+        return
+    end
+
+    local slotAnimatedObject = self.spec_animatedObjects.animatedObjects[slotIndex]
+    if slotAnimatedObject ~= nil then
+        slotAnimatedObject.activatable:onAnimationInputToggle()
+    end
 end
 
 --- debugRender if debug is on for mod then debug renders some feeder variables.
@@ -216,6 +274,9 @@ function DroneHub:onFinalizePlacement()
 
     if self.isServer and not spec.bInvalid then
 
+        spec.droneHandler = DroneActionManager.new(self,self.isServer,self.isClient,false)
+        spec.droneHandler:register(true)
+
         -- set a limit how complex location the hub can be by adjusting how many closed nodes A* pathfinding can close before should stop search for a path to hub.
         spec.maxAccessClosedNodes = 2000
         -- adjust how fast it should A* pathfind to see if hub can be accessed
@@ -229,7 +290,7 @@ function DroneHub:onFinalizePlacement()
             spec.accessTester:register(true)
 
             -- add this hub to be ignored by the navigation grid as non solid.
-            g_currentMission.gridMap3D:addObjectIgnoreID(self.rootNode)
+--             g_currentMission.gridMap3D:addObjectIgnoreID(self.rootNode)
 
 
             if g_currentMission.gridMap3D:isAvailable() then
@@ -240,7 +301,7 @@ function DroneHub:onFinalizePlacement()
         else
             spec.bInvalid = true
             for _, slot in ipairs(spec.droneSlots) do
-                slot:changeState(slot.EDroneWorkStatus.NOFLYPATHFINDING)
+                slot:changeState(slot.ESlotState.NOFLYPATHFINDING)
             end
 
         end
@@ -261,7 +322,15 @@ function DroneHub:initializeHub()
     local spec = self.spec_droneHub
 
     local callback = function(aStarSearch) self:checkAccessInitCallback(aStarSearch) end
-    print("checkAccess returns: " .. tostring(self:checkAccess(callback)))
+    self:checkAccess(callback)
+end
+
+function DroneHub:setSlotDirty(slotIndex)
+    local spec = self.spec_droneHub
+    if spec.droneSlots[slotIndex] ~= nil then
+        self:raiseDirtyFlags(spec.droneSlots[slotIndex]:getDirtyFlag())
+    end
+
 end
 
 function DroneHub:setAllSlotsDirty()
@@ -378,8 +447,6 @@ function DroneHub:onWriteUpdateStream(streamId, connection, dirtyMask)
             slot:writeUpdateStream(streamId,connection,dirtyMask)
         end
 
-
-
     end
 
 end
@@ -454,6 +521,10 @@ function DroneHub:onMenuTriggerCallback(triggerId, otherId, onEnter, onLeave, on
 
 end
 
+function DroneHub:getDroneHandler()
+    return self.spec_droneHub.droneHandler
+end
+
 function DroneHub:linkDrone(drone,id,slotIndex)
     local spec = self.spec_droneHub
     if spec.droneSlots == nil or spec.droneSlots[slotIndex] == nil then
@@ -472,14 +543,23 @@ function DroneHub:unLinkDrone(slotIndex)
     spec.droneSlots[slotIndex]:finalizeUnlinking()
 end
 
-function DroneHub:applyConfigSettings(slotIndex,pickUpPointCopy,deliveryPointCopy)
+function DroneHub:receiveConfigSettings(slotIndex,pickUpPointCopy,deliveryPointCopy)
 
     local spec = self.spec_droneHub
     if spec.droneSlots == nil or spec.droneSlots[slotIndex] == nil then
         return
     end
 
-    spec.droneSlots[slotIndex]:finalizeSettingsApply(pickUpPointCopy,deliveryPointCopy)
+    spec.droneSlots[slotIndex]:verifySettings(pickUpPointCopy,deliveryPointCopy)
+end
+
+function DroneHub:validatedSlotSettings(slotIndex,bValid)
+    local spec = self.spec_droneHub
+    if spec.droneSlots == nil or spec.droneSlots[slotIndex] == nil then
+        return
+    end
+
+    spec.droneSlots[slotIndex]:onValidatedSettings(bValid)
 end
 
 function DroneHub:renameDroneRoute(slotIndex,name)
@@ -503,16 +583,16 @@ function DroneHub:onExitingMenu()
 
 end
 
-function DroneHub:addOnSlotStateChangedListeners(callback)
-    table.addElement(self.spec_droneHub.slotStateChangedListeners,callback)
+function DroneHub:addOnDataChangedListeners(callback)
+    table.addElement(self.spec_droneHub.dataChangedListeners,callback)
 end
 
-function DroneHub:removeOnSlotStateChangedListeners(callback)
-    table.removeElement(self.spec_droneHub.slotStateChangedListeners, callback)
+function DroneHub:removeOnDataChangedListeners(callback)
+    table.removeElement(self.spec_droneHub.dataChangedListeners, callback)
 end
 
-function DroneHub:onSlotStateChange(slotIndex)
-    for _, callback in ipairs(self.spec_droneHub.slotStateChangedListeners) do
+function DroneHub:onDataChange(slotIndex)
+    for _, callback in ipairs(self.spec_droneHub.dataChangedListeners) do
         callback(slotIndex)
     end
 end
@@ -590,7 +670,7 @@ function DroneHub:invalidPlacement()
     if self.isServer then
         local dirtyFlags = 0
         for _, slot in ipairs(spec.droneSlots) do
-            slot:changeState(slot.EDroneWorkStatus.INCOMPATIBLEPLACEMENT)
+            slot:changeState(slot.ESlotState.INCOMPATIBLEPLACEMENT)
             dirtyFlags = dirtyFlags + slot:getDirtyFlag()
         end
 

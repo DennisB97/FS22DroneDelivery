@@ -9,8 +9,10 @@
         <text name="droneHub_Booting" text="Booting..."/>
         <text name="droneHub_IncompatiblePlacement" text="Incompatible placement"/>
         <text name="droneHub_NoFlyPathfinding" text="No flypathfinding enabled"/>
+        <text name="droneHub_ApplyingSettings" text="Applying settings..."/>
         <text name="droneHub_noAccess" text="Drone hub is blocked, replace the hub."/>
         <text name="droneHub_unlinkBeforeSell" text="You need to unlink all drones before selling!"/>
+        <text name="droneManager_unlinkBeforeSell" text="There are some drones that are connected to this placeable, remove those before selling!"/>
         <text name="customAction_scale" text="Change scale"/>
         <text name="customAction_select" text="Select placeable"/>
 		<text name="drone_NoRoute" text="No Route"/>
@@ -20,7 +22,9 @@
 		<text name="drone_Returning" text="Returning"/>
 		<text name="drone_Waiting" text="Waiting"/>
 		<text name="drone_Unlinked" text="Unlinked"/>
-		<text name="drone_Uninitialized" text="Uninitialized"/>
+		<text name="drone_PickupCancelled" text="Returning, no pallet found"/>
+		<text name="drone_Undocking" text="Undocking"/>
+		<text name="drone_Docking" text="Docking"/>
 		<text name="drone_EmergencyUnlink" text="Emergency unlinking"/>
         <text name="listingGUI_droneNotLinked" text="NO DRONE LINKED"/>
 		<text name="listingGUI_newDroneName" text="Give a new name to this drone route"/>

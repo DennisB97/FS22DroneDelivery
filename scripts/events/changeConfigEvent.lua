@@ -167,7 +167,7 @@ end
 function ChangeConfigEvent:run(connection)
 
     if self.hub ~= nil then
-        self.hub:applyConfigSettings(self.slotIndex,self.pickUpPointCopy,self.deliveryPointCopy)
+        self.hub:receiveConfigSettings(self.slotIndex,self.pickUpPointCopy,self.deliveryPointCopy)
     end
 
     if not connection:getIsServer() then
@@ -187,7 +187,7 @@ function ChangeConfigEvent.sendEvent(hub,slotIndex,pickUpPointCopy,deliveryPoint
     if g_server ~= nil then
         g_server:broadcastEvent(ChangeConfigEvent.new(hub,slotIndex,pickUpPointCopy,deliveryPointCopy), nil, nil, hub)
         -- if server doing event then need to run function here because broadcast will only be to clients
-        hub:applyConfigSettings(slotIndex,pickUpPointCopy,deliveryPointCopy)
+        hub:receiveConfigSettings(slotIndex,pickUpPointCopy,deliveryPointCopy)
     else
         g_client:getServerConnection():sendEvent(ChangeConfigEvent.new(hub,slotIndex,pickUpPointCopy,deliveryPointCopy))
     end

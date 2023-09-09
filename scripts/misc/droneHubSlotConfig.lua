@@ -105,7 +105,7 @@ function DroneWorkPoint:findPlaceable()
         return false
     end
 
-    overlapBox(self.position.x,self.position.y,self.position.z,0,0,0,5,5,5,"placeableSearchCallback",self,CollisionFlag.STATIC_WORLD,false,true,true,false)
+    overlapBox(self.position.x,self.position.y,self.position.z,0,0,0,5,5,5,"placeableSearchCallback",self,CollisionFlag.STATIC_WORLD + CollisionFlag.GROUND_TIP_BLOCKING,false,true,true,false)
 
     if self.placeable ~= nil then
         return true
@@ -361,20 +361,34 @@ InitObjectClass(DroneHubSlotConfig, "DroneHubSlotConfig")
 DroneHubSlotConfig.EDirtyFields = {PICKUPPLACEABLE = 1, DELIVERYPLACEABLE = 2, PRICELIMIT = 3, PRICELIMITUSED = 4, FILLTYPEID = 5 }
 
 
-function DroneHubSlotConfig.new(hub,slotIndex)
+function DroneHubSlotConfig.new(slot,hub,isServer,isClient)
     local self = setmetatable({}, DroneHubSlotConfig_mt)
     self.hubOwner = hub
     self.pickUpPoint = DroneWorkPoint.new(true)
     self.deliveryPoint = DroneWorkPoint.new(false)
+    self.bLoadedConfig = true
     self.dirtyTable = {}
-    self.slotIndex = slotIndex
-
+    self.slot = slot
+    self.isServer = isServer
+    self.isClient = isClient
     return self
 end
 
 function DroneHubSlotConfig:clearConfig()
     if self.pickUpPoint == nil or self.deliveryPoint == nil then
         return
+    end
+
+    if self.pickUpPoint.placeable ~= nil and self.pickUpPoint.placeable.droneManager ~= nil then
+        if self.pickUpPoint.placeable.droneManager:removeDrone(self.slot.linkedDrone) then
+            self.pickUpPoint.placeable.droneManager = nil
+        end
+    end
+
+    if self.deliveryPoint.placeable ~= nil and self.deliveryPoint.placeable.droneManager ~= nil then
+        if self.deliveryPoint.placeable.droneManager:removeDrone(self.slot.linkedDrone) then
+            self.deliveryPoint.placeable.droneManager = nil
+        end
     end
 
     self.pickUpPoint:reset()
@@ -385,18 +399,35 @@ end
 
 function DroneHubSlotConfig:searchPlaceables()
     if self.pickUpPoint == nil or self.deliveryPoint == nil then
-        return
+        return false
     end
 
+    local bValid = true
+
     if not self.pickUpPoint:findPlaceable() then
-        self.pickUpPoint:reset()
+        bValid = false
     end
 
     if not self.deliveryPoint:findPlaceable() then
+        bValid = false
+    end
+
+    if not bValid then
+        self.pickUpPoint:reset()
         self.deliveryPoint:reset()
+        self.bLoadedConfig = false
+        return false
     end
 
 
+    self.pickUpPoint.placeable.droneManager = PickupDeliveryManager.new(self.pickUpPoint.placeable,self.isServer,self.isClient)
+    self.pickUpPoint.placeable.droneManager:register(true)
+
+    self.deliveryPoint.placeable.droneManager = PickupDeliveryManager.new(self.deliveryPoint.placeable,self.isServer,self.isClient)
+    self.deliveryPoint.placeable.droneManager:register(true)
+
+
+    return true
 end
 
 function DroneHubSlotConfig:hasPickupPoint()
@@ -443,7 +474,18 @@ function DroneHubSlotConfig:isDirty()
     return next(self.dirtyTable) ~= nil
 end
 
-function DroneHubSlotConfig:updateWorkPoints(pickUpPointCopy,deliveryPointCopy)
+function DroneHubSlotConfig:addVerifyingPoints(pickUpPointCopy,deliveryPointCopy)
+    self.verifyPickUpPoint = pickUpPointCopy
+    self.verifydeliveryPoint = deliveryPointCopy
+end
+
+function DroneHubSlotConfig:clearVerifyingPoints()
+    self.verifyPickUpPoint = nil
+    self.verifydeliveryPoint = nil
+end
+
+
+function DroneHubSlotConfig:verifyWorkPoints(pickUpPointCopy,deliveryPointCopy)
 
     local sendPickUpPointCopy = DroneWorkPoint.new(true)
     sendPickUpPointCopy:nilEverything()
@@ -467,60 +509,78 @@ function DroneHubSlotConfig:updateWorkPoints(pickUpPointCopy,deliveryPointCopy)
     sendPickUpPointCopy:setHasPriceLimit(pickUpPointCopy:hasPriceLimit())
     sendPickUpPointCopy:setFillTypeIndex(pickUpPointCopy:getFillTypeIndex())
 
-    ChangeConfigEvent.sendEvent(self.hubOwner,self.slotIndex,sendPickUpPointCopy,sendDeliveryPointCopy)
+    self.slot:changeState(self.slot.ESlotState.APPLYINGSETTINGS)
+    ChangeConfigEvent.sendEvent(self.hubOwner,self.slot.slotIndex,sendPickUpPointCopy,sendDeliveryPointCopy)
 end
 
-function DroneHubSlotConfig:applySettings(pickUpPointCopy,deliveryPointCopy)
-    if pickUpPointCopy == nil or deliveryPointCopy == nil then
+
+function DroneHubSlotConfig:applySettings()
+    if self.verifyPickUpPoint == nil or self.verifydeliveryPoint == nil then
         return
     end
 
-    if pickUpPointCopy:getPlaceable() ~= nil then
-        self.pickUpPoint.placeable = pickUpPointCopy.placeable
-        self.pickUpPoint.name = pickUpPointCopy.name
-        self.pickUpPoint.position = pickUpPointCopy.position
-        self.pickUpPoint.fillTypes = pickUpPointCopy.fillTypes
-        self.pickUpPoint.allFillTypes = pickUpPointCopy.allFillTypes
-
-        --@TODO: do some event call pickup location changed
+    if self.verifyPickUpPoint:getFillTypeIndex() ~= nil then
+        self.pickUpPoint.fillTypeIndex = self.verifyPickUpPoint:getFillTypeIndex()
     end
 
-    if pickUpPointCopy:getFillTypeIndex() ~= nil then
-        self.pickUpPoint.fillTypeIndex = pickUpPointCopy:getFillTypeIndex()
+    if self.verifyPickUpPoint:hasPriceLimit() ~= nil then
+        self.pickUpPoint.bPriceLimit = self.verifyPickUpPoint:hasPriceLimit()
     end
 
-    if pickUpPointCopy:hasPriceLimit() ~= nil then
-        self.pickUpPoint.bPriceLimit = pickUpPointCopy:hasPriceLimit()
+    if self.verifyPickUpPoint:getPriceLimit() ~= nil then
+        self.pickUpPoint.priceLimit = self.verifyPickUpPoint:getPriceLimit()
     end
 
-    if pickUpPointCopy:getPriceLimit() ~= nil then
-        self.pickUpPoint.priceLimit = pickUpPointCopy:getPriceLimit()
-    end
+    if self.verifydeliveryPoint:getPlaceable() ~= nil then
+        if self.deliveryPoint.placeable ~= nil and self.deliveryPoint.placeable.droneManager ~= nil and self.deliveryPoint.placeable ~= self.verifydeliveryPoint:getPlaceable() then
+            if self.deliveryPoint.placeable.droneManager:removeDrone(self.slot.linkedDrone) then
+                self.deliveryPoint.placeable.droneManager = nil
+            end
+        end
 
-    if deliveryPointCopy:getPlaceable() ~= nil then
-        self.deliveryPoint.placeable = deliveryPointCopy.placeable
-        self.deliveryPoint.name = deliveryPointCopy.name
-        self.deliveryPoint.position = deliveryPointCopy.position
+        self.deliveryPoint.placeable = self.verifydeliveryPoint.placeable
+        self.deliveryPoint.name = self.verifydeliveryPoint.name
+        self.deliveryPoint.position = self.verifydeliveryPoint.position
         self.deliveryPoint.fillTypes = {}
-        self.deliveryPoint.allFillTypes = deliveryPointCopy.allFillTypes
+        self.deliveryPoint.allFillTypes = self.verifydeliveryPoint.allFillTypes
 
-        --@TODO: do some event call delivery location changed
+        if self.isServer then
+            if self.deliveryPoint.placeable.droneManager == nil then
+                self.deliveryPoint.placeable.droneManager = PickupDeliveryManager.new(self.deliveryPoint.placeable,self.isServer,self.isClient)
+                self.deliveryPoint.placeable.droneManager:register(true)
+            end
+            self.deliveryPoint.placeable.droneManager:addDeliveryDrone(self.slot.linkedDrone,self.slot)
+        end
     end
 
-    if deliveryPointCopy:getFillTypeIndex() ~= nil then
-        self.deliveryPoint.fillTypeIndex = deliveryPointCopy:getFillTypeIndex()
+    if self.verifyPickUpPoint:getPlaceable() ~= nil then
+        if self.pickUpPoint.placeable ~= nil and self.pickUpPoint.placeable.droneManager ~= nil and self.pickUpPoint.placeable ~= self.verifyPickUpPoint:getPlaceable() then
+            if self.pickUpPoint.placeable.droneManager:removeDrone(self.slot.linkedDrone) then
+                self.pickUpPoint.placeable.droneManager = nil
+            end
+        end
+
+        self.pickUpPoint.placeable = self.verifyPickUpPoint.placeable
+        self.pickUpPoint.name = self.verifyPickUpPoint.name
+        self.pickUpPoint.position = self.verifyPickUpPoint.position
+        self.pickUpPoint.fillTypes = self.verifyPickUpPoint.fillTypes
+        self.pickUpPoint.allFillTypes = self.verifyPickUpPoint.allFillTypes
+
+        if self.isServer then
+            if self.pickUpPoint.placeable.droneManager == nil then
+                self.pickUpPoint.placeable.droneManager = PickupDeliveryManager.new(self.pickUpPoint.placeable,self.isServer,self.isClient)
+                self.pickUpPoint.placeable.droneManager:register(true)
+            end
+            self.pickUpPoint.placeable.droneManager:addPickupDrone(self.slot.linkedDrone,self.slot,self.pickUpPoint.fillTypes[self.pickUpPoint.fillTypeIndex],self.pickUpPoint.bPriceLimit,self.pickUpPoint.priceLimit,self.deliveryPoint.placeable)
+        end
+    else
+        if self.pickUpPoint.placeable ~= nil and self.pickUpPoint.placeable.droneManager ~= nil then
+            self.pickUpPoint.placeable.droneManager:updatePickupDrone(self.slot.linkedDrone,self.pickUpPoint.fillTypes[self.pickUpPoint.fillTypeIndex],self.pickUpPoint.bPriceLimit,self.pickUpPoint.priceLimit,self.deliveryPoint.placeable)
+        end
     end
 
-    if deliveryPointCopy:hasPriceLimit() ~= nil then
-        self.deliveryPoint.bPriceLimit = deliveryPointCopy:hasPriceLimit()
-    end
-
-    if deliveryPointCopy:getPriceLimit() ~= nil then
-        self.deliveryPoint.priceLimit = deliveryPointCopy:getPriceLimit()
-    end
-
+    self.bLoadedConfig = false
     self:clearDirtyTable()
-    --@TODO: do some event call general settings changed
 end
 
 --- On saving
@@ -541,15 +601,27 @@ function DroneHubSlotConfig:loadFromXMLFile(xmlFile, key)
 
     self.pickUpPoint:loadFromXMLFile(xmlFile,key..".config(1)")
     self.deliveryPoint:loadFromXMLFile(xmlFile,key..".config(2)")
+    self:setAllDirty()
 
     return true
 end
 
+function DroneHubSlotConfig:onSlotInitialized()
+    if self.slot == nil or not self.bLoadedConfig then
+        return false
+    end
+
+    self.slot:changeState(self.slot.ESlotState.APPLYINGSETTINGS)
+    ChangeConfigEvent.sendEvent(self.hubOwner,self.slot.slotIndex,self.pickUpPoint,self.deliveryPoint)
+    return true
+end
+
+function DroneHubSlotConfig:isLoadedConfig()
+    return self.bLoadedConfig == true
+end
 
 --- Registering
 function DroneHubSlotConfig.registerXMLPaths(schema, basePath)
-
-
 
 
 
@@ -567,7 +639,6 @@ function DroneHubSlotConfig:readStream(streamId,connection)
 
     self.pickUpPoint:readStream(streamId,connection)
     self.deliveryPoint:readStream(streamId,connection)
-
 end
 
 function DroneHubSlotConfig:writeStream(streamId,connection)

@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+
+<i3D name="novaHub-X2.i3d" version="1.6" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://i3d.giants.ch/schema/i3d-1.6.xsd">
+  <Asset>
+    <Export program="GIANTS Editor 64bit" version="9.0.4"/>
+  </Asset>
+
+  <Files>
+    <File fileId="4" filename="textures/novaHubOthers_mat_diffuse.dds"/>
+    <File fileId="5" filename="textures/novaHubOthers_mat_normal.dds"/>
+    <File fileId="6" filename="textures/novaHubOthers_mat_specular.dds"/>
+    <File fileId="1" filename="textures/novaHub_mat_diffuse.dds"/>
+    <File fileId="2" filename="textures/novaHub_mat_normal.dds"/>
+    <File fileId="3" filename="textures/novaHub_mat_specular.dds"/>
+    <File fileId="7" filename="$data/shaders/buildingShader.xml"/>
+  </Files>
+
+
+  <Materials>
+    <Material name="default" materialId="5" diffuseColor="0.8 0.8 0.8 1" specularColor="0.494118 1 0">
+    </Material>
+    <Material name="novaHub_mat" materialId="6">
+      <Texture fileId="1"/>
+      <Normalmap fileId="2"/>
+      <Glossmap fileId="3"/>
+    </Material>
+    <Material name="novaHubOthers_mat" materialId="7" customShaderId="7">
+      <Texture fileId="4"/>
+      <Normalmap fileId="5"/>
+      <Glossmap fileId="6"/>
+    </Material>
+  </Materials>
+
+
+  <Shapes externalShapesFile="novaHub-X2.i3d.shapes">
+  </Shapes>
+
+
+  <Dynamics>
+  </Dynamics>
+
+  <Scene>
+      <TransformGroup name="novaHub-X2" nodeId="18">
+        <TransformGroup name="novaHub-X2_vis" nodeId="19">
+          <TransformGroup name="LOD0" nodeId="20">
+            <Shape shapeId="1" name="novaHub-X2" translation="0 -0.01 0" rotation="-6.83019e-06 -0 0" clipDistance="300" nodeId="21" materialIds="6">
+              <Shape shapeId="2" name="legCoverSlot1Left" translation="-1.60157 0.394962 -0.0358095" rotation="-1.82123e-06 -180 -3.78166e-13" clipDistance="300" nodeId="22" materialIds="6"/>
+              <Shape shapeId="3" name="legCoverSlot1Right" translation="-0.671354 0.394962 -0.0358096" rotation="-1.82123e-06 0 -3.78166e-13" clipDistance="300" nodeId="23" materialIds="6"/>
+              <Shape shapeId="4" name="legCoverSlot2Left" translation="0.671628 0.394962 -0.0358097" rotation="-1.82123e-06 -180 -3.78166e-13" clipDistance="300" nodeId="24" materialIds="6"/>
+              <Shape shapeId="5" name="legCoverSlot2Right" translation="1.6016 0.394962 -0.0358098" rotation="-1.82123e-06 -180 -3.78166e-13" clipDistance="300" nodeId="25" materialIds="6"/>
+            </Shape>
+            <Shape shapeId="6" name="novaHubPower" translation="0 -0.01 -0.0947794" rotation="-6.83019e-06 -0 0" clipDistance="300" nodeId="26" materialIds="7"/>
+            <Shape shapeId="7" name="novaHubRoofX2" translation="0 -0.01 0" rotation="-6.83019e-06 -0 0" clipDistance="300" nodeId="27" materialIds="7"/>
+          </TransformGroup>
+        </TransformGroup>
+        <TransformGroup name="misc" nodeId="28">
+          <TransformGroup name="mapPosition" nodeId="29"/>
+          <TransformGroup name="teleportPosition" translation="-2.47893 0 2.8025" rotation="0 100 0" nodeId="30"/>
+          <TransformGroup name="droneAttachPositions" nodeId="31">
+            <TransformGroup name="droneAttachPosition1" translation="-1.136 0.338 0" nodeId="32"/>
+            <TransformGroup name="droneAttachPosition2" translation="1.137 0.338 0" nodeId="33"/>
+          </TransformGroup>
+          <Shape shapeId="8" name="menuTrigger" translation="0 0.963302 0.343563" scale="4.8 2 6" static="true" trigger="true" collisionMask="1048576" nodeId="34" materialIds="5" nonRenderable="true" distanceBlending="false"/>
+          <TransformGroup name="entrance" translation="0 1 4.39749" nodeId="35"/>
+        </TransformGroup>
+        <TransformGroup name="clearAreas" nodeId="36">
+          <TransformGroup name="clearArea1Start" translation="2.8 0 5" nodeId="37"/>
+          <TransformGroup name="clearArea1Width" translation="-2.8 0 4.5" nodeId="38"/>
+          <TransformGroup name="clearArea1Heigth" translation="2.8 0 -2.44997" nodeId="39"/>
+        </TransformGroup>
+        <TransformGroup name="testAreas" nodeId="40">
+          <TransformGroup name="testArea1Start" translation="-2.8 0 -2.45" nodeId="41">
+            <TransformGroup name="testArea1End" translation="5.65182 2.68232 7.18339" nodeId="42"/>
+          </TransformGroup>
+        </TransformGroup>
+        <TransformGroup name="tipOcclusionUpdateAreas" nodeId="43">
+          <TransformGroup name="tipOcclusionUpdateArea1Start" translation="-2.8 0 -2.45" nodeId="44">
+            <TransformGroup name="tipOcclusionUpdateArea1End" translation="5.652 0 4.8962" nodeId="45"/>
+          </TransformGroup>
+        </TransformGroup>
+        <TransformGroup name="collisions" nodeId="46">
+          <Shape shapeId="9" name="novaHub-X2_col" translation="0 -3.8913e-09 -0.0890225" rotation="-6.83019e-06 -0 0" static="true" clipDistance="300" nodeId="47" materialIds="5" castsShadows="true" receiveShadows="true" nonRenderable="true"/>
+        </TransformGroup>
+        <TransformGroup name="levelAreas" nodeId="48">
+          <TransformGroup name="levelAreaStart" translation="2.8 0 5" nodeId="49"/>
+          <TransformGroup name="levelAreaWidth" translation="-2.8 0 4.5" nodeId="50"/>
+          <TransformGroup name="levelAreaHeight" translation="2.8 0 -2.45" nodeId="51"/>
+        </TransformGroup>
+        <TransformGroup name="indoorAreas" nodeId="52">
+          <TransformGroup name="indoorArea1Start" translation="-2.39314 0 -1.72205" nodeId="53">
+            <TransformGroup name="indoorArea1Width" translation="4.78796 0 0" nodeId="54"/>
+            <TransformGroup name="indoorArea1Height" translation="0 0 3.44472" nodeId="55"/>
+          </TransformGroup>
+        </TransformGroup>
+      </TransformGroup>
+  </Scene>
+
+</i3D>

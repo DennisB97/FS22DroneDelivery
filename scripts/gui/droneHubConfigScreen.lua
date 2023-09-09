@@ -33,8 +33,16 @@ function DroneHubConfigScreen.new(target)
     self.originalHitCallback = self.cursor.getHitPlaceable
     self.onDrawCallback = function() self:onDraw() end
     self.selectorBrush = nil
-    self.EConfigScreenStates = {IDLE = 0, PICKUP = 1, DELIVERY = 2, APPLYING = 3}
-    self.currentState = self.EConfigScreenStates.IDLE
+    self.bSelecting = false
+
+    -- callback for when a hub slot changes to disabled interaction or enabled to go back to previous screen
+    self.interactionDisabledCallback = function(isDisabled)
+        if self.bSelecting then
+            self:inactivateSelection()
+        end
+        self:onClickBack()
+    end
+
     return self
 end
 
@@ -80,7 +88,7 @@ end
 --- onClickBack in this GUI will either inactive the top down selection or go back to the previous screen.
 function DroneHubConfigScreen:onClickBack()
 
-    if self.currentState ~= self.EConfigScreenStates.IDLE and self.currentState ~= self.EConfigScreenStates.APPLYING then
+    if self.bSelecting then
         self:inactivateSelection()
         return
     end
@@ -109,7 +117,6 @@ function DroneHubConfigScreen:update(dt)
     if self.selectorBrush ~= nil then
         self.selectorBrush:update(dt)
     end
-
 end
 
 --- mouseEvent will be forwarded to the camera.
@@ -138,6 +145,10 @@ function DroneHubConfigScreen:onClose(element)
 
     if self.config ~= nil then
         self.config:clearDirtyTable()
+    end
+
+    if self.droneSlot ~= nil then
+        self.droneSlot:removeOnInteractionDisabledListeners(self.interactionDisabledCallback)
     end
 
     self.droneSlot = nil
@@ -202,6 +213,7 @@ function DroneHubConfigScreen:onOpen()
     end
 
     -- prepares focuses
+
     FocusManager:removeElement(self.configList)
     FocusManager:removeElement(self.mapConfigs)
     FocusManager:removeElement(self.pickUp)
@@ -210,10 +222,15 @@ function DroneHubConfigScreen:onOpen()
     FocusManager:removeElement(self.delivery.boxLayout)
     FocusManager:loadElementFromCustomValues(self.pickUp:getButtonElement())
     FocusManager:loadElementFromCustomValues(self.delivery:getButtonElement())
-    FocusManager:removeElement(self.deliveryTypeOption)
-    FocusManager:loadElementFromCustomValues(self.deliveryTypeOption)
-    FocusManager:removeElement(self.priceLimitCheckOption)
-    FocusManager:loadElementFromCustomValues(self.priceLimitCheckOption)
+
+    if self.deliveryTypeOption ~= nil then
+        FocusManager:removeElement(self.deliveryTypeOption)
+        FocusManager:loadElementFromCustomValues(self.deliveryTypeOption)
+    end
+    if self.priceLimitCheckOption ~= nil then
+        FocusManager:removeElement(self.priceLimitCheckOption)
+        FocusManager:loadElementFromCustomValues(self.priceLimitCheckOption)
+    end
 
     -- brush used for the blue highlight of placeables, the cursor's placeable function is overwritten to highlight only possible delivery/pickup points.
     if self.selectorBrush == nil then
@@ -311,29 +328,13 @@ function DroneHubConfigScreen:updateConfigScreen()
         return
     end
 
-    if self.currentState == self.EConfigScreenStates.IDLE then
+    if self.bSelecting then
+        self.applyButton:setVisible(false)
+        self.main:setVisible(false)
+    else
         self.header:setText(g_i18n:getText("configGUI_configure") .. " " ..  self.droneSlot.name)
         self.main:setVisible(true)
         self.applyButton:setVisible(true)
-
-    elseif self.currentState == self.EConfigScreenStates.PICKUP or self.currentState == self.EConfigScreenStates.DELIVERY then
-
-        self.applyButton:setVisible(false)
-
-        if self.currentState == self.EConfigScreenStates.PICKUP then
-            self.header:setText(g_i18n:getText("configGUI_pickupPointButton"))
-
-        elseif self.currentState == self.EConfigScreenStates.DELIVERY then
-            self.header:setText(g_i18n:getText("configGUI_deliveryPointButton"))
-
-        end
-
-        self.main:setVisible(false)
-
-    else -- else will be currently applying the settings so disabling all buttons
-        self.applyButton:setVisible(false)
-        self.delivery:setDisabled(true)
-        self.pickUp:setDisabled(true)
     end
 
     -- make delivery option only visible if pickup has already been chosen
@@ -361,16 +362,14 @@ function DroneHubConfigScreen:updateConfigScreen()
 
 
         -- enable apply button only if there is some things dirty
-        if self.config:isDirty() and self.currentState ~= self.EConfigScreenStates.APPLYING then
+        if self.config:isDirty() then
             self.applyButton:setDisabled(false)
         end
 
-        if self.EConfigScreenStates.APPLYING == self.currentState then
-            self.priceLimitOption:setDisabled(true)
-            self.priceLimitCheckOption:setDisabled(true)
-            self.deliveryTypeOption:setDisabled(true)
-        end
+    end
 
+    if not self.droneSlot:isDroneAtSlot() then
+        self.applyButton:setDisabled(true)
     end
 
     self.pickUp:updateConfigMapScreen()
@@ -482,42 +481,46 @@ end
 
 --- onSetPickupPointClicked is callback on the button to select a pickup point.
 function DroneHubConfigScreen:onSetPickupPointClicked()
-    if self.cursor == nil then
+    if self.cursor == nil or self.header == nil then
         return
     end
 
-    self:changeState(self.EConfigScreenStates.PICKUP)
+    self.bPickupSelection = true
+    self.header:setText(g_i18n:getText("configGUI_pickupPointButton"))
     self.cursor.getHitPlaceable = Utils.overwrittenFunction(self.cursor.getHitPlaceable,self.onPickupRequirementCheck)
     self:activateSelection()
 end
 
 --- onSetDeliveryPointClicked is callback on the button to select a delivery point.
 function DroneHubConfigScreen:onSetDeliveryPointClicked()
-    if self.cursor == nil then
+    if self.cursor == nil or self.header == nil then
         return
     end
 
-    self:changeState(self.EConfigScreenStates.DELIVERY)
+    self.bPickupSelection = false
+    self.header:setText(g_i18n:getText("configGUI_deliveryPointButton"))
     self.cursor.getHitPlaceable = Utils.overwrittenFunction(self.cursor.getHitPlaceable,self.onDeliveryRequirementCheck)
     self:activateSelection()
 end
 
 --- onAcceptClicked is callback on the settings changes to be accepted button.
 function DroneHubConfigScreen:onAcceptClicked()
-    if self.config == nil or self.pickUp == nil or self.delivery == nil then
+    if self.config == nil or self.pickUp == nil or self.delivery == nil or self.droneSlot == nil then
         return
     end
 
-    self:changeState(self.EConfigScreenStates.APPLYING)
-    self.config:updateWorkPoints(self.pickUp:getWorkPointCopy(),self.delivery:getWorkPointCopy())
+    if not self.droneSlot:isDroneAtSlot() or self.droneSlot:isInteractionDisabled() then
+        return
+    end
 
+    self.config:verifyWorkPoints(self.pickUp:getWorkPointCopy(),self.delivery:getWorkPointCopy())
 end
 
 --- onSettingsApplied will be called after settings has been confirmed to be applied on the hub.
 function DroneHubConfigScreen:onSettingsApplied()
     self:reEnableConfigScreen()
 
-    self:changeState(self.EConfigScreenStates.IDLE)
+
 end
 
 --- activateSelection will activate the pickup/delivery point selection top down view.
@@ -530,7 +533,8 @@ function DroneHubConfigScreen:activateSelection()
 
     self.main:setVisible(false)
     g_depthOfFieldManager:popArea()
-
+    self.bSelecting = true
+    self:updateConfigScreen()
     g_currentMission.hud.ingameMap:setTopDownCamera(self.camera)
     self.camera:activate()
     self.cursor:activate()
@@ -552,19 +556,7 @@ function DroneHubConfigScreen:inactivateSelection()
     g_depthOfFieldManager:pushArea(0, 0, 1, 1)
     self.main:setVisible(true)
     g_inputBinding:setShowMouseCursor(true)
-    self:changeState(self.EConfigScreenStates.IDLE)
-end
-
---- changeState used to change state and always updates the config screen after.
-function DroneHubConfigScreen:changeState(newState)
-
-    if self.currentState == newState or newState == nil or newState < 0 then
-        return
-    end
-
-
-    self.currentState = newState
-
+    self.bSelecting = false
     self:updateConfigScreen()
 end
 
@@ -610,7 +602,7 @@ function DroneHubConfigScreen:onSelection()
     local deliveryWorkPointCopy = self.delivery:getWorkPointCopy()
 
 
-    if self.currentState == self.EConfigScreenStates.PICKUP then
+    if self.bPickupSelection then
 
         -- can't set the same placeable again
         if pickupWorkPointCopy:getPlaceable() == hitPlaceable then
@@ -704,6 +696,7 @@ function DroneHubConfigScreen:setSlotOwner(inDroneSlot)
 
     self.droneSlot = inDroneSlot
     self.config = self.droneSlot:getConfig()
+    self.droneSlot:addOnInteractionDisabledListeners(self.interactionDisabledCallback)
 
 end
 

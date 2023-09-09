@@ -10,7 +10,7 @@ function ChangeCustomPointScaleEvent.emptyNew()
     return self
 end
 --- new creates a new event and saves object received as param.
---@param positionString is coorindates inserted into string.
+--@param positionString is coordinates inserted into string.
 --@param scale integer of the new scale.
 function ChangeCustomPointScaleEvent.new(positionString,scale)
     local self = ChangeCustomPointScaleEvent.emptyNew()
@@ -41,7 +41,7 @@ end
 
 
 --- sendEvent called when event wants to be sent.
---@param positionString is coorindates inserted into string.
+--@param positionString is coordinates inserted into string.
 --@param scale integer of the new scale.
 function ChangeCustomPointScaleEvent.sendEvent(positionString,scale)
     if positionString == nil or scale == nil then
