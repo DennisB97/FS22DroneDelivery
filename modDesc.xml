@@ -72,6 +72,8 @@
         <storeItem xmlFilename="xml/novaW-4.xml"/>
         <storeItem xmlFilename="xml/novaW-6.xml"/>
         <storeItem xmlFilename="xml/novaHub-X1.xml"/>
+        <storeItem xmlFilename="xml/novaHub-X2.xml"/>
+        <storeItem xmlFilename="xml/novaHub-X3.xml"/>
         <storeItem xmlFilename="xml/customDeliveryPickupPoint.xml"/>
     </storeItems>
 
@@ -81,10 +83,15 @@
 
     <extraSourceFiles>
         <sourceFile filename="scripts/droneDeliveryMod.lua" />
+        <sourceFile filename="scripts/states/droneStates.lua" />
         <sourceFile filename="scripts/utility/pickupDeliveryHelper.lua" />
         <sourceFile filename="scripts/misc/droneHubDroneSlot.lua" />
         <sourceFile filename="scripts/misc/droneHubSlotConfig.lua" />
-        <sourceFile filename="scripts/misc/placeablesPointManager.lua" />
+        <sourceFile filename="scripts/misc/droneActionManager.lua" />
+        <sourceFile filename="scripts/misc/droneActionPhase.lua" />
+        <sourceFile filename="scripts/misc/dronePathCreator.lua" />
+        <sourceFile filename="scripts/misc/pickupDeliveryManager.lua" />
+        <sourceFile filename="scripts/misc/droneSteering.lua" />
         <sourceFile filename="scripts/gui/droneHubScreen.lua" />
         <sourceFile filename="scripts/gui/droneHubListingScreen.lua" />
         <sourceFile filename="scripts/gui/droneHubConfigScreen.lua" />
@@ -96,6 +103,7 @@
         <sourceFile filename="scripts/events/droneHubAccessedEvent.lua" />
         <sourceFile filename="scripts/events/droneHubInvalidPlacementEvent.lua" />
         <sourceFile filename="scripts/events/changeCustomPointScaleEvent.lua" />
+        <sourceFile filename="scripts/events/configValidatedEvent.lua" />
         <sourceFile filename="scripts/flyPathfinding/flyPathfinding.lua" />
         <sourceFile filename="scripts/flyPathfinding/gridMap3D.lua" />
         <sourceFile filename="scripts/flyPathfinding/states/gridMap3DStates.lua" />
