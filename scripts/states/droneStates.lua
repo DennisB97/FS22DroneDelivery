@@ -10,6 +10,9 @@ function DroneStateBase.new(customMt)
     self.isServer = nil
     self.isClient = nil
     self.bLoaded = false
+    self.steering = nil
+    self.bIsOnSpline = false
+    self.onArrivedToSplineCallback = function() self:onAtSpline() end
     return self
 end
 
@@ -23,12 +26,29 @@ function DroneStateBase:enter()
 end
 
 function DroneStateBase:leave()
+    self.bIsOnSpline = false
+    if self.steering ~= nil then
+        self.steering:interrupt()
+    end
 end
 
 function DroneStateBase:update(dt)
+
+    if self.bLoaded or self.owner == nil then
+        return
+    end
+
+    if self.steering ~= nil and self.bIsOnSpline then
+        if not self.steering:run(dt) then
+            self.owner:raiseActive()
+        end
+    end
+
+
 end
 
 function DroneStateBase:hubLoaded()
+    self.bLoaded = false
 end
 
 function DroneStateBase:pathReceived(trianglePath)
@@ -38,6 +58,24 @@ function DroneStateBase:setIsSaveLoaded()
     self.bLoaded = true
 end
 
+function DroneStateBase:goForSpline(targetSpline,direction)
+    if self.owner ~= nil and self.owner:getTrianglePath() ~= nil and self.owner:getSteering() ~= nil then
+        self.steering = self.owner:getSteering()
+        self.steering:setTargetSpline(targetSpline)
+        self.steering:setPathDirection(direction)
+        self.steering:getToStartPoint(self.onArrivedToSplineCallback)
+    end
+end
+
+function DroneStateBase:onAtSpline()
+    if self.owner == nil then
+        return
+    end
+
+    self.bIsOnSpline = true
+    self.owner:raiseActive()
+end
+
 --- CHARGING STATE CLASS ---
 --- DroneChargeState is state where drone will be charged while it docked in hub.
 DroneChargeState = {}
@@ -45,14 +83,48 @@ DroneChargeState_mt = Class(DroneChargeState,DroneStateBase)
 InitObjectClass(DroneChargeState, "DroneChargeState")
 
 --- new creates a new charge state.
---@param customMt optional custom metatable.
-function DroneChargeState.new(customMt)
-    local self = DroneChargeState:superClass().new(customMt or DroneChargeState_mt)
-
-
+function DroneChargeState.new()
+    local self = DroneChargeState:superClass().new(DroneChargeState_mt)
+    self.timerTime = 60000 -- 60s in ms
+    self.timer = nil
+    self.callback = function() self:onCharge() end
     return self
 end
 
+function DroneChargeState:enter()
+    DroneChargeState:superClass().enter(self)
+    if self.owner == nil then
+        return
+    end
+
+    if self.owner:getCharge() >= 100 then
+        self.owner:setDroneIdleState()
+        return
+    end
+
+    self.timer = Timer.createOneshot(self.timerTime, self.callback)
+end
+
+function DroneChargeState:leave()
+    DroneChargeState:superClass().leave(self)
+
+    if self.timer ~= nil then
+        self.timer:delete()
+        self.timer = nil
+    end
+
+end
+
+
+function DroneChargeState:onCharge()
+
+    if self.owner:increaseCharge() then
+        self.owner:setDroneIdleState()
+    else
+        self.timer = Timer.createOneshot(self.timerTime, self.callback)
+    end
+
+end
 
 --- PICKING_UP CLASS ---
 --- DronePickingUpState is state handles steering along path to pickup place.
@@ -61,12 +133,53 @@ DronePickingUpState_mt = Class(DronePickingUpState,DroneStateBase)
 InitObjectClass(DronePickingUpState, "DronePickingUpState")
 
 --- new creates a pickingup state.
---@param customMt optional custom metatable.
-function DronePickingUpState.new(customMt)
-    local self = DronePickingUpState:superClass().new(customMt or DronePickingUpState_mt)
-
-
+function DronePickingUpState.new()
+    local self = DronePickingUpState:superClass().new(DronePickingUpState_mt)
     return self
+end
+
+function DronePickingUpState:enter()
+    DronePickingUpState:superClass().enter(self)
+    if self.owner == nil or self.bLoaded then
+        return
+    end
+
+    if self.owner:getTarget() == nil or self.owner:getTrianglePath() == nil then
+        SpecializationUtil.raiseEvent(self.owner,"onTargetLost")
+        return
+    end
+
+    self:goForSpline(self.owner:getTrianglePath().toPickup,1)
+end
+
+function DronePickingUpState:leave()
+    DronePickingUpState:superClass().leave(self)
+
+end
+
+function DronePickingUpState:hubLoaded()
+    DronePickingUpState:superClass().hubLoaded(self)
+
+
+end
+
+function DronePickingUpState:pathReceived(trianglePath)
+    DronePickingUpState:superClass().pathReceived(self,trianglePath)
+    self:goForSpline(trianglePath.toPickup,1)
+end
+
+function DronePickingUpState:update(dt)
+    DronePickingUpState:superClass().update(self,dt)
+
+end
+
+function DronePickingUpState:onAtSpline()
+    DronePickingUpState:superClass().onAtSpline(self)
+    if self.owner == nil or self.owner.spec_drone.pickupManager == nil then
+        return
+    end
+
+    self.owner:addOnDroneArrivedListener(self.owner.spec_drone.pickupManager.pickupDroneArrivedCallback)
 end
 
 
@@ -85,6 +198,42 @@ function DroneDeliveringState.new(customMt)
     return self
 end
 
+function DroneDeliveringState:enter()
+    DroneDeliveringState:superClass().enter(self)
+    if self.owner == nil or self.bLoaded then
+        -- if loaded state into delivering, can't do anything until grid is ready and path received.
+        return
+    end
+
+    self:startDelivering()
+end
+
+function DroneDeliveringState:leave()
+    DroneDeliveringState:superClass().leave(self)
+
+end
+
+function DroneDeliveringState:pathReceived(trianglePath)
+    DroneDeliveringState:superClass().pathReceived(self,trianglePath)
+
+    self:startDelivering()
+end
+
+function DroneDeliveringState:hubLoaded()
+
+
+    DroneDeliveringState:superClass().hubLoaded(self)
+end
+
+function DroneDeliveringState:startDelivering()
+
+    if self.owner.spec_drone.deliveryManager ~= nil then
+        self.owner:addOnDroneArrivedListener(self.owner.spec_drone.deliveryManager.deliveryDroneArrivedCallback)
+    end
+
+    self:goForSpline(self.owner:getTrianglePath().toDelivery,1)
+end
+
 
 --- RETURNING CLASS ---
 --- DroneReturningState is state handles steering along path to hub from delivery place.
@@ -100,6 +249,44 @@ function DroneReturningState.new(customMt)
 
     return self
 end
+
+function DroneReturningState:enter()
+    DroneReturningState:superClass().enter(self)
+
+    if self.owner == nil or self.bLoaded then
+        -- if loaded state into cancelled, can't do anything until grid is ready and path received.
+        return
+    end
+
+    self:startReturning()
+end
+
+function DroneReturningState:leave()
+    DroneReturningState:superClass().leave(self)
+
+end
+
+function DroneReturningState:pathReceived(trianglePath)
+    DroneReturningState:superClass().pathReceived(self,trianglePath)
+    self:startReturning()
+end
+
+function DroneReturningState:hubLoaded()
+
+    DroneReturningState:superClass().hubLoaded(self)
+end
+
+function DroneReturningState:startReturning()
+
+    local hubSlot = self.owner:getHubSlot()
+    if hubSlot ~= nil then
+        hubSlot:noticeDroneReturnal()
+    end
+
+    self:goForSpline(self.owner:getTrianglePath().toHub,1)
+end
+
+
 
 
 --- EMERGENCY UNLINK CLASS ---
@@ -134,7 +321,41 @@ function DronePickupCancelledState.new(customMt)
     return self
 end
 
+function DronePickupCancelledState:enter()
+    DronePickupCancelledState:superClass().enter(self)
 
+    if self.owner == nil or self.bLoaded then
+        -- if loaded state into cancelled, can't do anything until grid is ready and path received.
+        return
+    end
+
+    self:startCancelling()
+end
+
+function DronePickupCancelledState:leave()
+    DronePickupCancelledState:superClass().leave(self)
+
+end
+
+function DronePickupCancelledState:pathReceived(trianglePath)
+    DronePickupCancelledState:superClass().pathReceived(self,trianglePath)
+    self:startCancelling()
+end
+
+function DronePickupCancelledState:hubLoaded()
+
+    DronePickupCancelledState:superClass().hubLoaded(self)
+end
+
+function DronePickupCancelledState:startCancelling()
+
+    local hubSlot = self.owner:getHubSlot()
+    if hubSlot ~= nil then
+        hubSlot:noticeDroneReturnal()
+    end
+
+    self:goForSpline(self.owner:getTrianglePath().toPickup,-1)
+end
 
 --- UNDOCKING CLASS ---
 --- DroneUnDockingState used when drone leaves hub, if happens to game load into this state (hubLoaded called), will return drone back to hub from start.
@@ -143,9 +364,8 @@ DroneUnDockingState_mt = Class(DroneUnDockingState,DroneStateBase)
 InitObjectClass(DroneUnDockingState, "DroneUnDockingState")
 
 --- new creates a undocking state.
---@param customMt optional custom metatable.
-function DroneUnDockingState.new(customMt)
-    local self = DroneUnDockingState:superClass().new(customMt or DroneUnDockingState_mt)
+function DroneUnDockingState.new()
+    local self = DroneUnDockingState:superClass().new(DroneUnDockingState_mt)
 
 
     return self
@@ -175,7 +395,6 @@ end
 -- the undocking state will just directly request to dock the drone back.
 function DroneUnDockingState:hubLoaded()
     DroneUnDockingState:superClass().hubLoaded(self)
-    self.bLoaded = false
 
     local hubSlot = self.owner:getHubSlot()
     if hubSlot ~= nil then
@@ -193,9 +412,8 @@ DroneDockingState_mt = Class(DroneDockingState,DroneStateBase)
 InitObjectClass(DroneDockingState, "DroneDockingState")
 
 --- new creates a docking state.
---@param customMt optional custom metatable.
-function DroneDockingState.new(customMt)
-    local self = DroneDockingState:superClass().new(customMt or DroneDockingState_mt)
+function DroneDockingState.new()
+    local self = DroneDockingState:superClass().new(DroneDockingState_mt)
 
 
 
@@ -219,7 +437,7 @@ end
 
 function DroneDockingState:hubLoaded()
     DroneDockingState:superClass().hubLoaded(self)
-    self.bLoaded = false
+
 
     local hubSlot = self.owner:getHubSlot()
     if hubSlot ~= nil then

@@ -11,18 +11,18 @@ InitObjectClass(DroneActionPhase, "DroneActionPhase")
 --@param targetPosition is the final position of this phase the drone should be moved to, can be nil.
 --@param targetDirection is the look at direction drone should have at end of phase.
 --@param speed is the speed that drone should have when being moved given in meters/s.
---@param rotationTime is the rotational time that drone should have to reach Y targetRotation, given in s.
+--@param rotationSpeed is the rotational degrees per second that drone should have to reach Y targetRotation, given in degrees/s.
 --@param phaseStartCallback is optional callback to first get called when starting the phase.
 --@param phaseEndCallback is optional callback to when phase ends.
 --@param additionalTaskCallback is an optional callback to run each run to do something other too before finishing,
 -- callback will receive booleans indicating if position is done and rotation is done and then the dt time, callback should return constantly true when finished if called.
 --@param nextPhase is optional next phase which this links to.
-function DroneActionPhase.new(drone,targetPosition,targetDirection,speed,rotationTime,phaseStartCallback,phaseEndCallback,additionalTaskCallback,nextPhase)
+function DroneActionPhase.new(drone,targetPosition,targetDirection,speed,rotationSpeed,phaseStartCallback,phaseEndCallback,additionalTaskCallback,nextPhase)
     local self = setmetatable({}, DroneActionPhase_mt)
     self.targetPosition = targetPosition
     self.targetDirection = targetDirection
     self.speed = speed or 1
-    self.rotationTime = rotationTime or 1
+    self.rotationSpeed = rotationSpeed or 10
     self.phaseStartCallback = phaseStartCallback
     self.phaseEndCallback = phaseEndCallback
     self.additionalTaskCallback = additionalTaskCallback
@@ -30,6 +30,8 @@ function DroneActionPhase.new(drone,targetPosition,targetDirection,speed,rotatio
     self.drone = drone
     self.next = nextPhase
     self.currentTime = 0
+    self.quaternionAlpha = 0
+    self.toTargetDegrees = 0
     return self
 end
 
@@ -41,8 +43,16 @@ function DroneActionPhase:setDrone(drone)
     end
 end
 
-function DroneActionPhase:reset()
+function DroneActionPhase:reset(bRecursive)
     self.currentDistance = 0
+    self.quaternionAlpha = 0
+    self.toTargetDegrees = 0
+    self.currentTime = 0
+    self.firstRun = true
+
+    if bRecursive and self.next ~= nil then
+        self.next:reset(bRecursive)
+    end
 end
 
 function DroneActionPhase:run(dt)
@@ -51,6 +61,7 @@ function DroneActionPhase:run(dt)
         return false
     end
 
+    local sDt = dt / 1000
     local x,y,z = getWorldTranslation(self.drone.rootNode)
     local quatX,quatY,quatZ,quatW = getWorldQuaternion(self.drone.rootNode)
 
@@ -66,14 +77,22 @@ function DroneActionPhase:run(dt)
 
         if self.targetDirection ~= nil then
 
-            self.startQuat = {}
-            self.startQuat.x, self.startQuat.y, self.startQuat.z, self.startQuat.w = quatX,quatY,quatZ,quatW
+            if self.targetDirection.x ~= 0 and self.targetDirection.y ~= 0 or self.targetDirection.z ~= 0 then
 
-            self.targetQuat = PickupDeliveryHelper.createTargetQuaternion(self.drone.rootNode,self.targetDirection)
+                self.startQuat = {}
+                self.startQuat.x, self.startQuat.y, self.startQuat.z, self.startQuat.w = quatX,quatY,quatZ,quatW
+
+                self.targetQuat = PickupDeliveryHelper.createTargetQuaternion(self.drone.rootNode,self.targetDirection)
+                self.toTargetDegrees = math.deg(math.acos(self.startQuat.x * self.targetQuat.x + self.startQuat.y * self.targetQuat.y + self.startQuat.z * self.targetQuat.z + self.startQuat.w * self.targetQuat.w))
+
+                if math.abs(self.targetQuat.x-self.startQuat.x)<0.005 and math.abs(self.targetQuat.y-self.startQuat.y)>0.005 and math.abs(self.targetQuat.z-self.startQuat.z)>0.005 and math.abs(self.targetQuat.w-self.startQuat.w)>0.005 then
+                    self.targetQuat = nil
+                end
+            end
         end
 
         if self.phaseStartCallback ~= nil then
-            self.phaseStartCallback()
+            self.phaseStartCallback(self.drone)
         end
     end
 
@@ -82,7 +101,7 @@ function DroneActionPhase:run(dt)
 
     if self.targetPosition ~= nil then
 
-        self.currentDistance = self.currentDistance + ((dt/1000) * self.speed)
+        self.currentDistance = self.currentDistance + (sDt * self.speed)
 
         local alpha = MathUtil.clamp(CatmullRomSpline.normalize01(self.currentDistance,0,self.targetDistance),0,1)
 
@@ -97,11 +116,11 @@ function DroneActionPhase:run(dt)
 
     if self.targetQuat ~= nil then
 
-        local alpha = MathUtil.clamp(CatmullRomSpline.normalize01(self.currentTime,0,self.rotationTime),0,1)
+        self.quaternionAlpha = self.quaternionAlpha + ((self.rotationSpeed * sDt) / self.toTargetDegrees)
 
-        quatX,quatY,quatZ,quatW = MathUtil.slerpQuaternion(self.startQuat.x, self.startQuat.y, self.startQuat.z, self.startQuat.w,self.targetQuat.x, self.targetQuat.y, self.targetQuat.z, self.targetQuat.w,alpha)
+        quatX,quatY,quatZ,quatW = MathUtil.slerpQuaternion(self.startQuat.x, self.startQuat.y, self.startQuat.z, self.startQuat.w,self.targetQuat.x, self.targetQuat.y, self.targetQuat.z, self.targetQuat.w,self.quaternionAlpha)
 
-        if alpha ~= 1 then
+        if self.quaternionAlpha < 1 then
             bFinalRotation = false
         end
 
@@ -121,7 +140,7 @@ function DroneActionPhase:run(dt)
 
         self:reset()
         if self.phaseEndCallback ~= nil then
-            self.phaseEndCallback()
+            self.phaseEndCallback(self.drone)
         end
 
         return true

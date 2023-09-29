@@ -10,13 +10,11 @@ InitObjectClass(DroneActionManager, "DroneActionManager")
 --@param owner of this action manager.
 --@param isServer if owner is server.
 --@param isClient if owner is client.
---@param bSaveCurrent if the current drone id should be saved so in case of a queue the .
-function DroneActionManager.new(owner,isServer,isClient,bSaveCurrent)
+function DroneActionManager.new(owner,isServer,isClient)
     local self = Object.new(isServer,isClient, DroneActionManager_mt)
     self.owner = owner
     self.phaseQueue = {}
     self.currentPhase = nil
-    self.bSaveCurrent = bSaveCurrent
     self.isDeleted = false
     return self
 end
@@ -34,39 +32,6 @@ function DroneActionManager:delete()
     DroneActionManager:superClass().delete(self)
 end
 
-
---- On saving
-function DroneActionManager:saveToXMLFile(xmlFile, key, usedModNames)
-    local id = ""
-    if self.currentPhase ~= nil then
-        id = self.currentPhase.drone:getID()
-    end
-
-    if self.bSaveCurrent then
-        xmlFile:setValue(key..".droneActionManager#current", id)
-    end
-
-
-
-end
-
---- On loading
-function DroneActionManager:loadFromXMLFile(xmlFile, key)
-
-    local id = Utils.getNoNil(xmlFile:getValue(key..".droneActionManager#current"),"")
-    if id ~= nil then
-        self.loadedID = id
-    end
-
-    return true
-end
-
---- Registering
-function DroneActionManager.registerSavegameXMLPaths(schema, basePath)
-    schema:register(XMLValueType.STRING,        basePath .. ".droneActionManager#current", "Current drone id that was being moved")
-
-end
-
 --- update function called every frame when there is some drones to move around in phases.
 --@param dt is deltatime in ms.
 function DroneActionManager:update(dt)
@@ -75,9 +40,8 @@ function DroneActionManager:update(dt)
 
         if self.currentPhase:run(dt) then -- returns true when phase was completed
 
-            if self.currentPhase.next ~= nil then -- linked list so will point to next if has any other phases.
+            if self.currentPhase ~= nil and self.currentPhase.next ~= nil then -- linked list so will point to next if has any other phases.
                 self.currentPhase = self.currentPhase.next
-
             elseif next(self.phaseQueue) ~= nil then -- if no new phase then checks queue if has any new drone in queue.
                 self.currentPhase = self.phaseQueue[1]
                 table.remove(self.phaseQueue,1)
@@ -92,15 +56,43 @@ function DroneActionManager:update(dt)
 
 end
 
-
 function DroneActionManager:addDrone(phase)
+    if phase == nil then
+        return
+    end
 
-    if (self.currentPhase == nil and self.loadedID == nil) or (self.currentPhase == nil and self.loadedID == phase.drone:getID()) then
-        self.loadedID = nil
+    if self.currentPhase == nil then
         self.currentPhase = phase
         self:raiseActive()
         return
     end
 
     table.insert(self.phaseQueue,phase)
+end
+
+function DroneActionManager:interrupt(drone)
+    if drone == nil then
+        return
+    end
+
+    if self.currentPhase ~= nil and self.currentPhase.drone == drone then
+        self.currentPhase:reset(true)
+        self.currentPhase = nil
+        if next(self.phaseQueue) ~= nil then
+            self.currentPhase = self.phaseQueue[1]
+            table.remove(self.phaseQueue,1)
+        end
+
+    else
+
+        for i,phase in ipairs(self.phaseQueue) do
+            if phase.drone == drone then
+                table.remove(self.phaseQueue,i)
+                break
+            end
+        end
+
+
+    end
+
 end

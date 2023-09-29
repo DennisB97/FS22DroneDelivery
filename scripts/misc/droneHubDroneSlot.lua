@@ -37,6 +37,15 @@ end
 
 function DroneHubDroneSlot:onDelete()
 
+    if self.pathCreator ~= nil then
+        self.pathCreator:delete()
+        self.pathCreator = nil
+    end
+
+    if self.slotConfig ~= nil then
+        self.slotConfig:delete()
+        self.slotConfig = nil
+    end
 
 end
 
@@ -78,7 +87,6 @@ function DroneHubDroneSlot.registerSavegameXMLPaths(schema, basePath)
     schema:register(XMLValueType.STRING,        basePath .. "#droneID", "Drone and slot unique ID")
     schema:register(XMLValueType.STRING,        basePath .. "#name", "Drone route name")
     schema:register(XMLValueType.BOOL,        basePath .. "#slotCoverOpen", "Bool indicating if slot cover is open state")
-    DroneActionManager.registerSavegameXMLPaths(Placeable.xmlSchemaSavegame,basePath)
     DroneHubSlotConfig.registerSavegameXMLPaths(schema,basePath)
 end
 
@@ -135,14 +143,18 @@ function DroneHubDroneSlot:getDirtyFlag()
     return self.stateDirtyFlag
 end
 
+function DroneHubDroneSlot:getOwnerFarmId()
+    local farmId = -1
+    if self.hubOwner ~= nil then
+        farmId = self.hubOwner:getOwnerFarmId()
+    end
+    return farmId
+end
+
 function DroneHubDroneSlot:createActionPhases()
 
     self:createUnDockingAction()
     self:createDockingAction()
-
-
-
-
 end
 
 function DroneHubDroneSlot:createUnDockingAction()
@@ -175,7 +187,7 @@ function DroneHubDroneSlot:createUnDockingAction()
 
     local moveToEntranceAction = DroneActionPhase.new(nil,hubEntrancePosition,nil,0.4,nil,nil,finishedCallback,nil,nil)
 
-    local rotateTowardsEntranceAction = DroneActionPhase.new(nil,nil,directionToEntrance,nil,3,nil,nil,nil,moveToEntranceAction)
+    local rotateTowardsEntranceAction = DroneActionPhase.new(nil,nil,directionToEntrance,nil,10,nil,nil,nil,moveToEntranceAction)
 
     local slightlyForwardAction = DroneActionPhase.new(nil,slightlyForwardPositionStep2,nil,0.4,nil,nil,nil,nil,rotateTowardsEntranceAction)
 
@@ -246,15 +258,15 @@ function DroneHubDroneSlot:createDockingAction()
 
     local downToSlotAction = DroneActionPhase.new(nil,self.slot.position,nil,0.1,nil,nil,finishedCallback,nil,nil)
 
-    local rotateOutwardsAction = DroneActionPhase.new(nil,nil,hubForwardDirection,nil,3,nil,legsDownCallback,nil,downToSlotAction)
+    local rotateOutwardsAction = DroneActionPhase.new(nil,nil,hubForwardDirection,nil,10,nil,legsDownCallback,nil,downToSlotAction)
 
     local slightlyForward2Action = DroneActionPhase.new(nil,slightlyUpPosition,nil,0.4,nil,nil,nil,nil,rotateOutwardsAction)
 
-    local rotateToSlotAction = DroneActionPhase.new(nil,nil,{x=hubForwardDirection.x * -1,y= hubForwardDirection.y * -1,z= hubForwardDirection.z * -1},nil,3,nil,nil,nil,slightlyForward2Action)
+    local rotateToSlotAction = DroneActionPhase.new(nil,nil,{x=hubForwardDirection.x * -1,y= hubForwardDirection.y * -1,z= hubForwardDirection.z * -1},nil,10,nil,nil,nil,slightlyForward2Action)
 
     local slightlyForwardAction = DroneActionPhase.new(nil,slightlyForwardPositionStep2,nil,0.4,nil,nil,nil,nil,rotateToSlotAction)
 
-    self.dockingAction = DroneActionPhase.new(nil,nil,directionToSlot,nil,3,nil,nil,nil,slightlyForwardAction)
+    self.dockingAction = DroneActionPhase.new(nil,nil,directionToSlot,nil,10,nil,nil,nil,slightlyForwardAction)
 end
 
 function DroneHubDroneSlot:requestUndocking()
@@ -293,7 +305,7 @@ function DroneHubDroneSlot:initialize()
 
     if self.slotConfig ~= nil then
         -- if has no loaded pickup and delivery placeable then doesn't get initialized and returns false so need to change to linked state
-        if not self.slotConfig:onSlotInitialized() then
+        if not self.slotConfig:onConfigInitialized() then
             self:changeState(self.ESlotState.LINKED)
         end
     end
@@ -378,7 +390,7 @@ function DroneHubDroneSlot:searchDrone()
         end
         SpecializationUtil.raiseEvent(self.linkedDrone,"onHubLoaded",self.hubOwner,self,self.slotIndex)
         if not self.slotConfig:searchPlaceables() and not self.linkedDrone:isDroneAtHub() then
-            SpecializationUtil.raiseEvent(self.linkedDrone,"onTargetLost")
+            SpecializationUtil.raiseEvent(self.linkedDrone,"onPointLost")
         end
 
         return
@@ -395,12 +407,28 @@ function DroneHubDroneSlot:noticeDroneReturnal()
     self.linkedDrone:addOnDroneArrivedListener(self.droneArriveCallback)
 end
 
+
 function DroneHubDroneSlot:onDroneArrived(drone)
+    if drone == nil or self.slotConfig == nil then
+        return
+    end
 
     drone:removeOnDroneArrivedListener(self.droneArriveCallback)
-    self.linkedDrone:changeState(self.linkedDrone.EDroneStates.DOCKING)
 
+    local pickupManager, _ = self.slotConfig:getPlaceableManagers()
 
+    local bMore = false
+
+    if pickupManager ~= nil and drone:hasEnoughCharge() then
+        local originalFunction = drone.isAvailableForPickup
+        drone.isAvailableForPickup = function() return true end
+        bMore = pickupManager:requestPickup(drone)
+        drone.isAvailableForPickup = originalFunction
+    end
+
+    if not bMore then
+        drone:changeState(drone.spec_drone.EDroneStates.DOCKING)
+    end
 end
 
 function DroneHubDroneSlot:tryLinkDrone()
@@ -494,6 +522,13 @@ function DroneHubDroneSlot:isLinked()
     return self.linkedDrone ~= nil
 end
 
+function DroneHubDroneSlot:requestClear()
+
+    self:changeState(self.ESlotState.APPLYINGSETTINGS)
+
+    ClearConfigEvent.sendEvent(self.hubOwner,self.slotIndex)
+end
+
 function DroneHubDroneSlot:getCurrentStateName()
     local stateName = ""
 
@@ -574,7 +609,7 @@ function DroneHubDroneSlot:emergencyUnlink()
     self.linkedDroneID = ""
     self.name = ""
     self.slotConfig:clearConfig()
-    self.linkedDrone:changeState(self.linkedDrone.spec_drone.EDroneStates.EMERGENCYUNLINK)
+    SpecializationUtil.raiseEvent(self.linkedDrone,"onHubUnlink",true)
     self.linkedDrone = nil
 end
 
@@ -598,7 +633,7 @@ function DroneHubDroneSlot:finalizeLinking(drone,id)
 end
 
 function DroneHubDroneSlot:finalizeUnlinking()
-    if self.linkedDrone == nil or not self.linkedDrone:isDroneAtHub() then
+    if not self.linkedDrone:isDroneAtHub() then
         self:changeState(self.ESlotState.LINKED)
         return
     end
@@ -611,7 +646,7 @@ function DroneHubDroneSlot:finalizeUnlinking()
     end
 
     self.linkedDroneID = ""
-    SpecializationUtil.raiseEvent(self.linkedDrone,"onHubUnlink")
+    SpecializationUtil.raiseEvent(self.linkedDrone,"onHubUnlink",false)
     self.linkedDrone = nil
     self.name = ""
 
@@ -623,16 +658,36 @@ function DroneHubDroneSlot:finalizeRenaming(name)
     self.hubOwner:onDataChange(self.slotIndex)
 end
 
+function DroneHubDroneSlot:finalizeSettingsClear()
+    if self.linkedDrone == nil or not self.linkedDrone:isDroneAtHub() then
+        self:changeState(self.ESlotState.LINKED)
+        return
+    end
+
+    if self.slotConfig ~= nil then
+        self.slotConfig:clearConfig()
+    end
+
+    SpecializationUtil.raiseEvent(self.linkedDrone,"onPointLost")
+    self.linkedDrone:setDroneIdleState()
+
+    self:changeState(self.ESlotState.LINKED)
+end
+
 function DroneHubDroneSlot:verifySettings(pickUpPointCopy,deliveryPointCopy)
     if pickUpPointCopy == nil or deliveryPointCopy == nil or self.slotConfig == nil or self.hubOwner == nil then
         return
     end
+
 
     self:changeState(self.ESlotState.APPLYINGSETTINGS)
     self.slotConfig:addVerifyingPoints(pickUpPointCopy,deliveryPointCopy)
 
     if self.isServer and self.pathCreator ~= nil then
         if pickUpPointCopy.placeable ~= nil or deliveryPointCopy.placeable ~= nil then
+            -- remove drone from pickup and delivery managers
+            self.slotConfig:removeDroneFromManager(false)
+            self.slotConfig:removeDroneFromManager(true)
             local callback = function(trianglePath) self:onValidatedPaths(trianglePath)  end
             self.pathCreator:generateNew(pickUpPointCopy.placeable,deliveryPointCopy.placeable,callback)
         else
@@ -649,7 +704,10 @@ function DroneHubDroneSlot:onValidatedPaths(trianglePath)
     if trianglePath == nil then
         -- only while loading a save can the drone not be in the hub and have a path be validated, so if path couldn't be made, need to tell drone come back
         if not self.linkedDrone:isDroneAtHub() then
-            SpecializationUtil.raiseEvent(self.linkedDrone,"onTargetLost")
+            SpecializationUtil.raiseEvent(self.linkedDrone,"onPointLost")
+        else
+            self.slotConfig:addDroneToManager(false,false)
+            self.slotConfig:addDroneToManager(true,false)
         end
         ConfigValidatedEvent.sendEvent(self.hubOwner,self.slotIndex,false)
         return
@@ -684,8 +742,8 @@ function DroneHubDroneSlot:onValidatedSettings(bValid)
     if self.bufferTrianglePath ~= nil then
         self.trianglePath = self.bufferTrianglePath
         self.bufferTrianglePath = nil
-
-        SpecializationUtil.raiseEvent(self.linkedDrone,"onPathReceived",self.trianglePath)
+        local pickupManager, deliveryManager = self.slotConfig:getPlaceableManagers()
+        SpecializationUtil.raiseEvent(self.linkedDrone,"onPathReceived",self.trianglePath,pickupManager,deliveryManager)
     end
 
 end

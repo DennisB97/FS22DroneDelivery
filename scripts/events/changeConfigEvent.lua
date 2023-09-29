@@ -104,6 +104,9 @@ function ChangeConfigEvent:readStream(streamId, connection)
     -- always receives fill type index
     self.pickUpPointCopy:setFillTypeIndex(streamReadInt8(streamId))
 
+    -- always receives fill limit index
+    self.pickUpPointCopy:setFillLimitIndex(streamReadInt8(streamId))
+
     self:run(connection)
 end
 --- writeStream writes to object to clients.
@@ -160,6 +163,9 @@ function ChangeConfigEvent:writeStream(streamId, connection)
 
     -- always sends fill type index
     streamWriteInt8(streamId,self.pickUpPointCopy:getFillTypeIndex())
+
+    -- always send fill limit index
+    streamWriteInt8(streamId,self.pickUpPointCopy:getFillLimitIndex())
 
 end
 

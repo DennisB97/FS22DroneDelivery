@@ -324,8 +324,7 @@ function CatmullRomSpline:getSplineLength()
     if self.segments == nil then
         return 0
     end
---
---     return self.segments[#self.segments].length + self.segments[#self.segments].segmentStartLength
+
     return self.length
 end
 
@@ -380,6 +379,127 @@ function CatmullRomSpline.getUpVector(forwardVector,rightVector)
     normal.x, normal.y, normal.z = MathUtil.vector3Normalize(MathUtil.crossProduct(rightVector.x,rightVector.y,rightVector.z,forwardVector.x,forwardVector.y,forwardVector.z))
     return normal
 end
+
+--- getClosePositionOnSpline is used for getting an esimated close point from a given position to spline.
+--@param position is from position to go to spline, given as {x=,y=,z=}.
+--@param accuracy how accurate in meters to get position on the curve.
+--@return position on spline as {x=,y=,z=},distance along spline the position is found at in float, direction to it as {x=,y=,z=}, distance to it in float, and segment index it was on.
+function CatmullRomSpline:getClosePositionOnSpline(position,accuracy)
+    if position == nil then
+        return nil
+    end
+
+    accuracy = accuracy or 0.10
+    local segments = #self.segments
+    local segment = nil
+    local segmentIndex = 1
+    if segments > 1 then
+        segment, segmentIndex = self:SearchCloseSegment(position)
+    else
+        segment = self.segments[1]
+    end
+
+    local positionOnSpline, splineDistance,directionToSpline, distanceToSpline = self:getClosePositionOnCurve(position,accuracy,segment)
+
+    return positionOnSpline, splineDistance,directionToSpline, distanceToSpline, segmentIndex
+end
+
+--- SearchCloseSegment gets the nearest estimated segment from a given position.
+--@param position to try find nearby segment.
+--@return segment and segment index.
+function CatmullRomSpline:SearchCloseSegment(position)
+
+    local shortestDistance = 99999999
+    local shortestIndex = 1
+
+
+    for i,segment in ipairs(self.segments) do
+        local splinePositionX, splinePositionY, splinePositionZ = MathUtil.getClosestPointOnLineSegment(segment.p1.x,segment.p1.y,segment.p1.z,segment.p2.x,segment.p2.y,segment.p2.z,position.x,position.y,position.z)
+        local distance = MathUtil.vector3Length(splinePositionX - position.x, splinePositionY - position.y, splinePositionZ - position.z)
+
+        if distance < shortestDistance then
+            shortestDistance = distance
+            shortestIndex = i
+        end
+    end
+
+    return self.segments[shortestIndex], shortestIndex
+
+end
+
+--- getClosePositionOnCurve estimates shortest distance position on curve based on given accuracy value.
+--@param position from where to trace nearest position on curve.
+--@param accuracy is meter value of how accurately needs to search.
+--@param segment on which spline curve segment to look from.
+--@return position on spline as {x=,y=,z=},distance along spline the position is found at in float, direction to it as {x=,y=,z=}, distance to it in float.
+function CatmullRomSpline:getClosePositionOnCurve(position,accuracy,segment)
+    if position == nil or segment == nil then
+        return nil
+    end
+
+    accuracy = accuracy or 0.10
+    local positionOnSpline = {x=0,y=0,z=0}
+    local distance = 0
+    if CatmullRomSpline.isNearlySamePosition(position,segment.p1,accuracy) then
+        positionOnSpline, distance = segment.p1, segment.segmentStartLength
+    elseif CatmullRomSpline.isNearlySamePosition(position,segment.p2,accuracy) then
+        positionOnSpline, distance = segment.p2, segment.segmentStartLength + segment.length
+    else
+        positionOnSpline, distance = self:binarySearchCloseCurvePosition(segment,segment.segmentStartLength, segment.segmentStartLength + segment.length,position,accuracy)
+    end
+
+    local vectorToSpline = {x=0,y=0,z=0}
+    vectorToSpline.x = positionOnSpline.x - position.x
+    vectorToSpline.y = positionOnSpline.y - position.y
+    vectorToSpline.z = positionOnSpline.z - position.z
+
+    local directionToSpline = {x=0,y=0,z=0}
+    if vectorToSpline.x ~= 0 or vectorToSpline.y ~= 0 or vectorToSpline.z ~= 0 then
+        directionToSpline.x, directionToSpline.y, directionToSpline.z = MathUtil.vector3Normalize(vectorToSpline.x, vectorToSpline.y, vectorToSpline.z)
+    end
+
+    local distanceToSpline = MathUtil.vector3Length(vectorToSpline.x,vectorToSpline.y,vectorToSpline.z)
+
+    return positionOnSpline, distance, directionToSpline, distanceToSpline
+end
+
+--- binarySearchCloseCurvePosition iteratively searches for the estimated close position on curve from a position not on curve.
+--@param segment is from which curve segment to search from.
+--@param minDistance current min distance to compare from.
+--@param maxDistance current max distance to compare from.
+--@param position is constant position from which to trace to spline position.
+--@param accuracy how accurately in meters enough to satisfy search.
+--@return position as {x=,y=,z=}, distance along the spline the position is found at.
+function CatmullRomSpline:binarySearchCloseCurvePosition(segment,minDistance,maxDistance,position,accuracy)
+
+    if maxDistance < minDistance then
+        printCallstack()
+        DebugUtil.printTableRecursively(self)
+        Logging.warning("CatmullRomSpline:binarySearchCloseCurvePosition: close point on curve wasn't found, bad accuracy value?")
+        return nil
+    end
+
+    local middleDistance = (minDistance + maxDistance) / 2
+
+    if (maxDistance - minDistance) < accuracy then
+        return CatmullRomSpline.getPosition(segment,self:getEstimatedT(segment,middleDistance)), middleDistance
+    end
+
+    local minPosition = CatmullRomSpline.getPosition(segment,self:getEstimatedT(segment,minDistance))
+    local maxPosition = CatmullRomSpline.getPosition(segment,self:getEstimatedT(segment,maxDistance))
+
+    local distanceToMin = MathUtil.vector3Length(position.x - minPosition.x, position.y - minPosition.y, position.z - minPosition.z)
+    local distanceToMax = MathUtil.vector3Length(position.x - maxPosition.x, position.y - maxPosition.y, position.z - maxPosition.z)
+
+
+    if distanceToMin < distanceToMax then
+        return self:binarySearchCloseCurvePosition(segment,minDistance,middleDistance,position,accuracy)
+    else
+        return self:binarySearchCloseCurvePosition(segment,middleDistance,maxDistance,position,accuracy)
+    end
+
+end
+
 
 ---------- SPLINE CREATOR -------------
 

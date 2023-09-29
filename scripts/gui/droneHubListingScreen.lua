@@ -62,7 +62,7 @@ function DroneHubListingScreen:onOpen()
     if self.droneMap ~= nil and g_currentMission ~= nil then
         -- set the drone map image
         self.droneMap:setImageFilename(g_currentMission.mapImageFilename)
-        self.droneMap.elements[1]:setImageFilename(Utils.getFilename("images/test.dds", DroneDeliveryMod.modDir))
+        self.droneMap.elements[1]:setImageFilename(Utils.getFilename("images/droneMapIcon.dds", DroneDeliveryMod.modDir))
     end
 
     if self.droneCharge ~= nil then

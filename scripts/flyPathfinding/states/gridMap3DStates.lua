@@ -369,7 +369,13 @@ function GridMap3DStateGenerate:finishGrid()
 
     local minutes = math.floor(self.generationTime / 60)
     local seconds = self.generationTime % 60
-    Logging.info(string.format("GridMap3DStateGenerate done generating octree! Took around %d Minutes, %d Seconds",minutes,seconds))
+
+    -- doesn't print time taken on dedicated as it is completely wrong.
+    if g_currentMission ~= nil and g_currentMission.connectedToDedicatedServer then
+        Logging.info(string.format("GridMap3DStateGenerate done generating octree!"))
+    else
+        Logging.info(string.format("GridMap3DStateGenerate done generating octree! Took around %d Minutes, %d Seconds",minutes,seconds))
+    end
 
     -- Change state to idle
     self.currentState = self.EInternalState.IDLE

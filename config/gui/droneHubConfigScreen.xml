@@ -16,7 +16,7 @@
                         <GuiElement type="empty" size="450px 300px" anchors="0 0 1 1">
                         </GuiElement>
 
-                        <!-- <!-- <!-- <!-- middle "decoration part with just arrow pointing towards the right part which is "pickup point setting"  -->
+                        <!-- middle "decoration part with just arrow pointing towards the right part which is "pickup point setting"  -->
                         <GuiElement type="boxLayout" size="100px 300px" anchors="0 0 1 1">
                             <GuiElement type="empty" size="100px 50px" anchors="0 0 1 1"/>
                             <GuiElement type="text" text="---->" size="100px 200px" textAlignment="center" anchors="0 0 1 1"/>
@@ -29,9 +29,9 @@
 
                     </GuiElement>
 
-                    <GuiElement type="flowLayout" size="1000px 200px" anchors="0 0 1 1" margin="0px 50px 0px 0px" id="flowLayout">
+                    <GuiElement type="flowLayout" size="1000px 250px" anchors="0 0 1 1" margin="0px 50px 0px 0px" id="flowLayout">
                         <GuiElement type="empty" size="200px 200px" anchors="0 0 1 1" />
-                        <GuiElement type="boxLayout" size="600px 200px" anchors="0 0 1 1">
+                        <GuiElement type="boxLayout" size="600px 250px" anchors="0 0 1 1">
 
                             <!-- Delivery type selection -->
                             <GuiElement type="multiTextOption" profile="multiTextOptionSettings" anchors="0 0 1 1" position="0px 0px" margin="0px 0px 0px 0px" size="600px 65px" onClick="onDeliveryTypeChange" id="deliveryTypeOption">
@@ -43,6 +43,15 @@
                                 <GuiElement type="bitmap" profile="multiTextOptionSettingsBg" size="300px 50px" anchors="0 0 1 1" position="250px 0px" margin="0px 0px 0px 0px"/>
                             </GuiElement>
 
+                            <!-- fill level percentage limit selection -->
+                            <GuiElement type="multiTextOption" profile="multiTextOptionSettings" anchors="0 0 1 1" position="0px 0px" margin="0px 0px 0px 0px" size="600px 65px" onClick="onFillLimitChange" id="fillLimitOption">
+
+                                <GuiElement type="button"  profile="multiTextOptionSettingsLeft" size="50px 50px" anchors="0 0 1 1" position="200px 0px" margin="0px 0px 0px 0px"/>
+                                <GuiElement type="button" profile="multiTextOptionSettingsRight" size="50px 50px" anchors="0 0 1 1" position="550px 0px" margin="0px 0px 0px 0px"/>
+                                <GuiElement type="text" size="300px 50px" textSize="0.02" textBold="true" textAlignment="center" textVerticalAlignment="middle" anchors="0 0 1 1" position="250px 0px" margin="0px 0px 0px 0px"/>
+                                <GuiElement type="text" size="100px 50px"  profile="multiTextOptionSettingsTitle" text="$l10n_configGUI_fillLimit" anchors="0 0 1 1" position="0px 0px" margin="0px 0px 0px 0px"/>
+                                <GuiElement type="bitmap" profile="multiTextOptionSettingsBg" size="300px 50px" anchors="0 0 1 1" position="250px 0px" margin="0px 0px 0px 0px"/>
+                            </GuiElement>
 
                             <!-- Checkbox to require price reached on delivery type before delivering -->
                             <GuiElement type="checkedOption" profile="multiTextOptionSettings" size="600px 50px" anchors="0 0 1 1" id="priceLimitCheckOption" onClick="onPriceLimitChecked">
@@ -79,6 +88,7 @@
         <GuiElement type="flowLayout" profile="buttonBoxDockedOnScreen" size="1000px 50px">
             <GuiElement type="button" profile="buttonBack" onClick="onClickBack" text="$l10n_button_back"/>
             <GuiElement type="button" profile="buttonRectangle" onClick="onAcceptClicked" text="$l10n_button_apply" id="applyButton"/>
+            <GuiElement type="button" profile="buttonTriangle" onClick="onClearClicked" text="$l10n_button_clear" id="clearButton"/>
         </GuiElement>
 
     </GuiElement>

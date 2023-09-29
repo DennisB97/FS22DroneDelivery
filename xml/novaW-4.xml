@@ -2,10 +2,15 @@
 <vehicle type="drone" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../../shared/xml/schema/vehicle.xsd">
     <storeData>
         <name>NovaW-4</name>
-        <image>images/store_birdSeed.dds</image>
+        <specs>
+            <maxSpeed>80</maxSpeed>
+        </specs>
+        <functions>
+            <function>$l10n_function_drone</function>
+        </functions>
+        <image>images/store_novaW-4.dds</image>
         <brand>NovaFlyFast</brand>
         <price>150000</price>
-        <dailyUpkeep>20</dailyUpkeep>
         <lifetime>1000</lifetime>
         <showInStore>true</showInStore>
         <category>miscVehicles</category>
@@ -15,7 +20,7 @@
     </storeData>
 
     <base>
-        <typeDesc>DRONE TEST</typeDesc>
+        <typeDesc>$l10n_typeDesc_drone</typeDesc>
         <filename>models/novaW-4.i3d</filename>
         <canBeReset>false</canBeReset>
         <supportsPickUp>true</supportsPickUp>
@@ -48,7 +53,7 @@
         </animation>
 
         <animation name="hookAnimation">
-            <part node="hookHolder" startTime="0" duration="1" startRot="0 0 0" endRot="0 0 -90"/>
+            <part node="hookHolder" startTime="0" duration="1" startRot="0 0 0" endRot="0 0 90"/>
 
             <sound template="defaultHydraulicSound" startTime="0.01" endTime="0.99" volumeScale="1.2" pitchScale="0.4" linkNode="hookHolder"/>
             <sound template="clackVar6"             startTime="0.99" direction="1"  volumeScale="0.6" pitchScale="0.6" linkNode="hookHolder"/>
@@ -58,8 +63,8 @@
         </animation>
 
         <animation name="palletHolderAnimation">
-            <part node="palletHolder1" startTime="0" duration="1" startRot="0 0 0" endRot="0 0 90"/>
-            <part node="palletHolder2" startTime="0" duration="1" startRot="0 0 0" endRot="0 0 -90"/>
+            <part node="palletHolder1" startTime="0" duration="1" startRot="0 0 0" endRot="0 0 -90"/>
+            <part node="palletHolder2" startTime="0" duration="1" startRot="0 0 0" endRot="0 0 90"/>
 
             <sound template="defaultHydraulicSound" startTime="0.01" endTime="0.99" volumeScale="1.2" pitchScale="0.4" linkNode="palletHolder1"/>
             <sound template="clackVar6"             startTime="0.99" direction="1"  volumeScale="0.6" pitchScale="0.6" linkNode="palletHolder1"/>
@@ -78,9 +83,9 @@
         </meshNodes>
     </tensionBeltObject>
 
-    <drone leftLegCollision="leftLegCollision" rightLegCollision="rightLegCollision">
+    <drone leftLegCollision="leftLegCollision" rightLegCollision="rightLegCollision" chargeSpeed="5" carrySpeed="60" horizontalSpeed="80" verticalSpeed="8" minGroundOffset="2">
         <sounds>
-            <rotor file="sounds/drone.ogg" linkNode="droneNode" outerRadius="20" innerRadius="1" loops="0" supportsReverb="true" isLocalSound="false" debug="true">
+            <rotor file="sounds/drone.ogg" linkNode="droneNode" outerRadius="20" innerRadius="1" loops="0" supportsReverb="true" isLocalSound="false" debug="false">
                 <randomization minVolume="0.9" maxVolume="1.0" />
             </rotor>
         </sounds>
@@ -90,7 +95,7 @@
     <tensionBelts>
         <tensionBeltsConfigurations>
             <tensionBeltsConfiguration>
-                <tensionBelts linkNode="tensionBelts" jointNode="droneNode" width="0.10" interactionRadius="0" maxEdgeLength="0.1" geometryBias="0.01" ratchetPosition="0.2" defaultOffset="0.1" defaultOffsetSide="0.1" defaultHeight="4" >
+                <tensionBelts linkNode="tensionBelts" jointNode="droneNode" width="0.10" totalInteractionRadius="0" interactionRadius="0" maxEdgeLength="0.1" geometryBias="0.01" ratchetPosition="0.2" defaultOffset="0.1" defaultOffsetSide="0.1" defaultHeight="2.5" >
                     <tensionBelt startNode="startPoint01" endNode="startPoint01End" >
                         <intersectionNode node="tensionBelt01Intersection01"/>
                         <intersectionNode node="tensionBelt01Intersection02"/>

@@ -1,76 +1,141 @@
 ﻿<?xml version="1.0" encoding="utf-8" standalone="no" ?>
-<modDesc descVersion="75">
+<modDesc descVersion="77">
     <author>Dennis B</author>
     <version>1.0.0.0</version>
 
     <title>
         <en>Drone Delivery</en>
         <de>Drohnenlieferung</de>
-        <fr>Livraison Par Drone</fr>
     </title>
 
     <description>
-        <en><![CDATA[Decorational bird feeder with feeding functionality and birds.
+        <en><![CDATA[Future has arrived to Farming Simulator with drones that can carry Pallets, Big bags and Bales.
 
-- Bird feeder:
-  Purchase price: 300 €
-  Maintenance: 0 €
-  Can be found in the game under (Bird feeder): Construction / Animals / Others
+- NovaW-4:
+  Purchase price: 150000 €
+  Can be found in the game under (NovaW-4): Vehicles / Miscellaneous
+  Has to be lifted on the placeable NovaHub-X1/X2/X3 and then linked up to the hub.
+  Route and settings can be adjusted from the hub.
+  Drone and hub will be in a booting (non-interactable) state while the navigation grid is being generated for the server/host at start of the game, will take a few minutes if not on dedicated server.
 
-- Bird seed:
-  Purchase price: 20 €
-  Can be found in the game under (Bird seed 2Kg): Other / Pallets
+- NovaHub-X1:
+  Purchase price: 20000 €
+  Can be found in the game under (NovaHub-X1): Construction / Buildings / Tools
+  Drone slots: 1
+
+- NovaHub-X2:
+  Purchase price: 25000 €
+  Can be found in the game under (NovaHub-X2): Construction / Buildings / Tools
+  Drone slots: 2
+
+- NovaHub-X3:
+  Purchase price: 30000 €
+  Can be found in the game under (NovaHub-X3): Construction / Buildings / Tools
+  Drone slots: 3
+
+  Hubs will control bought drones when linked up, each hub has their own drone slot and drone route.
+  Hub will be in booting (non-interactable) state while the navigation grid is being generated for the server/host at start of the game, will take a few minutes if not on dedicated server.
+
+- NovaLift:
+  Purchase price: 5000 €
+  Can be found in the game under (NovaLift): Construction / Buildings / Tools
+  NovaLift is a placeable that can be used as a pickup or delivery point for the drone, any pallet, big bag or bale can be transported to or from a NovaLift.
+  NovaLift size can be scaled between 2m - 16m before placing.
+
 
 - Other info
   Multiplayer support
-  Languages: English, Deutsch, Français
-  Features flying birds which will come and eat from feeder few hours after having added seeds to feeder
-  Do note that creation of the navigation grid for birds will take few minutes at start of loading into save game, if not on dedicated server
-  config/config.xml has tweakable settings regarding creation of the navigation grid, if performance is slow]]></en>
-        <de><![CDATA[Dekoratives Vogelhäuschen mit Fütterungsfunktion und Vögeln.
+  Languages: English, Deutsch
+  Features flying drones which can be used for example to transport products from factories to sell or for further refinement in another factory.
+  Drones need to be linked by placing them in the hub, and then going into hub menu.
+  Drones cannot be sold before unlinking them from a hub, drone cannot be unlinked or route settings changed while it is away from the hub.
+  Hub cannot be sold before unlinking every drone.
+  Pickup or delivery placeable cannot either be sold if they are used by a hub.
 
-- Vogelfütterer:
-  Kaufpreise: 300 €
-  Unterhalt: 0 €
-  Zu finden im Spiel unter (Vogelfütterer): Bauen / Tiere / Sonstiges
+  Drone route settings:
+  - Delivery type: Choose what the drone should pick up and deliver, if multiple options then "Any" can be used to indicate anything is fine.
+  - Min fill percentage: Choose how much the pallet/bale/bigbag should be filled up before the drone would go and pick up.
+  - Sell price limit: If delivery is a place where the pallet/bale/bigbag will be sold, one can set a price limit that needs to be reached at the selling place before drone leaves to pickup & deliver.
 
-- Vogelfutter:
-  Kaufpreise: 20 €
-  Zu finden im Spiel unter (Vogelfutter 2Kg): Sonstiges / Paletten
+  Examples:
+  NovaHub-X3:
+  -slot1 drone1
+  Sheep Pasture (Wool) -> Spinnery / Object storage / NovaLift / Supermarket
+  -slot2 drone2
+  Spinnery (Fabric) ->  Object storage / NovaLift / Supermarket / Tailor Shop
+  -slot3 drone3
+  Tailor Shop (Clothes) -> Object storage / NovaLift / Supermarket
+
+  Do note that creation of the navigation grid for drones will take few minutes at start of loading into save game, if not on dedicated server.
+  FarmingSimulator2022/modSettings/flyPathfinding/config.xml has tweakable settings regarding creation of the navigation grid, if performance is slow.]]></en>
+        <de><![CDATA[Mit Drohnen, die Paletten, Bigbag und Ballen transportieren können, ist im Landwirtschafts-Simulator die Zukunft angekommen.
+
+- NovaW-4:
+  Kaufpreise: 150000 €
+  Zu finden im Spiel unter (NovaW-4): Fahrzeuge / Diverses
+  Muss auf den platzierbaren NovaHub-X1/X2/X3 gehoben und dann mit dem Hub verbunden werden.
+  Route und Einstellungen können vom Hub aus angepasst werden.
+  Drohne und Hub befinden sich in einem Boot-Zustand (nicht interagierbar), während das Navigationsraster für den Server/Host zu Beginn des Spiels erstellt wird. Dies dauert einige Minuten, wenn sie nicht auf einem dedizierten Server sind.
+
+- NovaHub-X1:
+  Kaufpreise: 20000 €
+  Zu finden im Spiel unter (NovaHub-X1): Bauen / Gebäude / Tools
+  Drohnenplätze: 1
+
+- NovaHub-X2:
+  Kaufpreise: 25000 €
+  Zu finden im Spiel unter (NovaHub-X2): Bauen / Gebäude / Tools
+  Drohnenplätze: 2
+
+- NovaHub-X3:
+  Kaufpreise: 30000 €
+  Zu finden im Spiel unter (NovaHub-X3): Bauen / Gebäude / Tools
+  Drohnenplätze: 3
+
+  Der Hub steuert gekaufte Drohnen, wenn er verbunden ist. Jeder Hub hat seinen eigenen Drohnensteckplatz und seine eigene Drohnenroute.
+  Der Hub befindet sich im Boot-Zustand (nicht interaktiv), während das Navigationsraster für den Server/Host zu Beginn des Spiels erstellt wird. Dies kann einige Minuten dauern, wenn er nicht auf einem dedizierten Server ist.
+
+- NovaLift:
+  Kaufpreise: 5000 €
+  Zu finden im Spiel unter (NovaLift): Bauen / Gebäude / Tools
+  NovaLift ist ein platzierbarer Ort, der als Abhol- oder Lieferpunkt für die Drohne verwendet werden kann. Jede Palette, jeder Big Bag oder Ballen kann zu oder von einem NovaLift transportiert werden.
+  Die NovaLift-Größe kann vor dem Platzieren zwischen 2 m und 16 m skaliert werden.
 
 - Andere Information:
-  Sprachen: Deutsch, English, Français
+  Sprachen: Deutsch, English
   Multiplayer-Unterstützung
-  Mit fliegenden Vögeln, wird ein paar Stunden später kommen und vom Futterhäuschen fressen
-  Beachten Sie, dass die Erstellung des Navigationsrasters für Vögel zu Beginn des Ladens in das gespeicherte Spiel einige Minuten dauern wird, wenn es sich nicht auf einem dedizierten Server befindet
-  config/config.xml verfügt über anpassbare Einstellungen zur Erstellung des Navigationsrasters, falls die Leistung langsam ist]]></de>
-       <fr><![CDATA[Mangeoire à oiseaux décorative avec fonction d'alimentation et oiseaux.
+  Verfügt über fliegende Drohnen, die beispielsweise zum Transport von Produkten von Fabriken zum Verkauf oder zur weiteren Veredelung in einer anderen Fabrik eingesetzt werden können.
+  Drohnen müssen verknüpft werden, indem Sie sie im Hub platzieren und dann das Hub-Menü aufrufen.
+  Drohnen können nicht verkauft werden, bevor die Verbindung zu einem Hub aufgehoben wurde. Die Verbindung der Drohne kann nicht aufgehoben oder Routeneinstellungen geändert werden, während sie sich außerhalb des Hubs befindet.
+  Der Hub kann nicht verkauft werden, bevor die Verknüpfung aller Drohnen aufgehoben wurde.
+  Abhol- oder Lieferplätze können ebenfalls nicht verkauft werden, wenn sie von einem Hub genutzt werden.
 
-- Mangeoire oiseaux:
-  Prix d'achat: 300 €
-  Entretien: 0 €
-  Se trouve dans le jeu sous (Mangeoire oiseaux) : Construction / Animaux / Autres
+  Drohnenrouteneinstellungen:
+  - Lieferart: Wählen Sie aus, was die Drohne aufnehmen und liefern soll. Bei mehreren Optionen kann „Alle“ verwendet werden, um anzuzeigen, dass alles in Ordnung ist.
+  - Min. Füllprozentsatz: Wählen Sie aus, wie viel die Palette/der Ballen/der Bigbag gefüllt sein soll, bevor die Drohne losfährt und abholt.
+  - Verkaufspreislimit: Wenn es sich bei der Lieferung um einen Ort handelt, an dem die Palette/der Ballen/Bigbag verkauft wird, kann man ein Preislimit festlegen, das am Verkaufsort erreicht werden muss, bevor die Drohne zur Abholung und Lieferung aufbricht.
+
+  Beispiele:
+  NovaHub-X3:
+  -slot1 drone1
+  Schafweide (Wolle) -> Spinnerei / Palletenlager / NovaLift / Supermarkt
+  -slot2 drone2
+  Spinnerei (Stoff) ->  Palletenlager / NovaLift / Supermarkt / Schneiderei
+  -slot3 drone3
+  Schneiderei (Kleidung) -> Palletenlager / NovaLift / Supermarkt
 
 
-- Graines pour oiseaux:
-  Prix d'achat: 20 €
-  Se trouve dans le jeu sous (Graines pour oiseaux 2Kg) : Objets / Palettes
+  Beachten Sie, dass die Erstellung des Navigationsrasters für Drohnen zu Beginn des Ladens in den Spielstand einige Minuten dauern wird, wenn es sich nicht auf einem dedizierten Server befindet.
+  FarmingSimulator2022/modSettings/flyPathfinding/config.xml verfügt über anpassbare Einstellungen bezüglich der Erstellung des Navigationsrasters, wenn die Leistung langsam ist.]]></de>
 
-- Autre info:
-  Langues: Français, Deutsch, English
-  Multijoueur
-  Dispose d'oiseaux volants qui viendront manger de la mangeoire quelques heures après avoir ajouté des graines à la mangeoire
-  Notez que la création de la grille de navigation pour les oiseaux prendra quelques minutes au début du chargement dans le jeu, sur serveur dédié c'est plus rapide
-  config/config.xml a des paramètres modifiables concernant la création de la grille de navigation, si les performances sont lentes]]></fr>
     </description>
 
-    <iconFilename>icon_birdFeeder.dds</iconFilename>
+    <iconFilename>icon_droneDelivery.dds</iconFilename>
     <multiplayer supported="true"/>
     <l10n filenamePrefix="translations/l10n"/>
 
     <storeItems>
         <storeItem xmlFilename="xml/novaW-4.xml"/>
-        <storeItem xmlFilename="xml/novaW-6.xml"/>
         <storeItem xmlFilename="xml/novaHub-X1.xml"/>
         <storeItem xmlFilename="xml/novaHub-X2.xml"/>
         <storeItem xmlFilename="xml/novaHub-X3.xml"/>
@@ -78,7 +143,7 @@
     </storeItems>
 
     <brands>
-        <brand title="NovaFlyFast" image="images/brand_AnimalExperience.dds" name="NovaFlyFast"/>
+        <brand title="NovaFlyFast" image="images/brand_novaFlyFast.dds" name="NovaFlyFast"/>
     </brands>
 
     <extraSourceFiles>
@@ -92,6 +157,7 @@
         <sourceFile filename="scripts/misc/dronePathCreator.lua" />
         <sourceFile filename="scripts/misc/pickupDeliveryManager.lua" />
         <sourceFile filename="scripts/misc/droneSteering.lua" />
+        <sourceFile filename="scripts/misc/palletAddition.lua" />
         <sourceFile filename="scripts/gui/droneHubScreen.lua" />
         <sourceFile filename="scripts/gui/droneHubListingScreen.lua" />
         <sourceFile filename="scripts/gui/droneHubConfigScreen.lua" />
@@ -104,6 +170,7 @@
         <sourceFile filename="scripts/events/droneHubInvalidPlacementEvent.lua" />
         <sourceFile filename="scripts/events/changeCustomPointScaleEvent.lua" />
         <sourceFile filename="scripts/events/configValidatedEvent.lua" />
+        <sourceFile filename="scripts/events/clearConfigEvent.lua" />
         <sourceFile filename="scripts/flyPathfinding/flyPathfinding.lua" />
         <sourceFile filename="scripts/flyPathfinding/gridMap3D.lua" />
         <sourceFile filename="scripts/flyPathfinding/states/gridMap3DStates.lua" />
@@ -114,8 +181,6 @@
     </extraSourceFiles>
 
     <specializations>
-        <specialization name="customVehicleInfo" className="CustomVehicleInfo" filename="scripts/specializations/customVehicleInfo.lua"/>
-        <specialization name="customDischarge" className="CustomDischarge" filename="scripts/specializations/customDischarge.lua"/>
         <specialization name="droneHub" className="DroneHub" filename="scripts/specializations/droneHub.lua"/>
         <specialization name="customDeliveryPickupPoint" className="CustomDeliveryPickupPoint" filename="scripts/specializations/customDeliveryPickupPoint.lua"/>
         <specialization name="drone" className="Drone" filename="scripts/specializations/drone.lua"/>

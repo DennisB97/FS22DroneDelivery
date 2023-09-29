@@ -16,7 +16,8 @@ PickupDeliveryHelper.allBaleNames = {
     ROUNDBALE = true,
     ROUNDBALE_GRASS = true,
     ROUNDBALE_COTTON = true,
-    ROUNDBALE_WOOD = true
+    ROUNDBALE_WOOD = true,
+    DRYGRASS_WINDROW = true
 }
 
 
@@ -40,6 +41,15 @@ end
 
 function PickupDeliveryHelper.isBaleFillType(baleTypeName)
     return PickupDeliveryHelper.allBaleNames[baleTypeName] == true
+end
+
+function PickupDeliveryHelper.getObjectId(object)
+    local id = object.rootNode
+    if object:isa(Bale) then
+        id = object.nodeId
+    end
+
+    return id
 end
 
 function PickupDeliveryHelper.isSupportedObject(object)
@@ -152,7 +162,7 @@ function PickupDeliveryHelper.getFilltypeIds(placeable,bPickup)
 
             -- supports bales then adds all bales as possible
             if placeable.spec_objectStorage.supportsBales then
-                for name,_ in ipairs(PickupDeliveryHelper.allBaleNames) do
+                for name,_ in pairs(PickupDeliveryHelper.allBaleNames) do
                     local fillType = g_fillTypeManager.nameToFillType[name]
                     fillTypes[fillType.index] = true
                 end
@@ -174,6 +184,7 @@ function PickupDeliveryHelper.getFilltypeIds(placeable,bPickup)
                     fillTypes[fillId] = true
                 end
             end
+
         end
 
         -- custom delivery pickup point placeable
@@ -212,7 +223,7 @@ end
 function PickupDeliveryHelper.addCustomPointSupportedTypes(fillTypes)
 
     -- adds all bales and pallets as supported in the custom delivery pickup point
-    for name,_ in ipairs(PickupDeliveryHelper.allBaleNames) do
+    for name,_ in pairs(PickupDeliveryHelper.allBaleNames) do
         local fillType = g_fillTypeManager.nameToFillType[name]
         fillTypes[fillType.index] = true
     end
@@ -232,21 +243,22 @@ end
 function PickupDeliveryHelper.getPointPosition(bPickup,placeable)
 
     local position = {}
-    local heightPickupOffset = 3.5 -- few m above the ground position offset.
+    -- few m above the ground position offset
+    local heightOffset = 3.5
 
     if bPickup then
 
 
         if placeable.spec_beehivePalletSpawner ~= nil then
             position.x,position.y,position.z = getWorldTranslation(placeable.rootNode)
-            position.y = position.y + heightPickupOffset
+            position.y = position.y + heightOffset
             return position
 
         elseif placeable.spec_husbandryPallets ~= nil then
 
             if placeable.spec_husbandryPallets.palletTriggers[1] ~= nil then
                 position.x,position.y,position.z = getWorldTranslation(placeable.spec_husbandryPallets.palletTriggers[1].node)
-                position.y = position.y + heightPickupOffset
+                position.y = position.y + heightOffset
                 return position
             end
 
@@ -263,7 +275,7 @@ function PickupDeliveryHelper.getPointPosition(bPickup,placeable)
 
                     -- get middle output position
                     position.x = position.x + (directionX * (production.palletSpawner.spawnPlaces[1].width))
-                    position.y = position.y + heightPickupOffset
+                    position.y = position.y + heightOffset
                     position.z = position.z + (directionZ * (production.palletSpawner.spawnPlaces[1].width))
 
                     return position
@@ -272,7 +284,7 @@ function PickupDeliveryHelper.getPointPosition(bPickup,placeable)
 
         elseif placeable.spec_customDeliveryPickupPoint ~= nil then
             position.x,position.y,position.z = getWorldTranslation(placeable.rootNode)
-            position.y = position.y + heightPickupOffset
+            position.y = position.y + heightOffset
             return position
         end
 
@@ -287,7 +299,7 @@ function PickupDeliveryHelper.getPointPosition(bPickup,placeable)
                 if production.unloadingStation.unloadTriggers ~= nil and production.unloadingStation.unloadTriggers[1] ~= nil then
 
                     position.x,position.y,position.z = getWorldTranslation(production.unloadingStation.unloadTriggers[1].exactFillRootNode)
-                    position.y = position.y + heightPickupOffset
+                    position.y = position.y + heightOffset
                     return position
                 end
 
@@ -301,7 +313,7 @@ function PickupDeliveryHelper.getPointPosition(bPickup,placeable)
 
                 if placeable.spec_husbandryFood.feedingTrough ~= nil and placeable.spec_husbandryFood.feedingTrough.exactFillRootNode ~= nil then
                     position.x,position.y,position.z = getWorldTranslation(placeable.spec_husbandryFood.feedingTrough.exactFillRootNode)
-                    position.y = position.y + heightPickupOffset
+                    position.y = position.y + heightOffset - 1.5 -- a bit lower for husbandries as tend to have low roof in the way
                     return position
                 end
             end
@@ -316,7 +328,7 @@ function PickupDeliveryHelper.getPointPosition(bPickup,placeable)
 
                 if sellingStation.unloadTriggers[1] ~= nil then
                     position.x,position.y,position.z = getWorldTranslation(sellingStation.unloadTriggers[1].exactFillRootNode)
-                    position.y = position.y + heightPickupOffset
+                    position.y = position.y + heightOffset
                     return position
                 end
             end
@@ -325,13 +337,13 @@ function PickupDeliveryHelper.getPointPosition(bPickup,placeable)
 
 
             position.x,position.y,position.z = getWorldTranslation(placeable.spec_objectStorage.objectTriggerNode)
-            position.y = position.y + heightPickupOffset
+            position.y = position.y + heightOffset
             return position
 
 
         elseif placeable.spec_customDeliveryPickupPoint ~= nil then
             position.x,position.y,position.z = getWorldTranslation(placeable.rootNode)
-            position.y = position.y + heightPickupOffset
+            position.y = position.y + heightOffset
             return position
         end
 
@@ -408,20 +420,21 @@ function PickupDeliveryHelper.getPalletSpawnerInfo(palletSpawner)
     pickupInfo.rotation.x = 0
     pickupInfo.rotation.z = 0
 
+    local rotY = MathUtil.getYRotationFromDirection(firstSpawnPlace.dirPerpX,firstSpawnPlace.dirPerpZ)
+    pickupInfo.rotation.y = rotY
+
     pickupInfo.position = {}
-    pickupInfo.position.x = palletSpawner.spawnPlaces[1].startX
-    pickupInfo.position.y = palletSpawner.spawnPlaces[1].startY + 1
-    pickupInfo.position.z = palletSpawner.spawnPlaces[1].startZ
+    pickupInfo.position.x = firstSpawnPlace.startX
+    pickupInfo.position.y = firstSpawnPlace.startY + 1
+    pickupInfo.position.z = firstSpawnPlace.startZ
 
     if spawnPlaceCount > 1 then
         pickupInfo.position.x = (firstSpawnPlace.startX + palletSpawner.spawnPlaces[spawnPlaceCount].startX) / 2
         pickupInfo.position.z = (firstSpawnPlace.startZ + palletSpawner.spawnPlaces[spawnPlaceCount].startZ) / 2
     end
 
-    pickupInfo.position.x = pickupInfo.position.x * (firstSpawnPlace.dirX * (firstSpawnPlace.width/2))
-    pickupInfo.position.z = pickupInfo.position.z * (firstSpawnPlace.dirZ * (firstSpawnPlace.width/2))
-
-    pickupInfo.rotation.y = MathUtil.getYRotationFromDirection(firstSpawnPlace.dirX,firstSpawnPlace.dirZ)
+    pickupInfo.position.x = pickupInfo.position.x + (firstSpawnPlace.dirX * (firstSpawnPlace.width/2))
+    pickupInfo.position.z = pickupInfo.position.z + (firstSpawnPlace.dirZ * (firstSpawnPlace.width/2))
 
     pickupInfo.scale = {}
     pickupInfo.scale.x = firstSpawnPlace.width / 2
@@ -429,8 +442,7 @@ function PickupDeliveryHelper.getPalletSpawnerInfo(palletSpawner)
     pickupInfo.scale.z = 1
 
     if spawnPlaceCount > 1 then
-        pickupInfo.scale.z = (MathUtil.vector3Length(firstSpawnPlace.startX - palletSpawner.spawnPlaces[spawnPlaceCount].startX,firstSpawnPlace.startY - palletSpawner.spawnPlaces[spawnPlaceCount].startY,
-            firstSpawnPlace.startZ - palletSpawner.spawnPlaces[spawnPlaceCount].startZ)) / 2
+        pickupInfo.scale.z = (1 * spawnPlaceCount)
     end
 
     return pickupInfo
@@ -449,6 +461,56 @@ function PickupDeliveryHelper.getSellPrice(placeable,fillType)
     end
 
     return sellPrice
+end
+
+--- hasStorageAvailability is used to check if given placeable has space for the filltype and filllevel so that drone can bring one pallet there and it gets taken.
+--@param placeable which is set as delivery destination.
+--@param fillType what filltype id wants to be delivered.
+--@param fillLevel how much wants to be delivered.
+function PickupDeliveryHelper.hasStorageAvailability(placeable,fillType,fillLevel)
+    if placeable == nil or fillType == nil then
+        return false
+    end
+
+    -- empty buffer offset that allows drone to transport pallets even if would go beyond capacity slightly by this value
+    local emptyBufferLevel = 100
+
+    if placeable.spec_productionPoint ~= nil and placeable.spec_greenhouse == nil then
+
+        local production = placeable.spec_productionPoint.productionPoint
+
+        if production ~= nil and production.storage ~= nil and production.inputFillTypeIds ~= nil and production.unloadingStation ~= nil then
+
+            if production.storage.capacities[fillType] < production.storage.fillLevels[fillType] + fillLevel - emptyBufferLevel then
+                return false
+            end
+
+        end
+
+    elseif placeable.spec_husbandryFood ~= nil and placeable.spec_husbandryAnimals ~= nil then
+
+        if placeable.spec_husbandryFood.supportedFillTypes ~= nil and not PickupDeliveryHelper.isSpecialHusbandryAvoid(placeable.spec_husbandryAnimals.animalType) then
+            if placeable.spec_husbandryFood.feedingTrough ~= nil then
+                local adjustedFillLevel = fillLevel
+                if placeable.spec_husbandryFood.capacity < fillLevel then -- bales might be larger than whole capacity on tiny husbandry
+                    adjustedFillLevel = placeable.spec_husbandryFood.capacity
+                end
+
+                if placeable.spec_husbandryFood.capacity < placeable.spec_husbandryFood.fillLevels[fillType] + adjustedFillLevel - emptyBufferLevel then
+                    return false
+                end
+
+            end
+        end
+
+    elseif placeable.spec_objectStorage ~= nil then
+
+        if placeable.spec_objectStorage.numStoredObjects + 1 > placeable.spec_objectStorage.capacity then
+            return false
+        end
+    end
+
+    return true
 end
 
 function PickupDeliveryHelper.createTargetQuaternion(objectNode,targetDirection)

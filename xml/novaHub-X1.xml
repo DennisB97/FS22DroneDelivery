@@ -3,9 +3,9 @@
     <storeData>
         <name>NovaHub-X1</name>
         <functions>
-            <function>TEMP</function>
+            <function>$l10n_function_droneHub</function>
         </functions>
-        <image>images/store_birdSeed.dds</image>
+        <image>images/store_novaHub-X1.dds</image>
         <price>20000</price>
         <dailyUpkeep>20</dailyUpkeep>
         <lifetime>1000</lifetime>

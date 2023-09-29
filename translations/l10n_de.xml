@@ -1,15 +1,61 @@
 <?xml version="1.0" encoding="utf-8" standalone="no" ?>
 <l10n>
     <texts>
-        <text name="birdFeeder" text="Vogelfütterer"/>
-		<text name="fillType_birdSeed" text="Vogelfutter" />
-		<text name="fillType_birdSeed2" text="Vogelfutter 2Kg" />
-        <text name="birdFeeder_noAccess" text="Vögel kommen nicht an Ihrem Vogelhäuschen an, bitte stellen Sie es in einen offeneren Bereich"/>
-        <text name="birdFeeder_infoNoAccess" text="ZUFÜHRER BEWEGEN"/>
-        <text name="birdFeeder_infoNoAccessTitle" text="UNGÜLTIGE PLATZIERUNG"/>
-        <text name="function_birdFeeder" text="Platzierbarer Vogelhäuschen, denken Sie daran, Vogelfutter zu kaufen und zum Futterhäuschen zu tragen, und beobachten Sie, wie die Vögel kommen und fressen."/>
-        <text name="typeDesc_birdSeed" text="Futter für Vögel, fügen Sie dieses Futter in das Vogelhäuschen hinzu, das Sie bei den Placeables gekauft haben." />
-        <text name="unit_gramShort" text="g" />
+        <text name="droneHub_hubActivateText" text="Drohnen konfigurieren"/>
+		<text name="droneHub_droneNotLinked" text="Keine Drohne angeschlossen"/>
+		<text name="droneHub_droneLinked" text="Drohne verbunden"/>
+        <text name="droneHub_rightsMissing" text="Sie benötigen produktionsstätten verwalten, um die instellungen anzupassen" />
+        <text name="droneHub_droneLinking" text="Drohnenverknüpfung..." />
+        <text name="droneHub_Booting" text="Booten..."/>
+        <text name="droneHub_IncompatiblePlacement" text="Inkompatible Platzierung"/>
+        <text name="droneHub_NoFlyPathfinding" text="Kein Flypathfinding aktiviert"/>
+        <text name="droneHub_ApplyingSettings" text="Einstellungen werden übernommen..."/>
+        <text name="droneHub_noAccess" text="Der Drohnen-Hub ist blockiert. Tauschen Sie den Hub aus."/>
+        <text name="droneHub_unlinkBeforeSell" text="Sie müssen vor dem Verkauf alle Drohnen entkoppeln!"/>
+        <text name="droneManager_unlinkBeforeSell" text="Es gibt einige Drohnen, die mit diesem platzierbaren Gerät verbunden sind. Entfernen Sie diese vor dem Verkauf!"/>
+        <text name="customAction_scale" text="Maßstab ändern"/>
+        <text name="customAction_select" text="Wählen Sie Platzierbar aus"/>
+		<text name="drone_NoRoute" text="Kein Weg"/>
+		<text name="drone_Charging" text="Aufladen"/>
+		<text name="drone_PickingUp" text="Aufheben"/>
+		<text name="drone_Delivering" text="Liefern"/>
+		<text name="drone_Returning" text="Rückkehr"/>
+		<text name="drone_Waiting" text="Warten"/>
+		<text name="drone_Unlinked" text="Nicht verknüpft"/>
+		<text name="drone_PickupCancelled" text="Rücksendung, keine Palette gefunden"/>
+		<text name="drone_Undocking" text="Abdocken"/>
+		<text name="drone_Docking" text="Docking"/>
+		<text name="drone_EmergencyUnlink" text="Notfall-Aufhebung der Verknüpfung"/>
+        <text name="listingGUI_droneNotLinked" text="KEINE DROHNE VERBUNDEN"/>
+		<text name="listingGUI_newDroneName" text="Geben Sie dieser Drohnenroute einen neuen Namen"/>
+		<text name="listingGUI_linkButton" text="Link-Drohne"/>
+        <text name="listingGUI_linkingFailure" text="Eine Drohne konnte nicht verbunden werden. Stellen Sie sicher, dass Sie eine Drohne auf dem Hub platzieren!"/>
+        <text name="listingGUI_configureButton" text="Konfigurieren"/>
+        <text name="listingGUI_unLinkButton" text="Verbindung aufheben" />
+        <text name="listingGUI_unLinkingFailure" text="Die Verbindung zur Drohne konnte nicht aufgehoben werden. Die Verbindung kann nur aufgehoben werden, während sich die Drohne am Hub befindet." />
+        <text name="listingGUI_linkingChange" text="Linkstatus ändert sich..." />
+        <text name="listingGUI_unlinkConfirmTitle" text="Verbindung zur Drohne wird aufgehoben" />
+        <text name="listingGUI_unlinkConfirmText" text="Möchten Sie die Drohne wirklich trennen? Dadurch werden alle konfigurierten Werte entfernt!" />
+        <text name="listingGUI_statusText" text="Status: " />
+        <text name="configGUI_configure" text="Konfigurieren" />
+        <text name="configGUI_pickupPointButton" text="Wählen Sie den Abholpunkt" />
+        <text name="configGUI_deliveryPointButton" text="Wählen Sie den Lieferort" />
+        <text name="configGUI_deliveryType" text="Lieferart" />
+        <text name="configGUI_fillLimit" text="Min. Füllprozentsatz" />
+        <text name="configGUI_priceLimit" text="Verkaufspreislimit" />
+        <text name="configGUI_price" text="Preis" />
+        <text name="configGUI_newPriceLimit" text="Geben Sie ein neues Preislimit ein" />
+        <text name="configGUI_clearConfirmTitle" text="Einstellungen löschen" />
+        <text name="configGUI_clearConfirmText" text="Sind Sie sicher, dass Sie die Drohneneinstellungen löschen möchten? Dadurch werden alle konfigurierten Werte entfernt!" />
+        <text name="button_clear" text="Einstellungen löschen" />
+        <text name="fillType_any" text="Beliebig" />
+        <text name="typeDesc_drone" text="Drohne, die Objekte transportieren kann, wenn sie mit einem Drohnen-Hub verbunden ist." />
+        <text name="function_drone" text="Drohne, die in Verbindung mit einem Drohnen-Hub paletten, ballen und bigbags transportieren kann." />
+        <text name="function_droneHub" text="Der Hub steuert Drohnen, wenn eine Drohne im Hub platziert und angeschlossen wird." />
+        <text name="function_customDeliveryPickupPoint" text="Skalierbarer Abhol- oder Lieferpunkt für Drohnen." />
+        <text name="novaLift_connectedPickupDrones" text="Abholendrohnen vernetzt: " />
+        <text name="novaLift_connectedDeliveryDrones" text="Lieferdrohnen vernetzt: " />
+        <text name="novaLift_availableSpace" text="Verfügbarer Platz:" />
         <text name="input_FLYPATHFINDING_DBG_PREVIOUS" text="Debuggen Vorherige" />
         <text name="input_FLYPATHFINDING_DBG_NEXT" text="Debuggen nächsten" />
         <text name="input_FLYPATHFINDING_DBG_ASTAR_SHOW_CLOSEDNODES" text="Geschlossene Knoten umschalten" />

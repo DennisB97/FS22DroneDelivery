@@ -13,9 +13,8 @@ DroneDeliveryMod.loadedLinkedDrones = {}
 g_droneHubScreen = nil
 
 function DroneDeliveryMod:loadMap(filename)
-
+    PalletAddition.initialize()
     self:setupGui()
-
 end
 
 
@@ -53,9 +52,6 @@ function DroneDeliveryMod.register(typeManager)
         g_placeableTypeManager:addSpecialization("customDeliveryPickupPoint","customDeliveryPickupPoint")
         g_placeableTypeManager:addSpecialization("customDeliveryPickupPoint","infoTrigger")
         g_placeableTypeManager:addSpecialization("customDeliveryPickupPoint","hotspots")
-
-        DroneActionManager.registerSavegameXMLPaths(Placeable.xmlSchemaSavegame,"placeable.placeables(?)")
-
         DroneDeliveryMod.bRegistered = true
     end
 end

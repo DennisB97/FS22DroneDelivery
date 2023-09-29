@@ -1,11 +1,11 @@
 ﻿<?xml version="1.0" encoding="utf-8" standalone="no" ?>
 <placeable type="customDeliveryPickupPoint" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../../shared/xml/schema/placeable.xsd">
     <storeData>
-        <name>customDeliveryPickupPoint</name>
+        <name>NovaLift</name>
         <functions>
-            <function>TEMP</function>
+            <function>$l10n_function_customDeliveryPickupPoint</function>
         </functions>
-        <image>images/store_birdSeed.dds</image>
+        <image>images/store_customDeliveryPickupPoint.dds</image>
         <price>5000</price>
         <dailyUpkeep>5</dailyUpkeep>
         <lifetime>1000</lifetime>
@@ -51,13 +51,14 @@
 
 
     <customDeliveryPickupPoint clearAreas="clearAreas" testAreas="testAreas" tipOcclusionUpdateAreas="tipOcclusionUpdateAreas"
-        levelAreas="levelAreas" stripes="customDeliveryPickupPoint_vis" infoTrigger="infoTrigger" scaleTriggers="scaleTriggers" />
+        levelAreas="levelAreas" stripes="customDeliveryPickupPoint_vis" scaleTriggers="scaleTriggers" />
 
 
     <hotspots>
         <hotspot type="LOADING" linkNode="customDeliveryPickupPoint" />
     </hotspots>
 
+    <infoTrigger triggerNode="infoTrigger"/>
 
     <i3dMappings>
         <i3dMapping id="customDeliveryPickupPoint" node="0>" />

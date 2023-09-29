@@ -11,7 +11,7 @@ function DroneWorkPoint.new(bPickup)
     self.name = ""
     self.fillTypes = {}
     self.allFillTypes = {}
-
+    self.fillLimitIndex = 5
     self.fillTypeIndex = 1
     self.bPickup = bPickup
     self.bPriceLimit = false
@@ -64,6 +64,14 @@ function DroneWorkPoint:getFillTypeIndex()
     return self.fillTypeIndex
 end
 
+function DroneWorkPoint:setFillLimitIndex(fillLimitIndex)
+    self.fillLimitIndex = fillLimitIndex
+end
+
+function DroneWorkPoint:getFillLimitIndex()
+    return self.fillLimitIndex
+end
+
 function DroneWorkPoint:getDeliveryId()
     return self.fillTypes[self.fillTypeId]
 end
@@ -84,6 +92,7 @@ function DroneWorkPoint:reset()
     self.fillTypes = {}
     self.allFillTypes = {}
     self.fillTypeIndex = 1
+    self.fillLimitIndex = 5 -- reset 5 which ends up as 50%
     self.bPriceLimit = false
     self.priceLimit = 0
 end
@@ -98,6 +107,7 @@ function DroneWorkPoint:nilEverything()
     self.bPickup = nil
     self.bPriceLimit = nil
     self.priceLimit = nil
+    self.fillLimitIndex = nil
 end
 
 function DroneWorkPoint:findPlaceable()
@@ -126,8 +136,10 @@ function DroneWorkPoint:placeableSearchCallback(objectId)
         local foundPosition = {}
         foundPosition.x,foundPosition.y,foundPosition.z = getWorldTranslation(object.rootNode)
 
-        if self.name == object:getName() and CatmullRomSpline.isNearlySamePosition(foundPosition,self.position,0.1) then
+        -- assuming there will be no possible placeable within 2cm
+        if CatmullRomSpline.isNearlySamePosition(foundPosition,self.position,0.02) then
             self.placeable = object
+            self.name = object:getName()
             return false
         end
     end
@@ -149,6 +161,7 @@ function DroneWorkPoint:copy()
     newCopy.fillTypeIndex = self.fillTypeIndex
     newCopy.bPriceLimit = self.bPriceLimit
     newCopy.priceLimit = self.priceLimit
+    newCopy.fillLimitIndex = self.fillLimitIndex
 
     for _,fillId in ipairs(self.fillTypes) do
         table.insert(newCopy.fillTypes,fillId)
@@ -180,6 +193,7 @@ end
 
 function DroneWorkPoint:restrictFilltypes(fillTypes)
     self.fillTypes = fillTypes
+    self.fillTypeIndex = 1
 end
 
 
@@ -192,9 +206,9 @@ function DroneWorkPoint:saveToXMLFile(xmlFile, key, usedModNames)
     end
 
     xmlFile:setValue(key.."#position", x, y, z)
-    xmlFile:setValue(key.."#name",self.name)
     xmlFile:setValue(key.."#fillTypeIndex", self.fillTypeIndex)
     xmlFile:setValue(key.."#hasPriceLimit", self.bPriceLimit)
+    xmlFile:setValue(key.."#fillLimitIndex",self.fillLimitIndex)
     xmlFile:setValue(key.."#priceLimit", self.priceLimit)
 
     local fillTypeString = ""
@@ -226,9 +240,9 @@ function DroneWorkPoint:loadFromXMLFile(xmlFile, key)
 
     self.position = {x = posX, y = posY, z = posZ}
     self.fillTypeIndex = Utils.getNoNil(xmlFile:getValue(key.."#fillTypeIndex"),1)
-    self.name = Utils.getNoNil(xmlFile:getValue(key.."#name"),"")
     self.bPriceLimit = Utils.getNoNil(xmlFile:getValue(key.."#hasPriceLimit"),false)
     self.priceLimit = Utils.getNoNil(xmlFile:getValue(key.."#priceLimit"),0)
+    self.fillLimitIndex = Utils.getNoNil(xmlFile:getValue(key.."#fillLimitIndex"),5)
 
     local fillTypeString = xmlFile:getValue(key.."#fillTypes")
     for fillName in fillTypeString:gmatch("%S+") do
@@ -256,8 +270,8 @@ end
 --- Registering
 function DroneWorkPoint.registerSavegameXMLPaths(schema, basePath)
     schema:register(XMLValueType.VECTOR_TRANS,        basePath .. ".config(?)#position", "Position of placeable")
-    schema:register(XMLValueType.STRING,        basePath .. ".config(?)#name", "name of placeable")
     schema:register(XMLValueType.INT,        basePath .. ".config(?)#fillTypeIndex", "Fill type index within the fillTypes array")
+    schema:register(XMLValueType.INT,        basePath .. ".config(?)#fillLimitIndex", "Fill limit index which is base to multiply by 10 to get percentage of fill limit of pallet for pickup")
     schema:register(XMLValueType.BOOL,        basePath .. ".config(?)#hasPriceLimit", "If has a price limit")
     schema:register(XMLValueType.FLOAT,        basePath .. ".config(?)#priceLimit", "price limit value")
     schema:register(XMLValueType.STRING,        basePath .. ".config(?)#fillTypes", "limited fillTypes")
@@ -277,6 +291,7 @@ function DroneWorkPoint:readStream(streamId,connection)
         self.fillTypeIndex = streamReadInt32(streamId)
         self.bPriceLimit = streamReadBool(streamId)
         self.priceLimit = streamReadInt32(streamId)
+        self.fillLimitIndex = streamReadInt8(streamId)
 
         local fillTypesString = streamReadString(streamId)
 
@@ -305,8 +320,6 @@ function DroneWorkPoint:writeStream(streamId,connection)
 
     if streamWriteBool(streamId,self.placeable ~= nil) then
 
-        print("sending placeable which is : " .. tostring(self.placeable))
-
         NetworkUtil.writeNodeObject(streamId, self.placeable)
         streamWriteFloat32(streamId,self.position.x)
         streamWriteFloat32(streamId,self.position.y)
@@ -315,6 +328,7 @@ function DroneWorkPoint:writeStream(streamId,connection)
         streamWriteInt32(streamId,self.fillTypeIndex)
         streamWriteBool(streamId,self.bPriceLimit)
         streamWriteInt32(streamId,self.priceLimit)
+        streamWriteInt8(streamId,self.fillLimitIndex)
 
         local fillTypesString = ""
         for _,id in ipairs(self.fillTypes) do
@@ -358,7 +372,7 @@ DroneHubSlotConfig = {}
 DroneHubSlotConfig_mt = Class(DroneHubSlotConfig)
 InitObjectClass(DroneHubSlotConfig, "DroneHubSlotConfig")
 
-DroneHubSlotConfig.EDirtyFields = {PICKUPPLACEABLE = 1, DELIVERYPLACEABLE = 2, PRICELIMIT = 3, PRICELIMITUSED = 4, FILLTYPEID = 5 }
+DroneHubSlotConfig.EDirtyFields = {PICKUPPLACEABLE = 1, DELIVERYPLACEABLE = 2, PRICELIMIT = 3, PRICELIMITUSED = 4, FILLTYPEID = 5, FILLLIMITID = 6 }
 
 
 function DroneHubSlotConfig.new(slot,hub,isServer,isClient)
@@ -474,6 +488,52 @@ function DroneHubSlotConfig:isDirty()
     return next(self.dirtyTable) ~= nil
 end
 
+function DroneHubSlotConfig:addDroneToManager(bDelivery,bUpdate)
+    if self.pickUpPoint == nil or self.deliveryPoint == nil or not self.isServer then
+        return
+    end
+
+    if bDelivery then
+        if self.deliveryPoint.placeable ~= nil and self.deliveryPoint.placeable.droneManager == nil then
+            self.deliveryPoint.placeable.droneManager = PickupDeliveryManager.new(self.deliveryPoint.placeable,self.isServer,self.isClient)
+            self.deliveryPoint.placeable.droneManager:register(true)
+        end
+        if self.deliveryPoint.placeable ~= nil then
+            self.deliveryPoint.placeable.droneManager:addDeliveryDrone(self.slot.linkedDrone,self.slot)
+        end
+    else
+        if self.pickUpPoint.placeable ~= nil and self.pickUpPoint.placeable.droneManager == nil then
+            self.pickUpPoint.placeable.droneManager = PickupDeliveryManager.new(self.pickUpPoint.placeable,self.isServer,self.isClient)
+            self.pickUpPoint.placeable.droneManager:register(true)
+        end
+
+        if self.pickUpPoint.placeable ~= nil then
+            self.pickUpPoint.placeable.droneManager:addPickupDrone(self.slot.linkedDrone,self.slot,self.pickUpPoint)
+        end
+    end
+
+end
+
+function DroneHubSlotConfig:removeDroneFromManager(bDelivery)
+    if self.pickUpPoint == nil or self.deliveryPoint == nil or not self.isServer then
+        return
+    end
+
+    if bDelivery then
+        if self.pickUpPoint.placeable ~= nil and self.pickUpPoint.placeable.droneManager ~= nil then
+            if self.deliveryPoint.placeable.droneManager:removeDeliveryDrone(self.slot.linkedDrone) then
+                self.deliveryPoint.placeable.droneManager = nil
+            end
+        end
+    else
+        if self.pickUpPoint.placeable ~= nil and self.pickUpPoint.placeable.droneManager ~= nil then
+            if self.pickUpPoint.placeable.droneManager:removeDrone(self.slot.linkedDrone) then
+                self.pickUpPoint.placeable.droneManager = nil
+            end
+        end
+    end
+end
+
 function DroneHubSlotConfig:addVerifyingPoints(pickUpPointCopy,deliveryPointCopy)
     self.verifyPickUpPoint = pickUpPointCopy
     self.verifydeliveryPoint = deliveryPointCopy
@@ -484,6 +544,15 @@ function DroneHubSlotConfig:clearVerifyingPoints()
     self.verifydeliveryPoint = nil
 end
 
+function DroneHubSlotConfig:getPlaceableManagers()
+    if self.pickUpPoint == nil or self.pickUpPoint:getPlaceable() == nil or self.deliveryPoint == nil or self.deliveryPoint:getPlaceable() == nil then
+        return
+    end
+
+    local pickupManager = self.pickUpPoint:getPlaceable().droneManager
+    local deliveryManager = self.deliveryPoint:getPlaceable().droneManager
+    return pickupManager, deliveryManager
+end
 
 function DroneHubSlotConfig:verifyWorkPoints(pickUpPointCopy,deliveryPointCopy)
 
@@ -498,7 +567,7 @@ function DroneHubSlotConfig:verifyWorkPoints(pickUpPointCopy,deliveryPointCopy)
     end
 
     if self.dirtyTable[DroneHubSlotConfig.EDirtyFields.DELIVERYPLACEABLE] then
-        sendPickUpPointCopy:restrictFilltypes(pickUpPointCopy:getFillTypes())
+        sendPickUpPointCopy:restrictFilltypes(deliveryPointCopy:getFillTypes())
         sendDeliveryPointCopy:setPlaceable(deliveryPointCopy:getPlaceable(),deliveryPointCopy:getAllFillTypes())
     end
 
@@ -506,8 +575,9 @@ function DroneHubSlotConfig:verifyWorkPoints(pickUpPointCopy,deliveryPointCopy)
         sendPickUpPointCopy:setPriceLimit(pickUpPointCopy:getPriceLimit())
     end
 
-    sendPickUpPointCopy:setHasPriceLimit(pickUpPointCopy:hasPriceLimit())
-    sendPickUpPointCopy:setFillTypeIndex(pickUpPointCopy:getFillTypeIndex())
+    sendPickUpPointCopy:setHasPriceLimit(deliveryPointCopy:hasPriceLimit())
+    sendPickUpPointCopy:setFillTypeIndex(deliveryPointCopy:getFillTypeIndex())
+    sendPickUpPointCopy:setFillLimitIndex(deliveryPointCopy:getFillLimitIndex())
 
     self.slot:changeState(self.slot.ESlotState.APPLYINGSETTINGS)
     ChangeConfigEvent.sendEvent(self.hubOwner,self.slot.slotIndex,sendPickUpPointCopy,sendDeliveryPointCopy)
@@ -523,6 +593,10 @@ function DroneHubSlotConfig:applySettings()
         self.pickUpPoint.fillTypeIndex = self.verifyPickUpPoint:getFillTypeIndex()
     end
 
+    if self.verifyPickUpPoint:getFillLimitIndex() ~= nil then
+        self.pickUpPoint.fillLimitIndex = self.verifyPickUpPoint:getFillLimitIndex()
+    end
+
     if self.verifyPickUpPoint:hasPriceLimit() ~= nil then
         self.pickUpPoint.bPriceLimit = self.verifyPickUpPoint:hasPriceLimit()
     end
@@ -532,52 +606,27 @@ function DroneHubSlotConfig:applySettings()
     end
 
     if self.verifydeliveryPoint:getPlaceable() ~= nil then
-        if self.deliveryPoint.placeable ~= nil and self.deliveryPoint.placeable.droneManager ~= nil and self.deliveryPoint.placeable ~= self.verifydeliveryPoint:getPlaceable() then
-            if self.deliveryPoint.placeable.droneManager:removeDrone(self.slot.linkedDrone) then
-                self.deliveryPoint.placeable.droneManager = nil
-            end
-        end
-
         self.deliveryPoint.placeable = self.verifydeliveryPoint.placeable
         self.deliveryPoint.name = self.verifydeliveryPoint.name
         self.deliveryPoint.position = self.verifydeliveryPoint.position
-        self.deliveryPoint.fillTypes = {}
         self.deliveryPoint.allFillTypes = self.verifydeliveryPoint.allFillTypes
-
-        if self.isServer then
-            if self.deliveryPoint.placeable.droneManager == nil then
-                self.deliveryPoint.placeable.droneManager = PickupDeliveryManager.new(self.deliveryPoint.placeable,self.isServer,self.isClient)
-                self.deliveryPoint.placeable.droneManager:register(true)
-            end
-            self.deliveryPoint.placeable.droneManager:addDeliveryDrone(self.slot.linkedDrone,self.slot)
-        end
     end
 
     if self.verifyPickUpPoint:getPlaceable() ~= nil then
-        if self.pickUpPoint.placeable ~= nil and self.pickUpPoint.placeable.droneManager ~= nil and self.pickUpPoint.placeable ~= self.verifyPickUpPoint:getPlaceable() then
-            if self.pickUpPoint.placeable.droneManager:removeDrone(self.slot.linkedDrone) then
-                self.pickUpPoint.placeable.droneManager = nil
-            end
-        end
-
         self.pickUpPoint.placeable = self.verifyPickUpPoint.placeable
         self.pickUpPoint.name = self.verifyPickUpPoint.name
         self.pickUpPoint.position = self.verifyPickUpPoint.position
-        self.pickUpPoint.fillTypes = self.verifyPickUpPoint.fillTypes
         self.pickUpPoint.allFillTypes = self.verifyPickUpPoint.allFillTypes
-
-        if self.isServer then
-            if self.pickUpPoint.placeable.droneManager == nil then
-                self.pickUpPoint.placeable.droneManager = PickupDeliveryManager.new(self.pickUpPoint.placeable,self.isServer,self.isClient)
-                self.pickUpPoint.placeable.droneManager:register(true)
-            end
-            self.pickUpPoint.placeable.droneManager:addPickupDrone(self.slot.linkedDrone,self.slot,self.pickUpPoint.fillTypes[self.pickUpPoint.fillTypeIndex],self.pickUpPoint.bPriceLimit,self.pickUpPoint.priceLimit,self.deliveryPoint.placeable)
-        end
+        self.pickUpPoint.fillTypes = self.verifyPickUpPoint.fillTypes
     else
-        if self.pickUpPoint.placeable ~= nil and self.pickUpPoint.placeable.droneManager ~= nil then
-            self.pickUpPoint.placeable.droneManager:updatePickupDrone(self.slot.linkedDrone,self.pickUpPoint.fillTypes[self.pickUpPoint.fillTypeIndex],self.pickUpPoint.bPriceLimit,self.pickUpPoint.priceLimit,self.deliveryPoint.placeable)
+        -- case where only  point has been changed then need to update the fillTypes
+        if self.verifydeliveryPoint:getPlaceable() ~= nil then
+            self.pickUpPoint.fillTypes = self.verifyPickUpPoint.fillTypes
         end
     end
+
+    self:addDroneToManager(false)
+    self:addDroneToManager(true)
 
     self.bLoadedConfig = false
     self:clearDirtyTable()
@@ -606,7 +655,7 @@ function DroneHubSlotConfig:loadFromXMLFile(xmlFile, key)
     return true
 end
 
-function DroneHubSlotConfig:onSlotInitialized()
+function DroneHubSlotConfig:onConfigInitialized()
     if self.slot == nil or not self.bLoadedConfig then
         return false
     end

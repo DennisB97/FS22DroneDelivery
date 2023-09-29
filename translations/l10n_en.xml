@@ -41,13 +41,21 @@
         <text name="configGUI_pickupPointButton" text="Select Pick-up Point" />
         <text name="configGUI_deliveryPointButton" text="Select Delivery Point" />
         <text name="configGUI_deliveryType" text="Delivery type" />
+        <text name="configGUI_fillLimit" text="Min fill percentage" />
         <text name="configGUI_priceLimit" text="Sell price limit" />
         <text name="configGUI_price" text="Price" />
         <text name="configGUI_newPriceLimit" text="Enter new price limit" />
-
-
-
-
+        <text name="configGUI_clearConfirmTitle" text="Clearing settings" />
+        <text name="configGUI_clearConfirmText" text="Are you sure you want to clear the drone settings? This will remove all the configured values!" />
+        <text name="button_clear" text="Clear Settings" />
+        <text name="fillType_any" text="Any" />
+        <text name="typeDesc_drone" text="Drone that can carry objects when linked with a drone hub." />
+        <text name="function_drone" text="Drone that can carry pallets, bales, big bags when linked with a drone hub." />
+        <text name="function_droneHub" text="Hub controls drones when a drone is placed in the hub and linked up." />
+        <text name="function_customDeliveryPickupPoint" text="Scalable pickup or delivery point for drones." />
+        <text name="novaLift_connectedPickupDrones" text="Pickup drones connected: " />
+        <text name="novaLift_connectedDeliveryDrones" text="Delivery drones connected: " />
+        <text name="novaLift_availableSpace" text="Available space: " />
         <text name="input_FLYPATHFINDING_DBG_PREVIOUS" text="Debug previous" />
         <text name="input_FLYPATHFINDING_DBG_NEXT" text="Debug next" />
         <text name="input_FLYPATHFINDING_DBG_ASTAR_SHOW_CLOSEDNODES" text="Toggle closed nodes" />

@@ -5,7 +5,7 @@
         <attributes>
             <set path="placeable.storeData.name" value="NovaHub-X2"/>
             <set path="placeable.storeData.price" value="25000"/>
-            <set path="placeable.storeData.image" value="images/store_birdSeed.dds"/>
+            <set path="placeable.storeData.image" value="images/store_novaHub-X2.dds"/>
             <set path="placeable.droneHub.drones.drone(1)#attachNode" value="0>1|2|1"/>
             <set path="placeable.base.filename" value="models/novaHub-X2.i3d"/>
 
@@ -63,7 +63,7 @@
 
     <storeData>
         <name>NovaHub-X2</name>
-        <image>images/store_birdSeed.dds</image>
+        <image>images/store_novaHub-X2.dds</image>
         <brand>NovaFlyFast</brand>
         <species>placeable</species>
         <category>placeableMisc</category>

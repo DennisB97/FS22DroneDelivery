@@ -94,6 +94,7 @@ function DroneHub.registerFunctions(placeableType)
     SpecializationUtil.registerFunction(placeableType, "toggleChargeCoverAnimation", DroneHub.toggleChargeCoverAnimation)
     SpecializationUtil.registerFunction(placeableType, "getDroneHandler", DroneHub.getDroneHandler)
     SpecializationUtil.registerFunction(placeableType, "setSlotDirty", DroneHub.setSlotDirty)
+    SpecializationUtil.registerFunction(placeableType, "clearConfigSettings", DroneHub.clearConfigSettings)
 end
 
 --- registerEvents registers new events.
@@ -551,6 +552,15 @@ function DroneHub:receiveConfigSettings(slotIndex,pickUpPointCopy,deliveryPointC
     end
 
     spec.droneSlots[slotIndex]:verifySettings(pickUpPointCopy,deliveryPointCopy)
+end
+
+function DroneHub:clearConfigSettings(slotIndex)
+    local spec = self.spec_droneHub
+    if spec.droneSlots == nil or spec.droneSlots[slotIndex] == nil then
+        return
+    end
+
+    spec.droneSlots[slotIndex]:finalizeSettingsClear()
 end
 
 function DroneHub:validatedSlotSettings(slotIndex,bValid)

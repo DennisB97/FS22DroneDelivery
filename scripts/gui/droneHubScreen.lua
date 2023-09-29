@@ -19,6 +19,9 @@ function DroneHubScreen.new()
         if self.droneList ~= nil and self.droneList.elements[slotIndex] ~= nil then
             self.droneList.elements[slotIndex]:updateListingScreen()
         end
+        if self.droneConfigScreen ~=  nil then
+            self.droneConfigScreen:updateConfigScreen()
+        end
     end
 
     -- creates all the screens that this screen will be using.
@@ -94,9 +97,6 @@ end
 --- onOpen when GUI gets opened mainly clones the dronelistscreens and shows them in scroll list, depending on how many slots the controlling hub has.
 function DroneHubScreen:onOpen()
     DroneHubScreen:superClass().onOpen(self)
-
-
-
 
     -- sets header to the name of the hub
     if self.header ~= nil then
