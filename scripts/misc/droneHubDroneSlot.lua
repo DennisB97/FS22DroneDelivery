@@ -19,7 +19,6 @@ function DroneHubDroneSlot.new(hubOwner,inSlotIndex,inPosition,inRotation,isServ
     self.ESlotState = {NOLINK = 0,LINKED = 1, LINKCHANGING = 2, BOOTING = 3, INCOMPATIBLEPLACEMENT = 4, NOFLYPATHFINDING = 5, APPLYINGSETTINGS = 6}
     self.currentState = self.ESlotState.BOOTING
     self.slot = {}
-    self.bSlotCoverOpen = false
     self.slot.position = inPosition
     self.slot.rotation = inRotation
     self.stateDirtyFlag = self.hubOwner:getNextDirtyFlag()
@@ -54,7 +53,6 @@ function DroneHubDroneSlot:saveToXMLFile(xmlFile, key, usedModNames)
 
     xmlFile:setValue(key.."#droneID", self.linkedDroneID)
     xmlFile:setValue(key.."#name", self.name)
-    xmlFile:setValue(key.."#slotCoverOpen",self.bSlotCoverOpen)
 
     if self.slotConfig ~= nil then
         self.slotConfig:saveToXMLFile(xmlFile,key,usedModNames)
@@ -66,7 +64,6 @@ function DroneHubDroneSlot:loadFromXMLFile(xmlFile, key)
 
     self.linkedDroneID = Utils.getNoNil(xmlFile:getValue(key.."#droneID"),"")
     self.name = Utils.getNoNil(xmlFile:getValue(key.."#name"),"")
-    self.bSlotCoverOpen = Utils.getNoNil(xmlFile:getValue(key.."#slotCoverOpen"),false)
 
     if self.slotConfig ~= nil then
         self.slotConfig:loadFromXMLFile(xmlFile,key)
@@ -204,8 +201,7 @@ function DroneHubDroneSlot:createUnDockingAction()
                 self.linkedDrone:useAnimation("legAnimation",1,0,nil,nil)
             end
             if self.hubOwner ~= nil then
-                self.hubOwner:toggleChargeCoverAnimation(self.slotIndex)
-                self.bSlotCoverOpen = not self.bSlotCoverOpen
+                self.hubOwner:setChargeCoverAnimation(self.slotIndex,false)
             end
         end
 
@@ -250,8 +246,7 @@ function DroneHubDroneSlot:createDockingAction()
                 self.linkedDrone:useAnimation("legAnimation",-1,self.linkedDrone:getAnimationTime("legAnimation"),nil,nil)
             end
             if self.hubOwner ~= nil then
-                self.hubOwner:toggleChargeCoverAnimation(self.slotIndex)
-                self.bSlotCoverOpen = not self.bSlotCoverOpen
+                self.hubOwner:setChargeCoverAnimation(self.slotIndex,true)
             end
         end
 
@@ -288,10 +283,7 @@ function DroneHubDroneSlot:requestDirectReturn()
 
     self.linkedDrone:setDirectPosition(self.slot.position,self.slot.rotation,true)
     self.linkedDrone:setAnimationsToDefault()
-    if not self.bSlotCoverOpen then
-        self.hubOwner:toggleChargeCoverAnimation(self.slotIndex)
-        self.bSlotCoverOpen = not self.bSlotCoverOpen
-    end
+    self.hubOwner:setChargeCoverAnimation(self.slotIndex,true)
 
     self.linkedDrone:setDroneIdleState()
 end
@@ -306,6 +298,10 @@ function DroneHubDroneSlot:initialize()
     if self.slotConfig ~= nil then
         -- if has no loaded pickup and delivery placeable then doesn't get initialized and returns false so need to change to linked state
         if not self.slotConfig:onConfigInitialized() then
+            -- if drone is not at hub need to signal that point was lost
+            if not self.linkedDrone:isDroneAtHub() then
+                SpecializationUtil.raiseEvent(self.linkedDrone,"onPointLost")
+            end
             self:changeState(self.ESlotState.LINKED)
         end
     end
@@ -331,7 +327,7 @@ function DroneHubDroneSlot:changeState(newState)
         self.hubOwner:setSlotDirty(self.slotIndex)
     end
 
-    if self.isServer and newState == self.ESlotState.INCOMPATIBLEPLACEMENT or newState == self.ESlotState.NOFLYPATHFINDING then
+    if newState == self.ESlotState.INCOMPATIBLEPLACEMENT or newState == self.ESlotState.NOFLYPATHFINDING then
         self:emergencyUnlink()
     end
 end
@@ -389,10 +385,6 @@ function DroneHubDroneSlot:searchDrone()
             self.dockingAction:setDrone(self.linkedDrone)
         end
         SpecializationUtil.raiseEvent(self.linkedDrone,"onHubLoaded",self.hubOwner,self,self.slotIndex)
-        if not self.slotConfig:searchPlaceables() and not self.linkedDrone:isDroneAtHub() then
-            SpecializationUtil.raiseEvent(self.linkedDrone,"onPointLost")
-        end
-
         return
     end
 
@@ -414,21 +406,7 @@ function DroneHubDroneSlot:onDroneArrived(drone)
     end
 
     drone:removeOnDroneArrivedListener(self.droneArriveCallback)
-
-    local pickupManager, _ = self.slotConfig:getPlaceableManagers()
-
-    local bMore = false
-
-    if pickupManager ~= nil and drone:hasEnoughCharge() then
-        local originalFunction = drone.isAvailableForPickup
-        drone.isAvailableForPickup = function() return true end
-        bMore = pickupManager:requestPickup(drone)
-        drone.isAvailableForPickup = originalFunction
-    end
-
-    if not bMore then
-        drone:changeState(drone.spec_drone.EDroneStates.DOCKING)
-    end
+    drone:changeState(drone.spec_drone.EDroneStates.DOCKING)
 end
 
 function DroneHubDroneSlot:tryLinkDrone()
@@ -609,6 +587,7 @@ function DroneHubDroneSlot:emergencyUnlink()
     self.linkedDroneID = ""
     self.name = ""
     self.slotConfig:clearConfig()
+    self.hubOwner:setChargeCoverAnimation(self.slotIndex,false)
     SpecializationUtil.raiseEvent(self.linkedDrone,"onHubUnlink",true)
     self.linkedDrone = nil
 end
@@ -620,7 +599,7 @@ function DroneHubDroneSlot:finalizeLinking(drone,id)
 
     self.linkedDrone = drone
     self.linkedDroneID = id
-    self.hubOwner:toggleChargeCoverAnimation(self.slotIndex)
+    self.hubOwner:setChargeCoverAnimation(self.slotIndex,true)
     if self.unDockingAction ~= nil then
         self.unDockingAction:setDrone(self.linkedDrone)
     end
@@ -642,7 +621,7 @@ function DroneHubDroneSlot:finalizeUnlinking()
         self.slotConfig:clearConfig()
     end
     if self.hubOwner ~= nil then
-        self.hubOwner:toggleChargeCoverAnimation(self.slotIndex)
+        self.hubOwner:setChargeCoverAnimation(self.slotIndex,false)
     end
 
     self.linkedDroneID = ""

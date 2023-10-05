@@ -202,11 +202,11 @@ function DroneHubConfigScreen:onOpen()
         self.priceLimitOption.elements[3].elements[1]:setImageFilename("dataS/menu/hud/hud_elements.png")
         FocusManager:removeElement(self.priceLimitOption)
         FocusManager:loadElementFromCustomValues(self.priceLimitOption.elements[3])
-        self.priceLimitOption.elements[3].onFocusEnter = Utils.overwrittenFunction(self.priceLimitOption.elements[3].onFocusEnter,function(...)
+        self.priceLimitCheckOption.elements[3].onFocusEnter = Utils.overwrittenFunction(self.priceLimitCheckOption.elements[3].onFocusEnter,function(...)
             self:onPriceLimitButtonFocused(unpack({...}))
         end)
-        self.priceLimitOption.elements[3].onFocusLeave = Utils.overwrittenFunction(self.priceLimitOption.elements[3].onFocusLeave,function(...)
-            self:onPriceLimitButtonFocusLeft(unpack({...}))
+        self.fillLimitOption.elements[3].onFocusEnter = Utils.overwrittenFunction(self.fillLimitOption.elements[3].onFocusEnter,function(...)
+            self:onFillLimitButtonFocus(unpack({...}))
         end)
     end
 
@@ -267,8 +267,8 @@ function DroneHubConfigScreen:onPriceLimitButtonFocused(element,superFunc)
         self.slider:setValue(100)
     end
 end
---- again ugly hack to adjust slider back up when leaving the last price limit element...
-function DroneHubConfigScreen:onPriceLimitButtonFocusLeft(element,superFunc)
+--- again ugly hack to adjust slider back up when entering the fill limit button...
+function DroneHubConfigScreen:onFillLimitButtonFocus(element,superFunc)
     superFunc(element)
 
     if self.slider ~= nil and self.configList ~= nil then
@@ -320,15 +320,18 @@ function DroneHubConfigScreen:updateFocusNavigation()
     FocusManager:linkElements(self.priceLimitCheckOption,FocusManager.BOTTOM, self.priceLimitOption.elements[3])
 
     FocusManager:linkElements(self.priceLimitOption.elements[3],FocusManager.TOP, self.priceLimitCheckOption)
-
-    FocusManager:linkElements(self.priceLimitOption.elements[3],FocusManager.BOTTOM, self.pickUp:getButtonElement())
+    FocusManager:linkElements(self.priceLimitOption.elements[3],FocusManager.BOTTOM, nil)
+    FocusManager:linkElements(self.priceLimitOption.elements[3],FocusManager.LEFT, nil)
 
     FocusManager:linkElements(self.pickUp:getButtonElement(),FocusManager.BOTTOM, self.deliveryTypeOption)
     FocusManager:linkElements(self.delivery:getButtonElement(),FocusManager.BOTTOM, self.deliveryTypeOption)
     FocusManager:linkElements(self.deliveryTypeOption ,FocusManager.TOP, self.pickUp:getButtonElement())
 
     FocusManager:linkElements(self.pickUp:getButtonElement(),FocusManager.RIGHT,  self.delivery:getButtonElement())
+    FocusManager:linkElements(self.pickUp:getButtonElement(),FocusManager.LEFT,  nil)
+    FocusManager:linkElements(self.pickUp:getButtonElement(),FocusManager.TOP,  nil)
     FocusManager:linkElements(self.delivery:getButtonElement(),FocusManager.LEFT,  self.pickUp:getButtonElement())
+    FocusManager:linkElements(self.delivery:getButtonElement(),FocusManager.TOP,  nil)
 
 end
 

@@ -274,9 +274,9 @@ function PickupDeliveryHelper.getPointPosition(bPickup,placeable)
                     local directionX, directionZ = production.palletSpawner.spawnPlaces[1].dirX, production.palletSpawner.spawnPlaces[1].dirZ
 
                     -- get middle output position
-                    position.x = position.x + (directionX * (production.palletSpawner.spawnPlaces[1].width))
+                    position.x = position.x + (directionX * (production.palletSpawner.spawnPlaces[1].width / 2))
                     position.y = position.y + heightOffset
-                    position.z = position.z + (directionZ * (production.palletSpawner.spawnPlaces[1].width))
+                    position.z = position.z + (directionZ * (production.palletSpawner.spawnPlaces[1].width / 2))
 
                     return position
                 end
@@ -540,4 +540,18 @@ function PickupDeliveryHelper.createTargetQuaternion(objectNode,targetDirection)
     return targetQuat
 end
 
+--- getAttachOffset receives correct y offset when drone picking up.
+--@param object is object that is being picked up.
+--@param fillType is the object's filltype.
+--@return float offset value in the y axis.
+function PickupDeliveryHelper.getAttachOffset(object,fillType)
+
+    local attachSafeOffset = 0.1
+
+    if fillType == FillType.TREESAPLINGS then
+        attachSafeOffset = 1.5
+    end
+
+    return attachSafeOffset
+end
 

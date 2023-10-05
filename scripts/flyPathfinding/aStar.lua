@@ -537,8 +537,8 @@ function AStar.new(isServer,isClient)
     self.pathingTime = 0
     self.goalPath = nil
     self.callback = nil
-    self.realStartLocation = {}
-    self.realGoalLocation = {}
+    self.realStartLocation = {x=0,y=0,z=0}
+    self.realGoalLocation = {x=0,y=0,z=0}
     self.maxSearchedNodes = 0
     self.maxPathfindLoops = 0
     self.defaultMaxPathfindLoops = 0
@@ -582,6 +582,8 @@ function AStar:loadConfig()
         if getXMLString(xmlFile, "config.aStarConfig#heuristicScalingMaxSize") ~= nil then
             self.heuristicScalingMaxSize = getXMLInt(xmlFile,"Config.aStarConfig#heuristicScalingMaxSize")
         end
+
+        delete(xmlFile)
     end
 
     if self.isServer == true and g_currentMission ~= nil and g_currentMission.connectedToDedicatedServer then
@@ -602,8 +604,6 @@ function AStar:clean()
     self.bSmoothPath = true
     self.goalGridNode = nil
     self.startGridNode = nil
-    self.realStartLocation = {}
-    self.realGoalLocation = {}
     self.bestNode = nil
     self.closedNodeCount = 0
     self.pathingTime = 0
@@ -659,8 +659,8 @@ function AStar:find(startPosition,goalPosition,findNearest,allowSolidStart,allow
     self.bSmoothPath = (smoothPath ~= nil and {smoothPath} or {true})[1]
     self.maxSearchedNodes = customSearchNodeLimit or self.defaultMaxSearchedNodes
     self.maxPathfindLoops = (customPathLoopAmount or self.defaultMaxPathfindLoops) * self.dedicatedScalingFactor
-    self.realStartLocation = startPosition
-    self.realGoalLocation = goalPosition
+    self.realStartLocation.x, self.realStartLocation.y, self.realStartLocation.z = startPosition.x, startPosition.y, startPosition.z
+    self.realGoalLocation.x, self.realGoalLocation.y, self.realGoalLocation.z = goalPosition.x, goalPosition.y, goalPosition.z
     self.startGridNode = g_currentMission.gridMap3D:getGridNode(startPosition,allowSolidStart)
     self.goalGridNode = g_currentMission.gridMap3D:getGridNode(goalPosition,allowSolidGoal)
     self.bFindNearest = (findNearest ~= nil and {findNearest} or {true})[1]
@@ -937,7 +937,8 @@ function AStar:postProcessPath(node)
     local firstPosition = g_currentMission.gridMap3D:getNodeLocation(node.gridNode)
 
     if self.bReachedGoal then
-        firstPosition = self.realGoalLocation
+        firstPosition = {x=0,y=0,z=0}
+        firstPosition.x, firstPosition.y, firstPosition.z = self.realGoalLocation.x,self.realGoalLocation.y,self.realGoalLocation.z
     end
     table.insert(path,firstPosition)
 
@@ -963,7 +964,8 @@ function AStar:postProcessPath(node)
             local bIsLast = thirdNode.gridNode == self.startGridNode
             local thirdPosition = g_currentMission.gridMap3D:getNodeLocation(thirdNode.gridNode)
             if bIsLast then
-                thirdPosition = self.realStartLocation
+                thirdPosition = {x=0,y=0,z=0}
+                thirdPosition.x, thirdPosition.y, thirdPosition.z = self.realStartLocation.x, self.realStartLocation.y, self.realStartLocation.z
             end
 
             -- do a raycast to check if middle node can be left out of path

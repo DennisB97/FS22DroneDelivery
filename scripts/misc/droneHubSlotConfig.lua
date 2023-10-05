@@ -245,16 +245,27 @@ function DroneWorkPoint:loadFromXMLFile(xmlFile, key)
     self.fillLimitIndex = Utils.getNoNil(xmlFile:getValue(key.."#fillLimitIndex"),5)
 
     local fillTypeString = xmlFile:getValue(key.."#fillTypes")
+    local currentIndex = 1
     for fillName in fillTypeString:gmatch("%S+") do
         local index = g_fillTypeManager:getFillTypeIndexByName(fillName)
-        table.insert(self.fillTypes, index)
+
+        if self.fillTypeIndex >= currentIndex then
+            self.fillTypeIndex = MathUtil.clamp(self.fillTypeIndex - 1,1,9999)
+        end
+
+        if index ~= nil then
+            table.insert(self.fillTypes, index)
+        end
+        currentIndex = currentIndex + 1
     end
 
     fillTypeString = xmlFile:getValue(key.."#allFillTypes")
 
     for fillName in fillTypeString:gmatch("%S+") do
         local index = g_fillTypeManager:getFillTypeIndexByName(fillName)
-        self.allFillTypes[index] = true
+        if index ~= nil then
+            self.allFillTypes[index] = true
+        end
     end
 
     return true
@@ -408,6 +419,11 @@ function DroneHubSlotConfig:clearConfig()
     self.pickUpPoint:reset()
     self.deliveryPoint:reset()
     self.dirtyTable = {}
+
+end
+
+function DroneHubSlotConfig:delete()
+    self:clearConfig()
 
 end
 
@@ -660,7 +676,10 @@ function DroneHubSlotConfig:onConfigInitialized()
         return false
     end
 
-    self.slot:changeState(self.slot.ESlotState.APPLYINGSETTINGS)
+    if not self:searchPlaceables() then
+        return false
+    end
+
     ChangeConfigEvent.sendEvent(self.hubOwner,self.slot.slotIndex,self.pickUpPoint,self.deliveryPoint)
     return true
 end

@@ -85,7 +85,7 @@ function DroneActionPhase:run(dt)
                 self.targetQuat = PickupDeliveryHelper.createTargetQuaternion(self.drone.rootNode,self.targetDirection)
                 self.toTargetDegrees = math.deg(math.acos(self.startQuat.x * self.targetQuat.x + self.startQuat.y * self.targetQuat.y + self.startQuat.z * self.targetQuat.z + self.startQuat.w * self.targetQuat.w))
 
-                if math.abs(self.targetQuat.x-self.startQuat.x)<0.005 and math.abs(self.targetQuat.y-self.startQuat.y)>0.005 and math.abs(self.targetQuat.z-self.startQuat.z)>0.005 and math.abs(self.targetQuat.w-self.startQuat.w)>0.005 then
+                if math.abs(self.targetQuat.x-self.startQuat.x)< 0.005 and math.abs(self.targetQuat.y-self.startQuat.y) < 0.005 and math.abs(self.targetQuat.z-self.startQuat.z) < 0.005 and math.abs(self.targetQuat.w-self.startQuat.w) < 0.005 then
                     self.targetQuat = nil
                 end
             end
@@ -116,7 +116,7 @@ function DroneActionPhase:run(dt)
 
     if self.targetQuat ~= nil then
 
-        self.quaternionAlpha = self.quaternionAlpha + ((self.rotationSpeed * sDt) / self.toTargetDegrees)
+        self.quaternionAlpha = MathUtil.clamp(self.quaternionAlpha + ((self.rotationSpeed * sDt) / self.toTargetDegrees),0,1)
 
         quatX,quatY,quatZ,quatW = MathUtil.slerpQuaternion(self.startQuat.x, self.startQuat.y, self.startQuat.z, self.startQuat.w,self.targetQuat.x, self.targetQuat.y, self.targetQuat.z, self.targetQuat.w,self.quaternionAlpha)
 
@@ -128,7 +128,7 @@ function DroneActionPhase:run(dt)
 
     self.currentTime = self.currentTime + (dt/1000)
 
-    self.drone:setWorldPositionQuaternion(x,y,z, quatX,quatY,quatZ,quatW, 1, true)
+    self.drone:setWorldPositionQuaternion(x,y,z, quatX,quatY,quatZ,quatW, 1, false)
 
     local additionalTaskDone = true
 

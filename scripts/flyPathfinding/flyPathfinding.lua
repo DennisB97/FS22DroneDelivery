@@ -68,7 +68,7 @@ FlyPathfinding.modDir = g_currentModDirectory .. "scripts/flyPathfinding/"
 -- the g_currentMission.gridMap3D might ne valid if some other mod had it too, but if the required version was lower then the following bool is false to indicate can't use pathfinding until upgraded.
 FlyPathfinding.bPathfindingEnabled = false
 -- grid version, to know if there has been any changes to the Grid system when multiple mods use this pathfinding system as the grid is shared between mods.
-FlyPathfinding.requiredGridVersion = "1.0.0"
+FlyPathfinding.requiredGridVersion = "1.0.1"
 
 --- deleteMap is FS22 function called after exiting played save.
 function FlyPathfinding:deleteMap(savegame)
@@ -87,6 +87,7 @@ function FlyPathfinding:loadMapData(xmlFile)
 
     if g_currentMission ~= nil and g_server ~= nil then
 
+        -- Enable here possible debug commands with a custom name for classes that are part of flypathfinding but local to each mod.
         addConsoleCommand( 'AStarFlypathfindingDebugDrone', 'toggle debugging for AStar pathfinding', 'aStarDebugToggle', AStar)
         addConsoleCommand( 'AStarFlypathfindingDebugPathCreateDrone', 'Given two vector positions creates a debug path between those', 'aStarDebugPathCreate', AStarDebug)
         addConsoleCommand( 'CatmullRomDebugDrone', 'toggle debugging for catmullrom', 'catmullRomDebugToggle', CatmullRomSplineCreator)
@@ -132,7 +133,7 @@ function FlyPathfinding.compareVersions(v1, v2)
     local major1, minor1, patch1 = string.match(v1, "(%d+)%.(%d+)%.(%d+)")
     local major2, minor2, patch2 = string.match(v2, "(%d+)%.(%d+)%.(%d+)")
     major1, minor1, patch1 = tonumber(major1),tonumber(minor1),tonumber(patch1)
-    major2, minor2, patch2 = tonumber(major2),tonumber(minor2),tonumber(patch1)
+    major2, minor2, patch2 = tonumber(major2),tonumber(minor2),tonumber(patch2)
 
     if major1 ~= major2 then
         return false

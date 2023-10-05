@@ -91,7 +91,7 @@ function DroneHub.registerFunctions(placeableType)
     SpecializationUtil.registerFunction(placeableType, "checkAccessNonInitCallback", DroneHub.checkAccessNonInitCallback)
     SpecializationUtil.registerFunction(placeableType, "checkAccessInitCallback", DroneHub.checkAccessInitCallback)
     SpecializationUtil.registerFunction(placeableType, "hasAnyLinkedDrones", DroneHub.hasAnyLinkedDrones)
-    SpecializationUtil.registerFunction(placeableType, "toggleChargeCoverAnimation", DroneHub.toggleChargeCoverAnimation)
+    SpecializationUtil.registerFunction(placeableType, "setChargeCoverAnimation", DroneHub.setChargeCoverAnimation)
     SpecializationUtil.registerFunction(placeableType, "getDroneHandler", DroneHub.getDroneHandler)
     SpecializationUtil.registerFunction(placeableType, "setSlotDirty", DroneHub.setSlotDirty)
     SpecializationUtil.registerFunction(placeableType, "clearConfigSettings", DroneHub.clearConfigSettings)
@@ -243,14 +243,19 @@ function DroneHub:onUpdate(dt)
 
 end
 
-function DroneHub:toggleChargeCoverAnimation(slotIndex)
+function DroneHub:setChargeCoverAnimation(slotIndex,bOpen)
     if self.spec_animatedObjects == nil or self.spec_animatedObjects.animatedObjects[slotIndex] == nil then
         return
     end
 
     local slotAnimatedObject = self.spec_animatedObjects.animatedObjects[slotIndex]
     if slotAnimatedObject ~= nil then
-        slotAnimatedObject.activatable:onAnimationInputToggle()
+        if bOpen and slotAnimatedObject.animation.time < 1 then
+            slotAnimatedObject.activatable:onAnimationInputToggle()
+        elseif not bOpen and slotAnimatedObject.animation.time >= 1 then
+            slotAnimatedObject.activatable:onAnimationInputToggle()
+        end
+
     end
 end
 
@@ -274,7 +279,10 @@ function DroneHub:onFinalizePlacement()
     local xmlFile = self.xmlFile
 
     if self.isServer and not spec.bInvalid then
-
+        DebugUtil.printTableRecursively(self.spec_animatedObjects,"self.spec_animatedObjects : ",0,5)
+        DebugUtil.printTableRecursively(PlaceableAnimatedObjects,"PlaceableAnimatedObjectsC : ",0,5)
+        DebugUtil.printTableRecursively(AnimatedObject,"AnimatedObjectC : ",0,5)
+        DebugUtil.printTableRecursively(AnimatedObjectActivatable,"AnimatedObjectActivatableC : ",0,5)
         spec.droneHandler = DroneActionManager.new(self,self.isServer,self.isClient,false)
         spec.droneHandler:register(true)
 

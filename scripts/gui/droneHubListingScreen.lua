@@ -82,7 +82,7 @@ function DroneHubListingScreen:onOpen()
     self:updateListingScreen()
 end
 
---- onDraw when this GUI gets drawn, if drone linked then checks if drone has moved between last draw and then calls updateMap to change center of map.
+--- onDraw when this GUI gets drawn, if drone linked then checks if drone has moved between last draw and then calls updateMap to change center of map and updates charge.
 function DroneHubListingScreen:onDraw()
 
     if self.bActive and self.droneSlot ~= nil then
@@ -100,6 +100,8 @@ function DroneHubListingScreen:onDraw()
             self.previousRotation = rotation
             self:updateMap()
         end
+
+        self:updateChargeText()
     end
 end
 
@@ -205,10 +207,7 @@ end
 
 --- updateStatus changes the battery charge text and status text depending on state and charge.
 function DroneHubListingScreen:updateStatus()
-
-    self:updateChargeText()
     self:updateStateText()
-
 end
 
 --- updateChargeText updates percentage shown of drone battery charge.
@@ -218,12 +217,13 @@ function DroneHubListingScreen:updateChargeText()
     local droneCharge = 0
     if self.droneSlot ~= nil then
         droneCharge = self.droneSlot:getDroneCharge()
+
     end
 
     if droneCharge < 1 then
         chargeText = "<1%"
     else
-        chargeText = tostring(droneCharge) .. chargeText
+        chargeText = string.format("%.1f", droneCharge) .. chargeText
     end
 
     if self.droneCharge ~= nil then

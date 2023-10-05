@@ -115,26 +115,26 @@ function CustomDeliveryPickupPoint:onLoad(savegame)
     local stripes = xmlFile:getValue("placeable.customDeliveryPickupPoint#stripes",nil,self.components,self.i3dMappings)
     spec.allStripes = {}
     spec.allStripes.leftTop = getChildAt(stripes,2)
-    spec.allStripes.leftTopPosition = {}
+    spec.allStripes.leftTopPosition = {x=0,y=0,z=0}
     spec.allStripes.leftTopPosition.x, spec.allStripes.leftTopPosition.y, spec.allStripes.leftTopPosition.z = getTranslation(spec.allStripes.leftTop)
     spec.allStripes.rightTop = getChildAt(stripes,3)
-    spec.allStripes.rightTopPosition = {}
+    spec.allStripes.rightTopPosition = {x=0,y=0,z=0}
     spec.allStripes.rightTopPosition.x, spec.allStripes.rightTopPosition.y, spec.allStripes.rightTopPosition.z = getTranslation(spec.allStripes.rightTop)
     spec.allStripes.rightBottom = getChildAt(stripes,0)
-    spec.allStripes.rightBottomPosition = {}
+    spec.allStripes.rightBottomPosition = {x=0,y=0,z=0}
     spec.allStripes.rightBottomPosition.x, spec.allStripes.rightBottomPosition.y, spec.allStripes.rightBottomPosition.z = getTranslation(spec.allStripes.rightBottom)
     spec.allStripes.leftBottom = getChildAt(stripes,1)
-    spec.allStripes.leftBottomPosition = {}
+    spec.allStripes.leftBottomPosition = {x=0,y=0,z=0}
     spec.allStripes.leftBottomPosition.x, spec.allStripes.leftBottomPosition.y, spec.allStripes.leftBottomPosition.z = getTranslation(spec.allStripes.leftBottom)
-    spec.allStripes.diagonalTopLeftDirection = {}
-    spec.allStripes.diagonalTopRightDirection = {}
+    spec.allStripes.diagonalTopLeftDirection = {x=0,y=0,z=0}
+    spec.allStripes.diagonalTopRightDirection = {x=0,y=0,z=0}
     spec.allStripes.diagonalTopLeftDirection.x, spec.allStripes.diagonalTopLeftDirection.y,spec.allStripes.diagonalTopLeftDirection.z = MathUtil.vector3Normalize(
         spec.allStripes.leftTopPosition.x - spec.allStripes.rightBottomPosition.x,spec.allStripes.leftTopPosition.y - spec.allStripes.rightBottomPosition.y,spec.allStripes.leftTopPosition.z - spec.allStripes.rightBottomPosition.z)
     spec.allStripes.diagonalTopRightDirection.x, spec.allStripes.diagonalTopRightDirection.y, spec.allStripes.diagonalTopRightDirection.z = MathUtil.vector3Normalize(
         spec.allStripes.rightTopPosition.x - spec.allStripes.leftBottomPosition.x,spec.allStripes.rightTopPosition.y - spec.allStripes.leftBottomPosition.y,spec.allStripes.rightTopPosition.z - spec.allStripes.leftBottomPosition.z)
 
-    spec.allStripes.topDirection = {}
-    spec.allStripes.rightDirection = {}
+    spec.allStripes.topDirection = {x=0,y=0,z=0}
+    spec.allStripes.rightDirection = {x=0,y=0,z=0}
     spec.allStripes.topDirection.x, spec.allStripes.topDirection.y,spec.allStripes.topDirection.z = MathUtil.vector3Normalize(
         spec.allStripes.leftTopPosition.x - spec.allStripes.leftBottomPosition.x,spec.allStripes.leftTopPosition.y - spec.allStripes.leftBottomPosition.y,spec.allStripes.leftTopPosition.z - spec.allStripes.leftBottomPosition.z)
     spec.allStripes.rightDirection.x, spec.allStripes.rightDirection.y, spec.allStripes.rightDirection.z = MathUtil.vector3Normalize(
@@ -222,7 +222,7 @@ function CustomDeliveryPickupPoint.decodeCoordinates(coordinateString)
         table.insert(coords,coord)
     end
 
-    local coordinates = {}
+    local coordinates = {x=0,y=0,z=0}
     coordinates.x, coordinates.y, coordinates.z = coords[1], coords[2], coords[3]
     return coordinates
 end

@@ -83,7 +83,7 @@
         </meshNodes>
     </tensionBeltObject>
 
-    <drone leftLegCollision="leftLegCollision" rightLegCollision="rightLegCollision" chargeSpeed="5" carrySpeed="60" horizontalSpeed="80" verticalSpeed="8" minGroundOffset="2">
+    <drone leftLegCollision="leftLegCollision" rightLegCollision="rightLegCollision" chargeConsumption="2" chargeSpeed="10" carrySpeed="60" horizontalSpeed="80" verticalSpeed="8" minGroundOffset="3">
         <sounds>
             <rotor file="sounds/drone.ogg" linkNode="droneNode" outerRadius="20" innerRadius="1" loops="0" supportsReverb="true" isLocalSound="false" debug="false">
                 <randomization minVolume="0.9" maxVolume="1.0" />

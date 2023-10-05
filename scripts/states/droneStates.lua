@@ -59,7 +59,7 @@ function DroneStateBase:setIsSaveLoaded()
 end
 
 function DroneStateBase:goForSpline(targetSpline,direction)
-    if self.owner ~= nil and self.owner:getTrianglePath() ~= nil and self.owner:getSteering() ~= nil then
+    if self.owner ~= nil and self.owner:getSteering() ~= nil and targetSpline ~= nil then
         self.steering = self.owner:getSteering()
         self.steering:setTargetSpline(targetSpline)
         self.steering:setPathDirection(direction)
@@ -85,9 +85,6 @@ InitObjectClass(DroneChargeState, "DroneChargeState")
 --- new creates a new charge state.
 function DroneChargeState.new()
     local self = DroneChargeState:superClass().new(DroneChargeState_mt)
-    self.timerTime = 60000 -- 60s in ms
-    self.timer = nil
-    self.callback = function() self:onCharge() end
     return self
 end
 
@@ -102,26 +99,19 @@ function DroneChargeState:enter()
         return
     end
 
-    self.timer = Timer.createOneshot(self.timerTime, self.callback)
 end
 
 function DroneChargeState:leave()
     DroneChargeState:superClass().leave(self)
-
-    if self.timer ~= nil then
-        self.timer:delete()
-        self.timer = nil
-    end
-
 end
 
+function DroneChargeState:update(dt)
+    DroneChargeState:superClass().update(self,dt)
 
-function DroneChargeState:onCharge()
+    self.owner:raiseActive()
 
-    if self.owner:increaseCharge() then
+    if self.owner:increaseCharge(dt) then
         self.owner:setDroneIdleState()
-    else
-        self.timer = Timer.createOneshot(self.timerTime, self.callback)
     end
 
 end
@@ -149,7 +139,7 @@ function DronePickingUpState:enter()
         return
     end
 
-    self:goForSpline(self.owner:getTrianglePath().toPickup,1)
+    self:startPickingUp()
 end
 
 function DronePickingUpState:leave()
@@ -165,8 +155,28 @@ end
 
 function DronePickingUpState:pathReceived(trianglePath)
     DronePickingUpState:superClass().pathReceived(self,trianglePath)
-    self:goForSpline(trianglePath.toPickup,1)
+    self:startPickingUp()
 end
+
+function DronePickingUpState:startPickingUp()
+    if self.owner == nil or self.owner:getSteering() == nil or self.owner:getTrianglePath() == nil then
+        return
+    end
+
+    local position = {x=0,y=0,z=0}
+    position.x,position.y,position.z = getWorldTranslation(self.owner.rootNode)
+
+    local _,_,_,distanceToPickup,_ = self.owner:getTrianglePath().toPickup:getClosePositionOnSpline(position)
+    local _,_,_,distanceToDelivery,_ = self.owner:getTrianglePath().toDelivery:getClosePositionOnSpline(position)
+
+    if distanceToPickup <= distanceToDelivery then
+        self:goForSpline(self.owner:getTrianglePath().toPickup,1)
+    else
+        self:goForSpline(self.owner:getTrianglePath().toDelivery,-1)
+    end
+
+end
+
 
 function DronePickingUpState:update(dt)
     DronePickingUpState:superClass().update(self,dt)
@@ -272,7 +282,6 @@ function DroneReturningState:pathReceived(trianglePath)
 end
 
 function DroneReturningState:hubLoaded()
-
     DroneReturningState:superClass().hubLoaded(self)
 end
 
@@ -285,26 +294,6 @@ function DroneReturningState:startReturning()
 
     self:goForSpline(self.owner:getTrianglePath().toHub,1)
 end
-
-
-
-
---- EMERGENCY UNLINK CLASS ---
---- DroneEmergencyUnlinkState state used when pathfinding issues to,from hub. Will handles moving drone back to store.
-DroneEmergencyUnlinkState = {}
-DroneEmergencyUnlinkState_mt = Class(DroneEmergencyUnlinkState,DroneStateBase)
-InitObjectClass(DroneEmergencyUnlinkState, "DroneEmergencyUnlinkState")
-
---- new creates a emergency unlink state.
---@param customMt optional custom metatable.
-function DroneEmergencyUnlinkState.new(customMt)
-    local self = DroneEmergencyUnlinkState:superClass().new(customMt or DroneEmergencyUnlinkState_mt)
-
-
-    return self
-end
-
-
 
 --- PICKUPCANCELLED CLASS ---
 --- DronePickupCancelledState state used when pickup pallet not found while going there, will go backwards on the hub -> pickup path.
@@ -343,19 +332,70 @@ function DronePickupCancelledState:pathReceived(trianglePath)
 end
 
 function DronePickupCancelledState:hubLoaded()
-
     DronePickupCancelledState:superClass().hubLoaded(self)
 end
 
 function DronePickupCancelledState:startCancelling()
-
-    local hubSlot = self.owner:getHubSlot()
-    if hubSlot ~= nil then
-        hubSlot:noticeDroneReturnal()
+    if self.owner == nil or self.owner:getSteering() == nil then
+        return
     end
 
-    self:goForSpline(self.owner:getTrianglePath().toPickup,-1)
+    local hubSlot = self.owner:getHubSlot()
+    if hubSlot == nil then
+        Logging.warning("DronePickupCancelledState:startCancelling: Could not notice hubslot about drone returnal!")
+        return
+    end
+
+    hubSlot:noticeDroneReturnal()
+
+    local position = {x=0,y=0,z=0}
+    position.x,position.y,position.z = getWorldTranslation(self.owner.rootNode)
+    local _, distanceToPickup, distanceToDelivery = nil,nil,nil
+
+    if self.owner:getTrianglePath() ~= nil then
+        _,_,_,distanceToPickup,_ = self.owner:getTrianglePath().toPickup:getClosePositionOnSpline(position)
+        _,_,_,distanceToDelivery,_ = self.owner:getTrianglePath().toDelivery:getClosePositionOnSpline(position)
+    end
+
+    if distanceToPickup ~= nil and distanceToDelivery ~= nil and distanceToPickup <= distanceToDelivery and distanceToPickup < 3 then
+        self:goForSpline(self.owner:getTrianglePath().toPickup,-1)
+    else
+        -- need custom temp path to hub as was cancelled while not near or on the toPickup path
+        if self.owner.spec_drone.specialPathCreator == nil or self.owner.spec_drone.specialSplineCreator == nil then
+            Logging.warning("Drone now stuck, as specialPathCreator or specialSplineCreator was nil in startCancelling!")
+            return
+        end
+
+        local callback = function(result) self:onPathCreated(result) end
+        if not self.owner.spec_drone.specialPathCreator:find(position,hubSlot.hubOwner:getEntrancePosition(),false,true,false,callback,true,5,60000) then
+            hubSlot:requestDirectReturn()
+        end
+    end
+
 end
+
+function DronePickupCancelledState:onPathCreated(pathResult)
+
+    if not pathResult[2] then
+        self.owner:getHubSlot():requestDirectReturn()
+        return
+    end
+
+    local callback = function(spline) self:onSplineCreated(spline) end
+    self.owner.spec_drone.specialSplineCreator:createSpline(pathResult[1],callback,nil,nil,nil)
+
+end
+
+function DronePickupCancelledState:onSplineCreated(spline)
+    if spline == nil then
+        self.owner:getHubSlot():requestDirectReturn()
+        return
+    end
+
+    self:goForSpline(spline,1)
+end
+
+
 
 --- UNDOCKING CLASS ---
 --- DroneUnDockingState used when drone leaves hub, if happens to game load into this state (hubLoaded called), will return drone back to hub from start.
@@ -366,8 +406,6 @@ InitObjectClass(DroneUnDockingState, "DroneUnDockingState")
 --- new creates a undocking state.
 function DroneUnDockingState.new()
     local self = DroneUnDockingState:superClass().new(DroneUnDockingState_mt)
-
-
     return self
 end
 
@@ -386,9 +424,6 @@ end
 
 function DroneUnDockingState:leave()
     DroneUnDockingState:superClass().leave(self)
-
-
-
 end
 
 --- hubLoaded is called for a state if it happens to be the loaded state when hub reconnects drones after load.
@@ -414,10 +449,6 @@ InitObjectClass(DroneDockingState, "DroneDockingState")
 --- new creates a docking state.
 function DroneDockingState.new()
     local self = DroneDockingState:superClass().new(DroneDockingState_mt)
-
-
-
-
     return self
 end
 

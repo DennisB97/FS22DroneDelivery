@@ -434,6 +434,7 @@ function GridMap3D:loadConfig()
             self.bIgnoreWater = getXMLBool(config,"octreeConfig#ignoreWater")
         end
 
+        delete(config)
     end
 
     -- leaf node is four times the size of the highest resolution, as leaf node contains the highest resolution in a 4x4x4 grid.
@@ -541,8 +542,19 @@ function GridMap3D:changeState(newState)
         return
     end
 
+    -- if grid turning idle while grid generated bool false then grid has been completed but an update check needs to be done before broadcasting
+    if newState == self.EGridMap3DStates.IDLE and not self.bGridGenerated then
+        if next(self.gridUpdateReadyQueue) ~= nil then
+            newState = self.EGridMap3DStates.UPDATE
+        else
+            self.bGridGenerated = true
+
+            if g_messageCenter ~= nil then
+                g_messageCenter:publish(MessageType.GRIDMAP3D_GRID_GENERATED)
+            end
+        end
     -- can't change into update if it is still generating
-    if newState == self.EGridMap3DStates.UPDATE and self.currentGridState == self.EGridMap3DStates.GENERATE then
+    elseif newState == self.EGridMap3DStates.UPDATE and self.currentGridState == self.EGridMap3DStates.GENERATE then
         return
     -- if there is work queued when returning to idle should set to update state instead
     elseif newState == self.EGridMap3DStates.IDLE and next(self.gridUpdateReadyQueue) ~= nil then
@@ -587,7 +599,7 @@ function GridMap3D:update(dt)
     end
 
     if self.gridMap3DStates[self.currentGridState] ~= nil then
-         self.gridMap3DStates[self.currentGridState]:update(dt)
+        self.gridMap3DStates[self.currentGridState]:update(dt)
     end
 end
 
@@ -763,7 +775,7 @@ function GridMap3D:clampToGrid(position)
     local gridMaxY = self.nodeTree.children[5].positionY + (self.nodeTree.children[1].size / 2) - 0.1
     local gridMaxZ = self.nodeTree.children[3].positionZ + (self.nodeTree.children[1].size / 2) - 0.1
 
-    local newPosition = {}
+    local newPosition = {x=0,y=0,z=0}
     newPosition.x = MathUtil.clamp(position.x,gridMinX,gridMaxX)
     newPosition.y = MathUtil.clamp(position.y,gridMinY,gridMaxY)
     newPosition.z = MathUtil.clamp(position.z,gridMinZ,gridMaxZ)
@@ -814,7 +826,7 @@ function GridMap3D:getGridNode(position,returnNodeIfSolid,customRootNode)
                 return {currentNode,-1}
             end
 
-            local nodeCornerOrigin = {}
+            local nodeCornerOrigin = {x=0,y=0,z=0}
             nodeCornerOrigin.x = currentNode.positionX - self.maxVoxelResolution * 2
             nodeCornerOrigin.y = currentNode.positionY - self.maxVoxelResolution * 2
             nodeCornerOrigin.z = currentNode.positionZ - self.maxVoxelResolution * 2

@@ -25,7 +25,6 @@
 		<text name="drone_PickupCancelled" text="Returning, no pallet found"/>
 		<text name="drone_Undocking" text="Undocking"/>
 		<text name="drone_Docking" text="Docking"/>
-		<text name="drone_EmergencyUnlink" text="Emergency unlinking"/>
         <text name="listingGUI_droneNotLinked" text="NO DRONE LINKED"/>
 		<text name="listingGUI_newDroneName" text="Give a new name to this drone route"/>
 		<text name="listingGUI_linkButton" text="Link Drone"/>

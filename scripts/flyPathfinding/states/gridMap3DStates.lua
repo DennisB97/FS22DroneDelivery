@@ -377,15 +377,9 @@ function GridMap3DStateGenerate:finishGrid()
         Logging.info(string.format("GridMap3DStateGenerate done generating octree! Took around %d Minutes, %d Seconds",minutes,seconds))
     end
 
-    -- Change state to idle
+    -- Change internal state to idle
     self.currentState = self.EInternalState.IDLE
     if self.owner ~= nil then
-        self.owner.bGridGenerated = true
-
-        if g_messageCenter ~= nil then
-            g_messageCenter:publish(MessageType.GRIDMAP3D_GRID_GENERATED)
-        end
-
         self.owner:changeState(self.owner.EGridMap3DStates.IDLE)
     end
 end
@@ -688,7 +682,7 @@ function GridMap3DStateUpdate:updateGrid()
             return true
         end
 
-          self.bFindNeighbours = true
+        self.bFindNeighbours = true
     end
 
     return false
@@ -1012,7 +1006,7 @@ function GridMap3DStateDebug:printCurrentNodeInfo(node)
         return
     end
 
-    local playerPosition = {}
+    local playerPosition = {x=0,y=0,z=0}
     playerPosition.x,playerPosition.y,playerPosition.z = getWorldTranslation(g_currentMission.player.rootNode)
 
     local aabbNode = {node.positionX - (node.size / 2), node.positionY - (node.size / 2), node.positionZ - (node.size / 2),node.positionX + (node.size / 2), node.positionY + (node.size / 2), node.positionZ + (node.size / 2) }

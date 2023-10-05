@@ -24,7 +24,6 @@ function PickupDeliveryManager.new(owner,isServer,isClient)
     self.deliveryHandler:register(true)
     self.isDeleted = false
     self.pickupCheckTime = 10 -- in seconds how often to check for pallets
-    self.attachSafeOffset = 0.1
     self.currentTime = 0
     self.bIsFirstTime = true -- used to checkup any loaded pallets to get connected back to the drones they were suppose to be picked up by.
     self.palletsNeedInfo = {}
@@ -343,7 +342,6 @@ function PickupDeliveryManager:addNewPallet(object,objectId,y)
         return
     end
 
-    y = y + self.attachSafeOffset
 
     local target = {}
     target.pallet = object
@@ -351,7 +349,6 @@ function PickupDeliveryManager:addNewPallet(object,objectId,y)
 
     local _,posY,_ = getWorldTranslation(objectId)
 
-    target.heightOffset = y - posY
     target.checked = true
     target.bHook = false
 
@@ -365,6 +362,10 @@ function PickupDeliveryManager:addNewPallet(object,objectId,y)
     elseif object.spec_fillUnit ~= nil and object.spec_fillUnit.fillUnits[1] ~= nil then
         target.fillType = object.spec_fillUnit.fillUnits[1].fillType
     end
+
+    y = y + PickupDeliveryHelper.getAttachOffset(object,target.fillType)
+    target.heightOffset = y - posY
+
 
     self.palletsWaiting[object] = target
 end
@@ -617,7 +618,22 @@ function PickupDeliveryManager:createDeliveryAction(drone)
     local endFunction = function(drone)
             if drone ~= nil then
                 drone:drop()
-                drone:changeState(drone.spec_drone.EDroneStates.RETURNING)
+
+                local pickupManager = drone.spec_drone.pickupManager
+
+                local bMore = false
+
+                if pickupManager ~= nil and drone:hasEnoughCharge() then
+                    -- need to override drone is available as it returns only true if it is at the hub, but is now available temprorarily
+                    local originalFunction = drone.isAvailableForPickup
+                    drone.isAvailableForPickup = function() return true end
+                    bMore = pickupManager:requestPickup(drone)
+                    drone.isAvailableForPickup = originalFunction
+                end
+
+                if not bMore then
+                    drone:changeState(drone.spec_drone.EDroneStates.RETURNING)
+                end
             end
         end
 

@@ -25,7 +25,6 @@
 		<text name="drone_PickupCancelled" text="Rücksendung, keine Palette gefunden"/>
 		<text name="drone_Undocking" text="Abdocken"/>
 		<text name="drone_Docking" text="Docking"/>
-		<text name="drone_EmergencyUnlink" text="Notfall-Aufhebung der Verknüpfung"/>
         <text name="listingGUI_droneNotLinked" text="KEINE DROHNE VERBUNDEN"/>
 		<text name="listingGUI_newDroneName" text="Geben Sie dieser Drohnenroute einen neuen Namen"/>
 		<text name="listingGUI_linkButton" text="Link-Drohne"/>

@@ -27,7 +27,7 @@ function DroneActionManager:delete()
     end
 
     self.isDeleted = true
-
+    self:interruptAll()
 
     DroneActionManager:superClass().delete(self)
 end
@@ -92,7 +92,20 @@ function DroneActionManager:interrupt(drone)
             end
         end
 
-
     end
+end
+
+function DroneActionManager:interruptAll()
+
+    if self.currentPhase ~= nil then
+        self:interrupt(self.currentPhase.drone)
+    end
+
+    for _, phase in ipairs(self.phaseQueue) do
+        self:interrupt(phase.drone)
+    end
+
+    self.currentPhase = nil
+    self.phaseQueue = {}
 
 end

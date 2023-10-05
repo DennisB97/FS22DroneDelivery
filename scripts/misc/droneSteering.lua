@@ -17,6 +17,8 @@ function DroneSteering.new(owner,groundOffset,carrySpeed,horizontalSpeed,vertica
     self.carrySpeed = carrySpeed
     self.horizontalSpeed = horizontalSpeed
     self.verticalSpeed = verticalSpeed
+    self.targetQuat = {x=0,y=0,z=0,w=0}
+    self.startQuat = {x=0,y=0,z=0,w=0}
     self.targetSpline = nil
     self.pathDirection = 1
     self.currentSegmentIndex = 1
@@ -24,7 +26,7 @@ function DroneSteering.new(owner,groundOffset,carrySpeed,horizontalSpeed,vertica
     self.maxFutureDistance = 10
     self.minFutureDistance = 2
     self.futureDistance = 5
-    self.targetDistance = 3
+    self.targetDistance = 1
     self.slowRadius = 10
     self.startPointCallback = nil
     self.actionManager = DroneActionManager.new(self,true,false)
@@ -32,6 +34,8 @@ function DroneSteering.new(owner,groundOffset,carrySpeed,horizontalSpeed,vertica
     self.velocity = {x=0,y=0,z=0}
     self.acceleration = 0.5
     self.bHasArrived = false
+    self.minDegreeDifference = 5
+    self.rotationSpeed = 20
     return self
 end
 
@@ -39,11 +43,11 @@ end
 function DroneSteering:interrupt()
 
     self.bHasArrived = false
+    self.previousSpline = self.targetSpline
     self.targetSpline = nil
     if self.actionManager ~= nil then
         self.actionManager:interrupt(self.owner)
     end
-
 
 end
 
@@ -95,9 +99,12 @@ function DroneSteering:getToStartPoint(callback)
                 if self.startPointCallback ~= nil then
                     self.startPointCallback()
                 end
-            end
+                if self.owner ~= nil then
+                    local quatX, quatY, quatZ, quatW = getWorldQuaternion(self.owner.rootNode)
+                    self:setNewTargetRotation({x=quatX,y=quatY,z=quatZ,w=quatW})
+                end
 
---         local rotateToSplineMoveDirection = DroneActionPhase.new(self.owner,nil,splineDirection,nil,10,nil,actionsDoneCallback,nil,nil)
+            end
 
         local moveToSpline = DroneActionPhase.new(self.owner,splinePosition,nil,1,nil,nil,actionsDoneCallback,nil,nil)
 
@@ -144,6 +151,13 @@ function DroneSteering:run(dt)
     DebugUtil.drawOverlapBox(futureX, futureY, futureZ, 0, 0, 0, 0.25, 0.25, 0.25, 0, 0, 1)
 
     local splinePosition, splineDistance,directionToSpline, distanceToTarget = self.targetSpline:getClosePositionOnCurve({x=futureX,y=futureY,z=futureZ},0.10,self.targetSpline.segments[self.currentSegmentIndex])
+    local _,splineDirection, _,_ = self.targetSpline:getSplineInformationAtDistance(splineDistance)
+    if self.pathDirection == -1 then
+        splineDirection.x = splineDirection.x * -1
+        splineDirection.y = splineDirection.y * -1
+        splineDirection.z = splineDirection.z * -1
+    end
+
 
     local bCloseToEnd = self:isWithinSlowRadius(splineDistance)
 
@@ -155,8 +169,8 @@ function DroneSteering:run(dt)
     -- adjust min height from ground as long as not nearing the end which might be near ground
     if not bCloseToEnd then
         self:limitTargetHeight(target)
+        distanceToTarget = MathUtil.vector3Length(splinePosition.x - target.x, splinePosition.y - target.y, splinePosition.z - target.z)
     end
-
 
     DebugUtil.drawOverlapBox(target.x, target.y, target.z, 0, 0, 0, 0.25, 0.25, 0.25, 1, 0, 0)
 
@@ -177,9 +191,9 @@ function DroneSteering:run(dt)
 
     local newPosition = {x= currentPosition.x + (self.velocity.x * sDt),y = currentPosition.y + (self.velocity.y * sDt), z = currentPosition.z + (self.velocity.z * sDt)}
 
-    local quatX, quatY, quatZ, quatW = getWorldQuaternion(self.owner.rootNode)
+    local quatX, quatY, quatZ , quatW = self:getDroneRotation(sDt,splineDirection.x,splineDirection.y,splineDirection.z)
 
-    self.owner:setWorldPositionQuaternion(newPosition.x, newPosition.y, newPosition.z, quatX,quatY, quatZ, quatW, 1, true)
+    self.owner:setWorldPositionQuaternion(newPosition.x, newPosition.y, newPosition.z, quatX,quatY, quatZ, quatW, 1, false)
 
     return false
 end
@@ -197,7 +211,8 @@ function DroneSteering:isWithinSlowRadius(splineDistance)
 end
 
 function DroneSteering:limitTargetHeight(target)
-    target.y = MathUtil.clamp(target.y,self.groundOffset,999999)
+    local terrainHeight = getTerrainHeightAtWorldPos(g_currentMission.terrainRootNode,target.x,target.y,target.z)
+    target.y = MathUtil.clamp(target.y,terrainHeight + self.groundOffset,999999)
 end
 
 function DroneSteering:adjustCurrentSegment(currentPosition)
@@ -251,7 +266,7 @@ function DroneSteering:checkIfArrived(position)
 
     if CatmullRomSpline.isNearlySamePosition(position,goalPosition,0.1) then
         local quatX, quatY, quatZ, quatW = getWorldQuaternion(self.owner.rootNode)
-        self.owner:setWorldPositionQuaternion(goalPosition.x,goalPosition.y,goalPosition.z,quatX,quatY,quatZ,quatW,1,true)
+        self.owner:setWorldPositionQuaternion(goalPosition.x,goalPosition.y,goalPosition.z,quatX,quatY,quatZ,quatW,1,false)
         self:arrived()
         return true
     end
@@ -261,6 +276,7 @@ end
 
 function DroneSteering:arrived()
     self.bHasArrived = true
+    self.previousSpline = self.targetSpline
     self.targetSpline = nil
     self.owner:onDroneArrived()
 end
@@ -296,3 +312,42 @@ function DroneSteering:scaleFutureDistance(magnitude)
 
 end
 
+function DroneSteering:getDroneRotation(sDt,directionX,directionY,directionZ)
+
+    if math.abs(directionY) < 0.8 then
+
+        local velocityQuat = PickupDeliveryHelper.createTargetQuaternion(self.owner.rootNode,{x=directionX,y=directionY,z=directionZ})
+
+        local newTargetDegree = math.deg(math.acos(self.targetQuat.x * velocityQuat.x + self.targetQuat.y * velocityQuat.y + self.targetQuat.z * velocityQuat.z + self.targetQuat.w * velocityQuat.w))
+
+        if newTargetDegree > self.minDegreeDifference then
+            self:setNewTargetRotation(velocityQuat)
+        end
+
+    end
+
+    self.quaternionAlpha = MathUtil.clamp(self.quaternionAlpha + ((self.rotationSpeed * sDt) / self.toTargetDegrees),0,1)
+
+    local quatX,quatY,quatZ,quatW = MathUtil.slerpQuaternion(self.startQuat.x, self.startQuat.y, self.startQuat.z, self.startQuat.w,self.targetQuat.x, self.targetQuat.y, self.targetQuat.z, self.targetQuat.w,self.quaternionAlpha)
+
+    if tostring(quatX) == "nan" or tostring(quatY) == "nan" or tostring(quatZ) == "nan" or tostring(quatW) == "nan" then
+        quatX,quatY,quatZ,quatW = getWorldQuaternion(self.owner.rootNode)
+    end
+
+    return quatX,quatY,quatZ,quatW
+end
+
+function DroneSteering:setNewTargetRotation(targetQuat)
+
+    local quatX, quatY, quatZ, quatW = getWorldQuaternion(self.owner.rootNode)
+    self.startQuat.x, self.startQuat.y, self.startQuat.z, self.startQuat.w = quatX,quatY,quatZ,quatW
+    self.quaternionAlpha = 0
+    self.quaternionAlpha = 0
+    self.toTargetDegrees = 0
+
+    self.targetQuat = targetQuat
+    self.toTargetDegrees = math.deg(math.acos(self.startQuat.x * self.targetQuat.x + self.startQuat.y * self.targetQuat.y + self.startQuat.z * self.targetQuat.z + self.startQuat.w * self.targetQuat.w))
+
+
+
+end

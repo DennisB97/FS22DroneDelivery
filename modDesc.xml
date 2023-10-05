@@ -117,11 +117,11 @@
 
   Beispiele:
   NovaHub-X3:
-  -slot1 drone1
+  -Drohnen 1
   Schafweide (Wolle) -> Spinnerei / Palletenlager / NovaLift / Supermarkt
-  -slot2 drone2
+  -Drohnen 2
   Spinnerei (Stoff) ->  Palletenlager / NovaLift / Supermarkt / Schneiderei
-  -slot3 drone3
+  -Drohnen 3
   Schneiderei (Kleidung) -> Palletenlager / NovaLift / Supermarkt
 
 
