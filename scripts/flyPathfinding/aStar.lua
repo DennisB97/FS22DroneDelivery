@@ -654,7 +654,7 @@ function AStar:find(startPosition,goalPosition,findNearest,allowSolidStart,allow
         return false
     end
 
-    allowSolidStart = (allowSolidStart ~= nil and {allowSolidStart} or {false})[1]
+    self.allowSolidStart = (allowSolidStart ~= nil and {allowSolidStart} or {false})[1]
     self.allowSolidGoal = (allowSolidGoal ~= nil and {allowSolidGoal} or {false})[1]
     self.bSmoothPath = (smoothPath ~= nil and {smoothPath} or {true})[1]
     self.maxSearchedNodes = customSearchNodeLimit or self.defaultMaxSearchedNodes
@@ -1127,16 +1127,14 @@ function AStar:checkgridNodePossibility(gridNode)
         return false
     end
 
-    local isGoal = false
     -- if it is the goal have to add it into the open if bool allows blocked nodes too if was solid.
-    if self:isSameGridNode(gridNode,self.goalGridNode) then
-        isGoal = true
-    end
+    local isGoal = self:isSameGridNode(gridNode,self.goalGridNode)
+    local isStart = self:isSameGridNode(gridNode,self.startGridNode)
 
     -- if it is a leaf node need to check if the leaf node is not full solid and if it is within a leaf voxel that the leaf voxel is not solid.
     if GridMap3DNode.isLeaf(gridNode[1]) then
         if GridMap3DNode.isLeafFullSolid(gridNode[1]) or gridNode[2] > -1 and GridMap3DNode.isNodeSolid(gridNode) then
-            if isGoal and self.allowSolidGoal then
+            if (isGoal and self.allowSolidGoal) or (isStart and self.allowSolidStart) then
                 return true
             else
                 return false

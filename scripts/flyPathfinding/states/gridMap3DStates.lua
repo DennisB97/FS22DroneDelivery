@@ -311,8 +311,6 @@ function GridMap3DStateGenerate:update(dt)
 
     -- on dedicated the grid will be generated much faster
     if g_currentMission ~= nil and g_currentMission.connectedToDedicatedServer then
-        -- accumulate time
-        self.generationTime = self.generationTime + (dt / 1000)
         for i = 0, 30000 do
             if self:iterateOctree() then
                 self:finishGrid()
@@ -525,18 +523,14 @@ function GridMap3DStateUpdate:enter()
     end
 
     self:receiveWork()
-
 end
 
---- leave has no stuff to do in this state.
+--- leave cleans up variables before leaving.
 function GridMap3DStateUpdate:leave()
     GridMap3DStateUpdate:superClass().leave(self)
     self.gridUpdate = nil
-    self.nodesToCheck = nil
     self.nodesToCheck = {}
-    self.currentLayerNodes = nil
     self.currentLayerNodes = {}
-    self.nextLayerNodes = nil
     self.nextLayerNodes = {}
     self.currentNodeIndex = 1
     self.bDeletedNodes = false

@@ -31,7 +31,7 @@ function DroneHubConfigScreen.new(target)
     self.config = nil
     self.camera = GuiTopDownCamera.new(nil, g_messageCenter, g_inputBinding)
     self.cursor = GuiTopDownCursor.new(nil, g_messageCenter, g_inputBinding)
-    self.cursor.rayCollisionMask = CollisionFlag.STATIC_WORLD
+    self.cursor.rayCollisionMask = CollisionFlag.STATIC_WORLD + CollisionFlag.GROUND_TIP_BLOCKING + CollisionFlag.FILLABLE
     self.originalHitCallback = self.cursor.getHitPlaceable
     self.onDrawCallback = function() self:onDraw() end
     self.selectorBrush = nil
@@ -64,16 +64,15 @@ function DroneHubConfigScreen:delete()
         self.cursor = nil
     end
 
-    if self.pickUp ~= nil then
-        self.pickUp:delete()
-        self.pickUp = nil
+    if self.pickupMap ~= nil then
+        self.pickupMap:delete()
+        self.pickupMap = nil
     end
 
-    if self.delivery ~= nil then
-        self.delivery:delete()
-        self.delivery = nil
+    if self.deliveryMap ~= nil then
+        self.deliveryMap:delete()
+        self.deliveryMap = nil
     end
-
 
     DroneHubConfigScreen:superClass().delete(self)
 end
@@ -135,18 +134,18 @@ end
 --- onClose will cleanup the config map screens, and clear the config dirty table.
 function DroneHubConfigScreen:onClose(element)
 
-    if self.pickUp ~= nil then
-        self.pickUp:delete()
-        self.pickUp = nil
+    if self.pickupMap ~= nil then
+        self.pickupMap:delete()
+        self.pickupMap = nil
     end
 
-    if self.delivery ~= nil then
-        self.delivery:delete()
-        self.delivery = nil
+    if self.deliveryMap ~= nil then
+        self.deliveryMap:delete()
+        self.deliveryMap = nil
     end
 
     if self.config ~= nil then
-        self.config:clearDirtyTable()
+        self.config:clearAllDirty()
     end
 
     if self.droneSlot ~= nil then
@@ -155,6 +154,8 @@ function DroneHubConfigScreen:onClose(element)
 
     self.droneSlot = nil
     self.config = nil
+    self.newPickupConfig = nil
+    self.newDeliveryConfig = nil
 
     g_depthOfFieldManager:popArea()
     g_messageCenter:unsubscribeAll(self)
@@ -170,29 +171,33 @@ function DroneHubConfigScreen:onOpen()
     g_depthOfFieldManager:pushArea(0, 0, 1, 1)
 
     -- create the map screens for both pickup and delivery
-    self.pickUp = self.target.droneConfigMapScreen:clone(self,true)
-    self.delivery = self.target.droneConfigMapScreen:clone(self,true)
-    self.pickUp:init(self.config:getPickupPoint())
-    self.delivery:init(self.config:getDeliveryPoint())
-    self.pickUp:setNewTarget(self,"DroneHubConfigScreen")
-    self.delivery:setNewTarget(self,"DroneHubConfigScreen")
+    self.pickupMap = self.target.droneConfigMapScreen:clone(self,true)
+    self.deliveryMap = self.target.droneConfigMapScreen:clone(self,true)
+    self.pickupMap:init(true)
+    self.deliveryMap:init(false)
+    self.pickupMap:setNewTarget(self,"DroneHubConfigScreen")
+    self.deliveryMap:setNewTarget(self,"DroneHubConfigScreen")
+
+    -- create new configs base on the existing that the GUI will change and when applied proceeds to try replace original configs with.
+    self.newPickupConfig = self.config.pickupConfig:copy()
+    self.newDeliveryConfig = self.config.deliveryConfig:copy()
+    self.pickupMap:setPlaceable(self.newPickupConfig.placeable)
+    self.deliveryMap:setPlaceable(self.newDeliveryConfig.placeable)
+
 
     -- sets the buttons callback for each map to pickup and delivery functions
-    self.pickUp:setButtonCallback(function() self:onSetPickupPointClicked() end)
-    self.delivery:setButtonCallback(function() self:onSetDeliveryPointClicked() end)
+    self.pickupMap:setButtonCallback(function() self:onSetPickupPointClicked() end)
+    self.deliveryMap:setButtonCallback(function() self:onSetDeliveryPointClicked() end)
 
     -- adds to the flowLayout the two map screens
     if self.mapConfigs ~= nil then
-        self.mapConfigs.elements[1]:addElement(self.pickUp)
-        self.mapConfigs.elements[3]:addElement(self.delivery)
+        self.mapConfigs.elements[1]:addElement(self.pickupMap)
+        self.mapConfigs.elements[3]:addElement(self.deliveryMap)
         self.mapConfigs:invalidateLayout()
     end
 
-    self.pickUp:updateConfigMapScreen()
-    self.delivery:updateConfigMapScreen()
-
     -- call to add the possible fill types to the selection element
-    self:addFillTypeOptions(self.pickUp:getWorkPointCopy():getFillTypes())
+    self:addFillTypeOptions(self.newPickupConfig.fillTypes)
     self:addFillLimitOptions()
 
     -- prepares the price limit element
@@ -202,6 +207,8 @@ function DroneHubConfigScreen:onOpen()
         self.priceLimitOption.elements[3].elements[1]:setImageFilename("dataS/menu/hud/hud_elements.png")
         FocusManager:removeElement(self.priceLimitOption)
         FocusManager:loadElementFromCustomValues(self.priceLimitOption.elements[3])
+
+        -- dirty way to change the slider position on entering these two elements...
         self.priceLimitCheckOption.elements[3].onFocusEnter = Utils.overwrittenFunction(self.priceLimitCheckOption.elements[3].onFocusEnter,function(...)
             self:onPriceLimitButtonFocused(unpack({...}))
         end)
@@ -212,19 +219,18 @@ function DroneHubConfigScreen:onOpen()
 
     -- sets initial state of the check option for price limit from config copy
     if self.priceLimitCheckOption ~= nil then
-        self.priceLimitCheckOption:setIsChecked(self.pickUp:getWorkPointCopy():hasPriceLimit())
+        self.priceLimitCheckOption:setIsChecked(self.newPickupConfig.bPriceLimit)
     end
 
     -- prepares focuses
-
     FocusManager:removeElement(self.configList)
     FocusManager:removeElement(self.mapConfigs)
-    FocusManager:removeElement(self.pickUp)
-    FocusManager:removeElement(self.delivery)
-    FocusManager:removeElement(self.pickUp.boxLayout)
-    FocusManager:removeElement(self.delivery.boxLayout)
-    FocusManager:loadElementFromCustomValues(self.pickUp:getButtonElement())
-    FocusManager:loadElementFromCustomValues(self.delivery:getButtonElement())
+    FocusManager:removeElement(self.pickupMap)
+    FocusManager:removeElement(self.deliveryMap)
+    FocusManager:removeElement(self.pickupMap.boxLayout)
+    FocusManager:removeElement(self.deliveryMap.boxLayout)
+    FocusManager:loadElementFromCustomValues(self.pickupMap:getButtonElement())
+    FocusManager:loadElementFromCustomValues(self.deliveryMap:getButtonElement())
 
     if self.deliveryTypeOption ~= nil then
         FocusManager:removeElement(self.deliveryTypeOption)
@@ -254,9 +260,7 @@ function DroneHubConfigScreen:onOpen()
     end
 
     self:updateConfigScreen()
-    self:updateFocusNavigation()
-
-    self.pickUp:setButtonFocus()
+    self.pickupMap:setButtonFocus()
 end
 
 --- ugly hack to adjust slider to reveal price limit element, no idea how slider should be setup...
@@ -284,12 +288,12 @@ function DroneHubConfigScreen:reEnableConfigScreen()
         self.applyButton:setVisible(true)
     end
 
-    if self.pickUp ~= nil then
-        self.pickUp:setDisabled(false)
+    if self.pickupMap ~= nil then
+        self.pickupMap:setDisabled(false)
     end
 
-    if self.delivery ~= nil then
-        self.delivery:setDisabled(false)
+    if self.deliveryMap ~= nil then
+        self.deliveryMap:setDisabled(false)
     end
 
     if self.priceLimitOption ~= nil then
@@ -312,7 +316,7 @@ end
 
 --- updateFocusNavigation updates the link directions between the elements for controller navigation.
 function DroneHubConfigScreen:updateFocusNavigation()
-    if self.pickUp == nil or self.delivery == nil or self.priceLimitOption == nil or self.priceLimitCheckOption == nil or
+    if self.pickupMap == nil or self.deliveryMap == nil or self.priceLimitOption == nil or self.priceLimitCheckOption == nil or
             self.deliveryTypeOption == nil or self.mapConfigs == nil or self.fillLimitOption == nil then
         return
     end
@@ -323,21 +327,21 @@ function DroneHubConfigScreen:updateFocusNavigation()
     FocusManager:linkElements(self.priceLimitOption.elements[3],FocusManager.BOTTOM, nil)
     FocusManager:linkElements(self.priceLimitOption.elements[3],FocusManager.LEFT, nil)
 
-    FocusManager:linkElements(self.pickUp:getButtonElement(),FocusManager.BOTTOM, self.deliveryTypeOption)
-    FocusManager:linkElements(self.delivery:getButtonElement(),FocusManager.BOTTOM, self.deliveryTypeOption)
-    FocusManager:linkElements(self.deliveryTypeOption ,FocusManager.TOP, self.pickUp:getButtonElement())
+    FocusManager:linkElements(self.pickupMap:getButtonElement(),FocusManager.BOTTOM, self.deliveryTypeOption)
+    FocusManager:linkElements(self.deliveryMap:getButtonElement(),FocusManager.BOTTOM, self.deliveryTypeOption)
+    FocusManager:linkElements(self.deliveryTypeOption ,FocusManager.TOP, self.pickupMap:getButtonElement())
 
-    FocusManager:linkElements(self.pickUp:getButtonElement(),FocusManager.RIGHT,  self.delivery:getButtonElement())
-    FocusManager:linkElements(self.pickUp:getButtonElement(),FocusManager.LEFT,  nil)
-    FocusManager:linkElements(self.pickUp:getButtonElement(),FocusManager.TOP,  nil)
-    FocusManager:linkElements(self.delivery:getButtonElement(),FocusManager.LEFT,  self.pickUp:getButtonElement())
-    FocusManager:linkElements(self.delivery:getButtonElement(),FocusManager.TOP,  nil)
+    FocusManager:linkElements(self.pickupMap:getButtonElement(),FocusManager.RIGHT,  self.deliveryMap:getButtonElement())
+    FocusManager:linkElements(self.pickupMap:getButtonElement(),FocusManager.LEFT,  nil)
+    FocusManager:linkElements(self.pickupMap:getButtonElement(),FocusManager.TOP,  nil)
+    FocusManager:linkElements(self.deliveryMap:getButtonElement(),FocusManager.LEFT,  self.pickupMap:getButtonElement())
+    FocusManager:linkElements(self.deliveryMap:getButtonElement(),FocusManager.TOP,  nil)
 
 end
 
 --- updateConfigScreen used to update all changing UI elements depending on adjusted configs.
 function DroneHubConfigScreen:updateConfigScreen()
-    if self.droneSlot == nil or self.config == nil or self.header == nil or self.main == nil or self.pickUp == nil or self.delivery == nil
+    if self.droneSlot == nil or self.config == nil or self.header == nil or self.main == nil or self.pickupMap == nil or self.deliveryMap == nil
         or self.priceLimitCheckOption == nil or self.priceLimitOption == nil or self.deliveryTypeOption == nil or self.applyButton == nil or self.fillLimitOption == nil or self.clearButton == nil then
         return
     end
@@ -353,11 +357,11 @@ function DroneHubConfigScreen:updateConfigScreen()
         self.clearButton:setVisible(true)
     end
 
-    -- make delivery option only visible if pickup has already been chosen
-    if self.pickUp:getWorkPointCopy():hasPoint() then
-        self.delivery:setVisible(true)
+    -- make delivery map option only visible if pickup has already been chosen
+    if self.newPickupConfig:hasPoint() then
+        self.deliveryMap:setVisible(true)
     else
-        self.delivery:setVisible(false)
+        self.deliveryMap:setVisible(false)
     end
 
     -- make the other configurations only visible when both pickup and delivery point has been selected
@@ -365,7 +369,7 @@ function DroneHubConfigScreen:updateConfigScreen()
     self.clearButton:setDisabled(false)
 
     self.priceLimitCheckOption.parent:setVisible(false)
-    if self.pickUp:getWorkPointCopy():hasPoint() and self.delivery:getWorkPointCopy():hasPoint() then
+    if self.newPickupConfig:hasPoint() and self.newDeliveryConfig:hasPoint() then
 
         -- set the parent visible which contains all the configuration
         self.priceLimitCheckOption.parent:setVisible(true)
@@ -375,11 +379,10 @@ function DroneHubConfigScreen:updateConfigScreen()
         if self.priceLimitCheckOption:getIsChecked() then
             self.priceLimitOption.elements[3].elements[1]:setImageUVs(nil, unpack(GuiUtils.getUVs({1100, 0, 400, 400},{8192,8192})))
             self.priceLimitOption:setVisible(true)
-            self.priceLimitOption.elements[1]:setText(tostring(self.pickUp:getWorkPointCopy():getPriceLimit()))
+            self.priceLimitOption.elements[1]:setText(tostring(self.newPickupConfig.priceLimit))
         end
 
-
-        -- enable apply button only if there is some things dirty
+        -- enable apply button only if there is some things dirty and when has both a pickup and delivery point
         if self.config:isDirty() then
             self.applyButton:setDisabled(false)
         end
@@ -391,8 +394,8 @@ function DroneHubConfigScreen:updateConfigScreen()
         self.clearButton:setDisabled(true)
     end
 
-    self.pickUp:updateConfigMapScreen()
-    self.delivery:updateConfigMapScreen()
+    self.pickupMap:updateConfigMapScreen()
+    self.deliveryMap:updateConfigMapScreen()
     self:updateFocusNavigation()
 end
 
@@ -452,29 +455,25 @@ function DroneHubConfigScreen:onPriceLimitEntered(_,text,bAccepted)
         local limit = tonumber(text)
 
         if limit ~= nil then
-            self.pickUp:getWorkPointCopy():setPriceLimit(limit)
-            self.delivery:getWorkPointCopy():setPriceLimit(limit)
-            self.config:setDirty(DroneHubSlotConfig.EDirtyFields.PRICELIMIT)
+            self.newPickupConfig.priceLimit = limit
+            self.config:setDirty(self.newPickupConfig,self.newDeliveryConfig,DroneHubSlotConfig.EDirtyFields.PRICELIMIT)
             self:updateConfigScreen()
         else
             -- needed numbers nothing else...
         end
-
     end
-
 end
 
 --- onPriceLimitChecked is callback on the check box if price limit should be used or not.
 function DroneHubConfigScreen:onPriceLimitChecked()
-    if self.priceLimitCheckOption == nil or self.pickUp == nil then
+    if self.priceLimitCheckOption == nil or self.pickupMap == nil then
         return
     end
 
     local bChecked = self.priceLimitCheckOption:getIsChecked()
-    self.pickUp:getWorkPointCopy():setHasPriceLimit(bChecked)
-    self.delivery:getWorkPointCopy():setHasPriceLimit(bChecked)
+    self.newPickupConfig.bPriceLimit = bChecked
 
-    self.config:setDirty(DroneHubSlotConfig.EDirtyFields.PRICELIMITUSED)
+    self.config:setDirty(self.newPickupConfig,self.newDeliveryConfig,DroneHubSlotConfig.EDirtyFields.PRICELIMITUSED)
     self:updateConfigScreen()
 end
 
@@ -482,40 +481,34 @@ end
 --@param index is the new index of the selected text.
 --@param element is the element that changed on.
 function DroneHubConfigScreen:onDeliveryTypeChange(index,element)
-    if index < 1 or element == nil or self.pickUp == nil then
+    if index < 1 or element == nil or self.pickupMap == nil then
         return
     end
 
-
-    if index == self.pickUp:getWorkPointCopy():getFillTypeIndex() then
+    if index == self.newPickupConfig.fillTypeIndex then
         self:updateConfigScreen()
         return
     end
 
-
-    self.pickUp:getWorkPointCopy():setFillTypeIndex(index)
-    self.delivery:getWorkPointCopy():setFillTypeIndex(index)
-
-    self.config:setDirty(DroneHubSlotConfig.EDirtyFields.FILLTYPEID)
+    self.newPickupConfig.fillTypeIndex = index
+    self.config:setDirty(self.newPickupConfig,self.newDeliveryConfig,DroneHubSlotConfig.EDirtyFields.FILLTYPEID)
     self:updateConfigScreen()
 end
 
 function DroneHubConfigScreen:onFillLimitChange(index,element)
-    if index < 1 or element == nil or self.pickUp == nil then
+    if index < 1 or element == nil or self.pickupMap == nil then
         return
     end
 
-    if index == self.pickUp:getWorkPointCopy():getFillLimitIndex() then
+    if index == self.newPickupConfig.fillLimitIndex then
         self:updateConfigScreen()
         return
     end
 
-    self.pickUp:getWorkPointCopy():setFillLimitIndex(index)
-    self.delivery:getWorkPointCopy():setFillLimitIndex(index)
-    self.config:setDirty(DroneHubSlotConfig.EDirtyFields.FILLLIMITID)
+    self.newPickupConfig.fillLimitIndex = index
+    self.config:setDirty(self.newPickupConfig,self.newDeliveryConfig,DroneHubSlotConfig.EDirtyFields.FILLLIMITID)
     self:updateConfigScreen()
 end
-
 
 --- onSetPickupPointClicked is callback on the button to select a pickup point.
 function DroneHubConfigScreen:onSetPickupPointClicked()
@@ -543,7 +536,7 @@ end
 
 --- onAcceptClicked is callback on the settings changes to be accepted button.
 function DroneHubConfigScreen:onAcceptClicked()
-    if self.config == nil or self.pickUp == nil or self.delivery == nil or self.droneSlot == nil then
+    if self.config == nil or self.pickupMap == nil or self.deliveryMap == nil or self.droneSlot == nil then
         return
     end
 
@@ -551,7 +544,7 @@ function DroneHubConfigScreen:onAcceptClicked()
         return
     end
 
-    self.config:verifyWorkPoints(self.pickUp:getWorkPointCopy(),self.delivery:getWorkPointCopy())
+    self.config:verifyWorkConfigs(self.newPickupConfig,self.newDeliveryConfig)
 end
 
 --- onClearClicked is callback on clear button pressed to request clearing the settings.
@@ -575,7 +568,6 @@ function DroneHubConfigScreen:onClearRequested(bAccepted)
         self.droneSlot:requestClear()
     end
 end
-
 
 --- onSettingsApplied will be called after settings has been confirmed to be applied on the hub.
 function DroneHubConfigScreen:onSettingsApplied()
@@ -647,7 +639,7 @@ end
 
 --- onSelection is callback on the action event for choosing a placeable in top down view.
 function DroneHubConfigScreen:onSelection()
-    if self.cursor == nil or self.pickUp == nil or self.delivery == nil or self.config == nil then
+    if self.cursor == nil or self.pickupMap == nil or self.deliveryMap == nil or self.config == nil then
         return
     end
 
@@ -657,72 +649,49 @@ function DroneHubConfigScreen:onSelection()
         return
     end
 
-    local pickupWorkPointCopy = self.pickUp:getWorkPointCopy()
-    local deliveryWorkPointCopy = self.delivery:getWorkPointCopy()
-
+    local allFillTypes = PickupDeliveryHelper.getFilltypeIds(hitPlaceable,self.bPickupSelection)
 
     if self.bPickupSelection then
 
         -- can't set the same placeable again
-        if pickupWorkPointCopy:getPlaceable() == hitPlaceable then
+        if self.newPickupConfig.placeable == hitPlaceable then
             return
         end
-
+        self.pickupMap:setPlaceable(hitPlaceable)
+        self.deliveryMap:setPlaceable(nil)
         -- always resets the delivery point and pickup when selecting new pickup
-        pickupWorkPointCopy:reset()
-        deliveryWorkPointCopy:reset()
+        self.newPickupConfig:reset()
+        self.newDeliveryConfig:reset()
         self.config:setAllDirty()
         if self.priceLimitCheckOption ~= nil then
             self.priceLimitCheckOption:setIsChecked(false)
         end
 
-        self:selectPoint(hitPlaceable,pickupWorkPointCopy)
+        self.newPickupConfig:setPlaceable(hitPlaceable)
+        self.newPickupConfig.allFillTypes = allFillTypes
+
     else
 
         -- can't choose same pickup and delivery point and neither the same delivery point again
-        if hitPlaceable == pickupWorkPointCopy:getPlaceable() or hitPlaceable == deliveryWorkPointCopy:getPlaceable() then
+        if hitPlaceable == self.newPickupConfig.placeable or hitPlaceable == self.newDeliveryConfig.placeable then
             return
         end
 
-        self:selectPoint(hitPlaceable,deliveryWorkPointCopy)
-    end
-
-end
-
---- selectPoint is called when an actual suitable placeable might be selected as pickup/delivery point.
---@param placeable is the possible suitable placeable to set as pickup/delivery.
---@param point is the DroneWorkPoint copy of either pickup or delivery.
-function DroneHubConfigScreen:selectPoint(placeable,point)
-    if self.config == nil then
-        return
-    end
-
-    local allFillTypes = PickupDeliveryHelper.getFilltypeIds(placeable,point:isPickup())
-
-    -- if is not pickup then will validate the filltypes of pickup and delivery if these can be matched together.
-    if not point:isPickup() then
-
-        local availableFillTypes = PickupDeliveryHelper.validateInputOutput(self.pickUp:getWorkPointCopy():getAllFillTypes(),allFillTypes)
-
+        local availableFillTypes = PickupDeliveryHelper.validateInputOutput(self.newPickupConfig.allFillTypes,allFillTypes)
         -- if did not have any common filltype then will return as placeable is not valid delivery place.
         if next(availableFillTypes) == nil then
             return
         end
 
+        self.deliveryMap:setPlaceable(hitPlaceable)
         -- if valid then restricts the filltypes on the pickup to the common ones.
-        self.pickUp:getWorkPointCopy():restrictFilltypes(availableFillTypes)
-        self.pickUp:getWorkPointCopy():setFillTypeIndex(1)
-        self.delivery:getWorkPointCopy():restrictFilltypes(availableFillTypes)
-        self.delivery:getWorkPointCopy():setFillTypeIndex(1)
-
-        self.config:setDirty(DroneHubSlotConfig.EDirtyFields.DELIVERYPLACEABLE)
-
+        self.newPickupConfig:restrictFillTypes(availableFillTypes)
         self:addFillTypeOptions(availableFillTypes)
-    else
-        self.config:setDirty(DroneHubSlotConfig.EDirtyFields.PICKUPPLACEABLE)
+
+        self.newDeliveryConfig:setPlaceable(hitPlaceable)
+        self.config:setDirty(self.newPickupConfig,self.newDeliveryConfig,DroneHubSlotConfig.EDirtyFields.DELIVERYPLACEABLE)
     end
 
-    point:setPlaceable(placeable,allFillTypes)
     self:inactivateSelection()
 end
 
@@ -744,9 +713,8 @@ function DroneHubConfigScreen:addFillTypeOptions(fillTypes)
 
     if self.deliveryTypeOption ~= nil then
         self.deliveryTypeOption:setTexts(texts)
-        self.deliveryTypeOption:setState(self.pickUp:getWorkPointCopy():getFillTypeIndex(),true)
+        self.deliveryTypeOption:setState(self.newPickupConfig.fillTypeIndex,true)
     end
-
 end
 
 --- addFillLimitOptions will add to the selection element all the possible fill level percentage limits as string text array.
@@ -761,7 +729,7 @@ function DroneHubConfigScreen:addFillLimitOptions()
 
     if self.fillLimitOption ~= nil then
         self.fillLimitOption:setTexts(texts)
-        self.fillLimitOption:setState(self.pickUp:getWorkPointCopy():getFillLimitIndex(),true)
+        self.fillLimitOption:setState(self.newPickupConfig.fillLimitIndex,true)
     end
 
 end

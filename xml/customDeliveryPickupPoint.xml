@@ -81,7 +81,5 @@
         <i3dMapping id="levelAreas" node="0>5" />
         <i3dMapping id="scaleTriggers" node="0>6" />
         <i3dMapping id="infoTrigger" node="0>6|0|0" />
-
-
     </i3dMappings>
 </placeable>

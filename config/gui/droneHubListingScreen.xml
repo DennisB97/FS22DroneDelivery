@@ -20,7 +20,7 @@
                     <GuiElement type="empty" size="500px 350px" anchors="0 0 1 1">
                         <GuiElement type="boxLayout" anchors="0 0 1 1" size="500px 350px" autoValidateLayout="true">
                             <GuiElement type="bitmap" profile="mapImage" id="droneMap">
-                                <GuiElement type="bitmap" size="15px 20px" imageColor="1.0 0.0 0.0 1.0" anchors="0.5 0.5 0.5 0.5" />
+                                <GuiElement type="bitmap" size="15px 20px" imageColor="0.16 0.76 0.93 1" anchors="0.5 0.5 0.5 0.5" />
                             </GuiElement>
                         </GuiElement>
                     </GuiElement>
@@ -49,7 +49,7 @@
             <GuiElement type="empty" profile="droneHubSideDiv">
 
                 <GuiElement type="boxLayout" anchors="0.5 0.5 0.5 0.5" alignmentY="bottom" size="500px 300px" >
-                    <GuiElement type="text" size="500px 100px" textColor="1 0 0 1" textSize="0.015" textLayoutMode="overflow" id="linkErrorText" textMaxNumLines="3" text="Can't unlink drone while drone not at the hub! Can't unlink drone while drone not at the hub! Can't unlink drone while drone not at the hub!"  anchors="0 0 1 1"/>
+                    <GuiElement type="text" size="500px 100px" textColor="1 0 0 1" textSize="0.015" textLayoutMode="overflow" id="linkErrorText" textMaxNumLines="3" text=""  anchors="0 0 1 1"/>
                     <GuiElement type="empty" size="500px 100px" anchors="0.0 0.0 1.0 1.0">
                         <GuiElement type="flowLayout" handleFocus="false" alignmentX="center" id="buttonLayout">
                             <!-- <GuiElement type="button" onClick="onClick" profile="textButton" text="Configure"/> -->

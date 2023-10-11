@@ -342,7 +342,6 @@ function GridMap3D.new(gridVersion)
     self.gridMap3DStates[self.EGridMap3DStates.UPDATE]:init(self)
 
     registerObjectClassName(self, "GridMap3D")
-
     return self
 end
 
@@ -351,6 +350,9 @@ end
 function GridMap3D:init()
 
     if g_currentMission ~= nil then
+        -- adds a debugging console command to be able to visualize the octree
+        addConsoleCommand( 'GridMap3DOctreeDebug', 'toggle debugging for octree', 'octreeDebugToggle', g_currentMission.gridMap3D)
+
         -- overlapBox seems to have some bug with non default sized maps.
         if getTerrainSize(g_currentMission.terrainRootNode) ~= 2048 then
             Logging.info("The fly pathfinding does not work on non-default sized maps!")
@@ -492,7 +494,12 @@ end
 --- delete function handles cleaning up the grid.
 function GridMap3D:delete()
 
+    if self.isDeleted then
+        return
+    end
+
     self.isDeleted = true
+    removeConsoleCommand("GridMap3DOctreeDebug")
     if self.gridMap3DStates[self.currentGridState] ~= nil then
         self.gridMap3DStates[self.currentGridState]:leave()
     end
@@ -655,7 +662,7 @@ function GridMap3D:onPlaceableModified(placeable,isDeletion)
 
     local x,y,z = getTranslation(placeable.rootNode)
     local _rotX,rotY,_rotZ = getRotation(placeable.rootNode)
-    -- Init a new grid queue update with the placeable's id and location, and intially has some values set which might change down below if spec_placement exists.
+    -- Init a new grid queue update with the placeable's id and location, and intially has aabb values set which might change down below if spec_placement exists.
     local newWork = GridMap3DUpdate.new(placeable.rootNode,x,y,z,{x - 50, y - 50, z - 50, x + 50, y + 50, z + 50},isDeletion)
 
 

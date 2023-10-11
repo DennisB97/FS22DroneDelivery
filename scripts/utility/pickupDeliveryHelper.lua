@@ -1,4 +1,29 @@
+--[[
+This file is part of Drone delivery mod (https://github.com/DennisB97/FS22DroneDelivery)
 
+Copyright (c) 2023 Dennis B
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this mod and associated files, to copy, modify ,subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+This mod is for personal use only and is not affiliated with GIANTS Software.
+Sharing or distributing FS22_DroneDelivery mod in any form is prohibited except for the official ModHub (https://www.farming-simulator.com/mods).
+Selling or distributing FS22_DroneDelivery mod for a fee or any other form of consideration is prohibited by the game developer's terms of use and policies,
+Please refer to the game developer's website for more information.
+]]
+
+---@class PickupDeliveryHelper table containing various helper functions related to filltypes and pallets and position and rotations.
 PickupDeliveryHelper = {}
 
 -- some that should be able to be picked up by drones, don't have the pallet designation in filltype table.
@@ -20,12 +45,14 @@ PickupDeliveryHelper.allBaleNames = {
     DRYGRASS_WINDROW = true
 }
 
-
+-- special husbandries to avoid, cow uses mixed food so only the husbandry with robot could have hay delivered, but if wanted can use NovaLift for that case.
 PickupDeliveryHelper.specialHusbandryAvoid = {
     COW = true
 }
 
-
+--- isSpecialHusbandryAvoid checks given animalType if it is a husbandry type to avoid or not.
+--@param animalType is animalType to check for.
+--@return true if is suppose to avoid given type.
 function PickupDeliveryHelper.isSpecialHusbandryAvoid(animalType)
     if animalType == nil then
         return false
@@ -34,15 +61,24 @@ function PickupDeliveryHelper.isSpecialHusbandryAvoid(animalType)
     return PickupDeliveryHelper.specialHusbandryAvoid[animalType.name] == true
 end
 
-
+--- isSpecialPalletFillType checks if given filltypename is a special kind.-
+--@param fillTypeName of the filltype to check if it is special type.
+--@return true if was of special type.
 function PickupDeliveryHelper.isSpecialPalletFillType(fillTypeName)
     return PickupDeliveryHelper.specialPalletNames[fillTypeName] == true
 end
 
+--- isBaleFillType called to check if given baleTypeName is of any bale name.
+--@param baleTypeName given name of bale to check if can be accepted or not.
+--@return true if was valid bale.
 function PickupDeliveryHelper.isBaleFillType(baleTypeName)
     return PickupDeliveryHelper.allBaleNames[baleTypeName] == true
 end
 
+--- getObjectId is a helper function to get the objectId of given object/pallet/bale/bigbag.
+-- as Bale's have differently stored the id.
+--@param object to check id of.
+--@return found id of object, could be nil.
 function PickupDeliveryHelper.getObjectId(object)
     local id = object.rootNode
     if object:isa(Bale) then
@@ -52,6 +88,9 @@ function PickupDeliveryHelper.getObjectId(object)
     return id
 end
 
+--- isSupportedObject checks object type if has required specializations that can be delivered by drone.
+--@param object is the object to check if it is valid to be delivered.
+--@return true if is valid.
 function PickupDeliveryHelper.isSupportedObject(object)
 
     if object.spec_bigBag ~= nil or object.spec_pallet ~= nil or object.spec_treeSaplingPallet   then
@@ -61,6 +100,10 @@ function PickupDeliveryHelper.isSupportedObject(object)
     return false
 end
 
+--- getFillTypeIds gets all the available filltypes that can be delivered and picked up by drone.
+--@param placeable is the placeable to check all valid filltypes from.
+--@param bPickup varies which filltypes the placeable will have if it is input or output filltypes.
+--@return an hashtable of all available filltypeIds.
 function PickupDeliveryHelper.getFilltypeIds(placeable,bPickup)
     local fillTypes = {}
 
@@ -197,13 +240,16 @@ function PickupDeliveryHelper.getFilltypeIds(placeable,bPickup)
     return fillTypes
 end
 
+--- validateInputOutput called to compare given pickup and delivery place filltypes and match any same ones as possible fill ids.
+--@param pickupFillTypeIds all available filltypes of the pickup placeable.
+--@param deliveryFillTypeIds all available filltypes of the delivery placeable.
+--@return all possible common filltypes between both pickup and delivery place.
 function PickupDeliveryHelper.validateInputOutput(pickupFillTypeIds,deliveryFillTypeIds)
-    if pickupFillTypeIds == nil or deliveryFillTypeIds == nil then
-        return
-    end
-
-
     local possibleFillIds = {}
+
+    if pickupFillTypeIds == nil or deliveryFillTypeIds == nil then
+        return possibleFillIds
+    end
 
     for fillId,_ in pairs(deliveryFillTypeIds) do
 
@@ -220,6 +266,8 @@ function PickupDeliveryHelper.validateInputOutput(pickupFillTypeIds,deliveryFill
     return possibleFillIds
 end
 
+--- addCustomPointSupportedTypes called to add all available types that can be delivered to given table.
+--@param fillTypes hash table will be filled with all drone carried filltypes.
 function PickupDeliveryHelper.addCustomPointSupportedTypes(fillTypes)
 
     -- adds all bales and pallets as supported in the custom delivery pickup point
@@ -349,12 +397,15 @@ function PickupDeliveryHelper.getPointPosition(bPickup,placeable)
 
     end
 
-
+    -- shouldn't go here, just set point 15m above center of placeable.
     position.x, position.y, position.z = getWorldTranslation(placeable.rootNode)
     position.y = position.y + 15
     return position
 end
 
+--- getPickupArea called to get the information of pickup area.
+--@param placeable is the pickup placeable to check area from.
+--@return pickup info table of {position=,rotation=,scale=}.
 function PickupDeliveryHelper.getPickupArea(placeable)
 
     local pickupInfo = {}
@@ -411,6 +462,9 @@ function PickupDeliveryHelper.getPickupArea(placeable)
     return pickupInfo
 end
 
+--- getPalletSpawnerInfo called to get the pickup info of a placeable which uses a palletSpawner.
+--@param palletSpawner is a placeable spawner to check the area from.
+--@return pickup info table of {position=,rotation=,scale=}.
 function PickupDeliveryHelper.getPalletSpawnerInfo(palletSpawner)
     local firstSpawnPlace = palletSpawner.spawnPlaces[1]
     local spawnPlaceCount = #palletSpawner.spawnPlaces
@@ -448,8 +502,12 @@ function PickupDeliveryHelper.getPalletSpawnerInfo(palletSpawner)
     return pickupInfo
 end
 
+--- getSellPrice called to check the current sell price of a filltype from placeable.
+--@param placeable is the placeable which sells something.
+--@param fillType is the filltype to price check.
+--@return sellPrice of the given filltype in €/1000 liters.
 function PickupDeliveryHelper.getSellPrice(placeable,fillType)
-    local sellPrice = 999999
+    local sellPrice = 999999999
 
     if placeable == nil or placeable.spec_sellingStation == nil then
         return sellPrice
@@ -492,11 +550,14 @@ function PickupDeliveryHelper.hasStorageAvailability(placeable,fillType,fillLeve
         if placeable.spec_husbandryFood.supportedFillTypes ~= nil and not PickupDeliveryHelper.isSpecialHusbandryAvoid(placeable.spec_husbandryAnimals.animalType) then
             if placeable.spec_husbandryFood.feedingTrough ~= nil then
                 local adjustedFillLevel = fillLevel
-                if placeable.spec_husbandryFood.capacity < fillLevel then -- bales might be larger than whole capacity on tiny husbandry
-                    adjustedFillLevel = placeable.spec_husbandryFood.capacity
+                local currentFillLevel = placeable.spec_husbandryFood.fillLevels[fillType] or 0
+                local capacity = placeable.spec_husbandryFood.capacity or 0
+                if capacity < fillLevel then -- bales might be larger than whole capacity on tiny husbandry
+                    adjustedFillLevel = capacity
                 end
+                DebugUtil.printTableRecursively(placeable.spec_husbandryFood,"husbandryFood: ",0,4)
 
-                if placeable.spec_husbandryFood.capacity < placeable.spec_husbandryFood.fillLevels[fillType] + adjustedFillLevel - emptyBufferLevel then
+                if capacity < currentFillLevel + adjustedFillLevel - emptyBufferLevel then
                     return false
                 end
 
@@ -513,11 +574,14 @@ function PickupDeliveryHelper.hasStorageAvailability(placeable,fillType,fillLeve
     return true
 end
 
-function PickupDeliveryHelper.createTargetQuaternion(objectNode,targetDirection)
+--- createTargetQuaternion used to create a quaternion out of a targetDirection.
+--@param objectId object's id that will be the target rotation calculated from.
+--@return quaternion of target rotation.
+function PickupDeliveryHelper.createTargetQuaternion(objectId,targetDirection)
 
-    local quatX, quatY, quatZ, quatW = getWorldQuaternion(objectNode)
+    local quatX, quatY, quatZ, quatW = getWorldQuaternion(objectId)
 
-    local startDirectionX, _, startDirectionZ = localDirectionToWorld(objectNode,0,0,1)
+    local startDirectionX, _, startDirectionZ = localDirectionToWorld(objectId,0,0,1)
 
     local angle = MathUtil.dotProduct(startDirectionX,0,startDirectionZ,targetDirection.x,0,targetDirection.z)
     angle = math.acos(angle)

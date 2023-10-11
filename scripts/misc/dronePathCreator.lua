@@ -1,4 +1,27 @@
+--[[
+This file is part of Drone delivery mod (https://github.com/DennisB97/FS22DroneDelivery)
 
+Copyright (c) 2023 Dennis B
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this mod and associated files, to copy, modify ,subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+This mod is for personal use only and is not affiliated with GIANTS Software.
+Sharing or distributing FS22_DroneDelivery mod in any form is prohibited except for the official ModHub (https://www.farming-simulator.com/mods).
+Selling or distributing FS22_DroneDelivery mod for a fee or any other form of consideration is prohibited by the game developer's terms of use and policies,
+Please refer to the game developer's website for more information.
+]]
 
 ---@class DronePathCreator.
 -- Handles creating path between hub -> pickup -> delivery -> hub.
@@ -20,12 +43,11 @@ function DronePathCreator.new(entrancePosition)
     self.splineGenerator = CatmullRomSplineCreator.new(true,false)
     self.splineGenerator:register(true)
     -- a distance value in m, when closer than this will have lower pathfind between points. Else will go higher up in the sky between points.
-    self.nearbyDistanceLimit = 650
+    self.nearbyDistanceLimit = 600
     -- if longer distance than above limit then, this indicates how high up the path should be made between points.
     self.longDistanceSkyFlyHeight = 50
     -- else lower height
     self.skyFlyHeight = 5
-
     self.callback = nil
     -- these bools indicate which paths need to be made
     self.bRequiresToPickup = false
@@ -38,7 +60,7 @@ function DronePathCreator.new(entrancePosition)
     return self
 end
 
-
+--- delete cleans up the spline and astar generators.
 function DronePathCreator:delete()
 
     if self.splineGenerator ~= nil then
@@ -54,14 +76,18 @@ function DronePathCreator:delete()
     self.trianglePath = nil
     self.previousTriangle = nil
     self.callback = nil
-
 end
 
+--- generateNew called to start a new generation with new pickup and delivery placeable or delivery placeable new.
+--@param pickUpPlaceable is a possible new pickup place.
+--@param deliveryPlaceable is always given, new delivery place.
+--@param callback function to call after all paths generated and made into splines.
 function DronePathCreator:generateNew(pickUpPlaceable,deliveryPlaceable,callback)
     if pickUpPlaceable == nil and deliveryPlaceable == nil then
         return
     end
 
+    -- store previous paths so can be used if a placeable hasn't changed
     self.previousTriangle = self.trianglePath
     self.trianglePath = {}
     self.callback = callback
@@ -95,6 +121,7 @@ function DronePathCreator:generateNew(pickUpPlaceable,deliveryPlaceable,callback
     self:newConnection()
 end
 
+--- newConnection called to proceed create each path in order, and each path has different steps for the generation starting from verticalup.
 function DronePathCreator:newConnection()
     self.currentSpline = nil
     self.currentStep = self.EConnectionStep.VERTICALUP
@@ -102,6 +129,12 @@ function DronePathCreator:newConnection()
     local startPosition = {x=0,y=0,z=0}
     startPosition.x, startPosition.y, startPosition.z = self.entrancePosition.x, self.entrancePosition.y, self.entrancePosition.z
     local endPosition = nil
+
+    if not self:checkPlacablesExists() then
+        self:creationFailed()
+        return
+    end
+
 
     if self.bRequiresToPickup then
         self.bRequiresToPickup = false
@@ -116,42 +149,66 @@ function DronePathCreator:newConnection()
         self.bRequiresToHub = false
         self.currentConnection = self.EConnections.TOHUB
         startPosition = PickupDeliveryHelper.getPointPosition(false,self.deliveryPlaceable)
-        endPosition = {}
+        endPosition = {x=0,y=0,z=0}
         endPosition.x,endPosition.y,endPosition.z = self.entrancePosition.x, self.entrancePosition.y, self.entrancePosition.z
     end
 
     if endPosition ~= nil then
         self.bIsLowerHeight = false
+        -- checking straight distance between start and end, if within limit will fly closer to ground
         if self:isLowerHeightConnection(startPosition,endPosition) then
             self.bIsLowerHeight = true
         end
 
         self:createNewPath(startPosition,self:getNextEndPosition({x=startPosition.x,y=startPosition.y,z=startPosition.z}))
     else -- if no end position means the whole "triangle" path is ready
-        self.callback(self.trianglePath)
+        --last check to check that no placeable was deleted/sold while was generating
+        if not self:checkPlacablesExists() then
+            self:creationFailed()
+        else
+            self.callback(self.trianglePath)
+        end
     end
 
 end
 
+--- checkPlaceablesExists used to check if the pickup and delivery placeable is still valid and not sold/deleted.
+--@return true if they exists.
+function DronePathCreator:checkPlacablesExists()
+    if self.pickUpPlaceable == nil or self.pickUpPlaceable.isDeleted or self.deliveryPlaceable == nil or self.deliveryPlaceable.isDeleted then
+        return false
+    else
+        return true
+    end
+end
+
+--- isLowerHeightConnection check distance between given points if under nearby distance limit.
+--@param startPosition , given as {x=,y=,z=}.
+--@param endPosition, given as {x=,y=,z=}.
+--@return true if distance was within the self.nearbyDistanceLimit.
 function DronePathCreator:isLowerHeightConnection(startPosition,endPosition)
     local distance = MathUtil.vector3Length(startPosition.x - endPosition.x, startPosition.y - endPosition.y, startPosition.z - endPosition.z)
     return distance <= self.nearbyDistanceLimit
 end
 
-
+--- createNewPath called to have AStar class create a path between given points.
+--@param startPosition , given as {x=,y=,z=}.
+--@param endPosition, given as {x=,y=,z=}.
 function DronePathCreator:createNewPath(startPosition,endPosition)
 
     local callback = function(aStarResult) self:onPathCreated(aStarResult) end
     -- To delivery will use the postProcessDronePath function instead of the one in the AStar class.
+    -- to take a bit in consideration the bigger size of drone.
     local bDefaultSmoothPath = self.currentConnection ~= self.EConnections.TODELIVERY
 
     if not self.pathGenerator:find(startPosition,endPosition,false,true,true,callback,bDefaultSmoothPath,5,10000) then
         self:creationFailed()
         return
     end
-
 end
 
+--- onPathCreated is callback for the pathGenerator done.
+--@aStarResult is the result of pathfinding, given as {pathArray,bReachedGoal}.
 function DronePathCreator:onPathCreated(aStarResult)
 
     if not aStarResult[2] then
@@ -179,29 +236,25 @@ function DronePathCreator:onPathCreated(aStarResult)
     self.splineGenerator:createSpline(aStarResult[1],callback,customP0,nil,lastDirection)
 end
 
-
+--- onSplineCreated is callback for the splineGenerator done.
+--@param spline is the created CatmullRomSpline.
 function DronePathCreator:onSplineCreated(spline)
 
-    if self.bIsDirect then
-        self:finalizeSpline(spline)
-        return
-    end
-
+    -- if currently no spline set, then this will be first spline base
     if self.currentSpline == nil then
         self.currentSpline = spline
         lastSegment = self.currentSpline.segments[#self.currentSpline.segments]
         local startPosition = {x = lastSegment.p2.x,y = lastSegment.p2.y,z = lastSegment.p2.z}
         self:createNewPath(startPosition,self:getNextEndPosition({x=startPosition.x,y=startPosition.y,z=startPosition.z}))
-    else
-
+    else -- else combines the newly created into the previous
         local callback = function(newSpline) self:onSplineCombined(newSpline) end
         self.splineGenerator:combineSplinesAtDistance(self.currentSpline,spline,self.currentSpline:getSplineLength(),callback)
-
     end
-
 
 end
 
+--- onSplineCombined is callback when splineGenerator combined the given splines.
+--@param spline is the newly combined spline.
 function DronePathCreator:onSplineCombined(spline)
 
     if self.currentStep == self.EConnectionStep.DONE then
@@ -214,20 +267,29 @@ function DronePathCreator:onSplineCombined(spline)
 
 end
 
---- getNextEndPosition
+--- getNextEndPosition finds the correct end position to pathfind to, and progresses the EConnectionStep forward after each time function is called.
+--@param startPosition is from where the pathfind starts, given as {x=,y=,z=}.
+--@return new endPosition to pathfind to, given as {x=,y=,z=}.
 function DronePathCreator:getNextEndPosition(startPosition)
 
-    self.flyHeight = self.skyFlyHeight
-
-    if not self.bIsLowerHeight then
-        self.flyHeight = self.longDistanceSkyFlyHeight
-    end
+    self.flyHeight = self:getCorrectFlyHeight()
 
     if self.currentStep == self.EConnectionStep.VERTICALUP then
         raycastAll(startPosition.x,startPosition.y,startPosition.z,0,1,0,"heightCheckCallback",self.flyHeight,self,CollisionFlag.STATIC_WORLD,false,false)
-        startPosition.y = startPosition.y + self.flyHeight
+        local newHeight = startPosition.y + self.flyHeight
         self.currentStep = self.EConnectionStep.HORIZONTAL
-        return startPosition
+        -- only if actually higher position was possible then proceed, otherwise will skip vertical up step
+        if newHeight > startPosition.y then
+            startPosition.y = newHeight
+            return startPosition
+        end
+        self.flyHeight = self:getCorrectFlyHeight() -- reset after raycast callback changed it
+    end
+
+    -- have to make sure the placeables exists as below the PickupDeliveryHelper will require the placeable ids to be valid
+    if not self:checkPlacablesExists() then
+        self:creationFailed()
+        return
     end
 
     -- get the end position which is the way when step is HORIZONTAL or VERTICALDOWN
@@ -238,12 +300,22 @@ function DronePathCreator:getNextEndPosition(startPosition)
         finalPosition = PickupDeliveryHelper.getPointPosition(false,self.deliveryPlaceable)
     elseif self.currentConnection == self.EConnections.TOHUB then
         finalPosition = {x=self.entrancePosition.x,y=self.entrancePosition.y,z=self.entrancePosition.z}
+    else
+        return nil
     end
 
     if self.currentStep == self.EConnectionStep.HORIZONTAL then
         raycastAll(finalPosition.x,finalPosition.y,finalPosition.z,0,1,0,"heightCheckCallback",self.flyHeight,self,CollisionFlag.STATIC_WORLD,false,false)
-        finalPosition.y = finalPosition.y + self.flyHeight
-        self.currentStep = self.EConnectionStep.VERTICALDOWN
+        local newHeight = finalPosition.y + self.flyHeight
+        -- if end position horizontal is lower than the actual final position then skips the vertical down step and makes direct path
+        if newHeight <= finalPosition.y then
+            self.currentStep = self.EConnectionStep.DONE
+        else
+            finalPosition.y = newHeight
+            self.currentStep = self.EConnectionStep.VERTICALDOWN
+        end
+
+
     elseif self.currentStep == self.EConnectionStep.VERTICALDOWN then
         self.currentStep = self.EConnectionStep.DONE
     end
@@ -251,6 +323,23 @@ function DronePathCreator:getNextEndPosition(startPosition)
     return finalPosition
 end
 
+--- getCorrectFlyHeight helper function to get correct height value based on bool.
+--@return fly height in the y axis to use.
+function DronePathCreator:getCorrectFlyHeight()
+    if not self.bIsLowerHeight then
+        return self.longDistanceSkyFlyHeight
+    end
+    return self.skyFlyHeight
+end
+
+--- heightCheckCallback is used as callback for rayCastAll.
+-- checks if collides with any placeable, and if it does gets the safe distance that is not inside collision.
+--@param objectId collided objectId.
+--@param x coordinate of hit.
+--@param y coordinate of hit.
+--@param z coordinate of hit.
+--@param distance how long the trace was for hit.
+--@return true to continue search and false if trace should stop.
 function DronePathCreator:heightCheckCallback(objectId, x, y, z, distance)
     if objectId < 1 or objectId == g_currentMission.terrainRootNode then
         return true
@@ -269,6 +358,8 @@ function DronePathCreator:heightCheckCallback(objectId, x, y, z, distance)
     return true
 end
 
+--- finalizeSpline called to complete and add generated spline to the trianglePath.
+--@param spline is the finalized ready spline of one path out of the three.
 function DronePathCreator:finalizeSpline(spline)
 
     if self.currentConnection == self.EConnections.TOPICKUP then
@@ -279,6 +370,7 @@ function DronePathCreator:finalizeSpline(spline)
         self.trianglePath.toHub = spline
     end
 
+    -- after done tries to go for new connections.
     self:newConnection()
 end
 
@@ -344,7 +436,6 @@ function DronePathCreator:postProcessDronePath(path)
                 firstNode = secondNode
                 break
             end
-
         end
 
         if not self.bTraceBlocked then
@@ -367,33 +458,57 @@ function DronePathCreator:postProcessDronePath(path)
 
 end
 
+--- checkShortCut calls to make a rayCastClosest to check if any hit is blocking possible shortcutting in the path.
+--@param startPosition , given as {x=,y=,z=}.
+--@param endPosition, given as {x=,y=,z=}.
 function DronePathCreator:checkShortCut(startPosition,endPosition)
 
-    -- do a raycasts to check if middle node can be left out of path
+    -- do a raycasts to check if middle node can be left out of path, one time out of multiple calls made to make sure a drone size object can pass
     local directionX,directionY,directionZ = MathUtil.vector3Normalize(endPosition.x - startPosition.x,endPosition.y - startPosition.y,endPosition.z - startPosition.z)
     local distance = MathUtil.vector3Length(endPosition.x - startPosition.x,endPosition.y - startPosition.y,endPosition.z - startPosition.z)
     raycastClosest(startPosition.x,startPosition.y,startPosition.z,directionX,directionY,directionZ,"pathTraceCallback",distance,self,CollisionFlag.STATIC_WORLD)
 end
 
-
+--- pathTraceCallback callback to the raycastClosest, if hits any solid placeable will mark as traceBlocked and stop trace.
+--@param objectId is hit id of object.
+--@param return true to continue the trace, false stops when has hit any solid placeable.
 function DronePathCreator:pathTraceCallback(objectId)
     if objectId < 1 or g_currentMission.terrainRootNode == objectId then
         return true
-    else
-        -- set that trace was blocked so can't remove middle path position from between
-        self.bTraceBlocked = true
-        return false
     end
+
+    local object = g_currentMission.nodeToObject[objectId]
+    if object == nil then
+        return true
+    end
+
+    if not object:isa(Placeable) then
+        return true
+    end
+
+    -- set that trace was blocked so can't remove middle path position from between
+    self.bTraceBlocked = true
+    return false
 
 end
 
+--- creationFailed called to mark as creating the paths with given placeables failed.
 function DronePathCreator:creationFailed()
     self.pickUpPlaceable = self.previousPickUpPlaceable
     self.deliveryPlaceable = self.previousDeliveryPlaceable
     self.trianglePath = self.previousTriangle
 
+    if self.pathGenerator ~= nil then
+        self.pathGenerator:interrupt()
+    end
+
+    if self.splineGenerator ~= nil then
+        self.splineGenerator:interrupt()
+    end
+
     if self.callback ~= nil then
         self.callback(nil)
+        self.callback = nil
     end
 
 end

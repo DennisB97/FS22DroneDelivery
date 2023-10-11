@@ -58,7 +58,7 @@
             <TransformGroup name="droneAttachPosition1" translation="0 0.338 0" nodeId="28"/>
           </TransformGroup>
           <Shape shapeId="6" name="menuTrigger" translation="0 0.963302 0.343563" scale="2.5 2 6" static="true" trigger="true" collisionMask="1048576" nodeId="29" materialIds="5" nonRenderable="true" distanceBlending="false"/>
-          <TransformGroup name="entrance" translation="0 1 4.39749" nodeId="30"/>
+          <TransformGroup name="entrance" translation="0 2.652 4.39749" nodeId="30"/>
         </TransformGroup>
         <TransformGroup name="clearAreas" nodeId="31">
           <TransformGroup name="clearArea1Start" translation="1.8 0 5" nodeId="32"/>

@@ -1,6 +1,5 @@
-
 ---@class DroneDeliveryMod is the root class for the drone delivery mod.
--- Does register custom specialization, adds debug console commands and prepares custom GUI.
+-- Does register custom specialization, prepares custom GUI.
 DroneDeliveryMod = {}
 DroneDeliveryMod.modName = g_currentModName;
 DroneDeliveryMod.modDir = g_currentModDirectory;
@@ -17,15 +16,11 @@ function DroneDeliveryMod:loadMap(filename)
     self:setupGui()
 end
 
-
-
 function DroneDeliveryMod:setupGui()
     g_gui:loadProfiles( Utils.getFilename("config/gui/GUIProfiles.xml", DroneDeliveryMod.modDir) )
     g_droneHubScreen = DroneHubScreen.new()
 	g_gui:loadGui(Utils.getFilename("config/gui/droneHubScreen.xml", DroneDeliveryMod.modDir),"DroneHubScreen", g_droneHubScreen)
 end
-
-
 
 --- The register function takes care of adding new placeable specialization and type
 function DroneDeliveryMod.register(typeManager)

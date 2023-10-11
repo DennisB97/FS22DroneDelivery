@@ -86,7 +86,6 @@ end
 function DroneHubScreen:onClose(element)
     DroneHubScreen:superClass().onClose(self)
 
-
     if self.droneList ~= nil then
         self.droneList:deleteListItems()
     end

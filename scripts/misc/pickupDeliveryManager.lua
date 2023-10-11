@@ -14,7 +14,11 @@ InitObjectClass(PickupDeliveryManager, "PickupDeliveryManager")
 function PickupDeliveryManager.new(owner,isServer,isClient)
     local self = Object.new(isServer,isClient, PickupDeliveryManager_mt)
     self.owner = owner
+    self.isServer = isServer
+    self.isClient = isClient
     self.pickupDrones = {}
+    -- drones that have their path changed will be on hold until either a new path has been made and might get removed or if path was invalid will be put back to pickup or delivery drones table.
+    self.onHoldDrones = {}
     self.loadedDrones = {}
     self.readyPickupDrones = {}
     self.deliveryDrones = {}
@@ -23,10 +27,14 @@ function PickupDeliveryManager.new(owner,isServer,isClient)
     self.deliveryHandler = DroneActionManager.new(self,isServer,isClient,true)
     self.deliveryHandler:register(true)
     self.isDeleted = false
-    self.pickupCheckTime = 10 -- in seconds how often to check for pallets
+    self.actionRotationSpeed = 15
+    self.actionMoveSpeed = 1
+    self.minPickupCheckTime = 30 -- in seconds how often to check for pallets min
+    self.maxPickupCheckTime = 60 -- in seconds how often to check for pallets max
+    self.pickupCheckTime = math.random(self.minPickupCheckTime,self.maxPickupCheckTime)
     self.currentTime = 0
     self.bIsFirstTime = true -- used to checkup any loaded pallets to get connected back to the drones they were suppose to be picked up by.
-    self.palletsNeedInfo = {}
+    self.palletNeedInfo = nil
     self.palletsWaiting = {}
     self.palletsScheduled = {}
     self.collisionMask = CollisionFlag.STATIC_WORLD + CollisionFlag.VEHICLE + CollisionFlag.DYNAMIC_OBJECT + CollisionFlag.TRIGGER_VEHICLE + CollisionFlag.FILLABLE
@@ -39,6 +47,7 @@ function PickupDeliveryManager.new(owner,isServer,isClient)
     self.deliveryDroneArrivedCallback = function(drone) self:onDeliveryDroneArrive(drone) end
 
     local callback = function(owner,superFunc) self:canOwnerBeSold(owner,superFunc) end
+    self.originalSellFunction = self.owner.canBeSold
     self.owner.canBeSold = Utils.overwrittenFunction(self.owner.canBeSold,callback)
     return self
 end
@@ -74,20 +83,33 @@ function PickupDeliveryManager:delete()
         self.deliveryHandler = nil
     end
 
-
+    self.owner.canBeSold = self.originalSellFunction
     PickupDeliveryManager:superClass().delete(self)
 end
 
+function PickupDeliveryManager:isUnused()
+    return next(self.pickupDrones) == nil and next(self.deliveryDrones) == nil and next(self.onHoldDrones) == nil and next(self.loadedDrones) == nil
+end
 
-function PickupDeliveryManager:addPickupDrone(drone,hubSlot,config)
+function PickupDeliveryManager:holdDrone(drone)
+    self.readyPickupDrones[drone] = nil
+    self.onHoldDrones[drone] = true
+end
+
+function PickupDeliveryManager:clearHold(drone)
+    self.readyPickupDrones[drone] = true
+    self.onHoldDrones[drone] = nil
+end
+
+function PickupDeliveryManager:addPickupDrone(drone,config)
     if drone == nil then
         return
     end
 
+    self:clearHold(drone)
     if self.pickupDrones[drone] == nil then
         local droneInfo = {}
         self.pickupDrones[drone] = droneInfo
-        droneInfo.hubSlot = hubSlot
         droneInfo.drone = drone
         drone:addOnDroneReturnedListener(self.droneReturnedCallback)
 
@@ -101,6 +123,7 @@ function PickupDeliveryManager:addPickupDrone(drone,hubSlot,config)
 
     self:updatePickupDrone(drone,config)
 
+    self:checkPickup()
     self:raiseActive()
 end
 
@@ -127,11 +150,12 @@ function PickupDeliveryManager:removeDrone(drone)
 
     drone:removeOnDroneArrivedListener(self.pickupDroneArrivedCallback)
     drone:removeOnDroneReturnedListener(self.droneReturnedCallback)
+    self.onHoldDrones[drone] = nil
     self.pickupDrones[drone] = nil
     self.readyPickupDrones[drone] = nil
     self.deliveryDrones[drone] = nil
     self.loadedDrones[drone] = nil
-    if next(self.pickupDrones) == nil and next(self.deliveryDrones) == nil then
+    if self:isUnused() then
         self:delete()
         return true
     elseif next(self.pickupDrones) == nil then
@@ -141,24 +165,12 @@ function PickupDeliveryManager:removeDrone(drone)
     return false
 end
 
-function PickupDeliveryManager:addDeliveryDrone(drone,hubSlot)
-    self.deliveryDrones[drone] = hubSlot
-end
-
---@return true if no more drones are connected to this manager.
-function PickupDeliveryManager:removeDeliveryDrone(drone)
-    self.deliveryDrones[drone] = nil
-    if next(self.pickupDrones) == nil and next(self.deliveryDrones) == nil then
-        self:delete()
-        return true
-    end
-
-    return false
+function PickupDeliveryManager:addDeliveryDrone(drone)
+    self.onHoldDrones[drone] = nil
+    self.deliveryDrones[drone] = true
 end
 
 function PickupDeliveryManager:update(dt)
-
-    DebugUtil.drawOverlapBox(self.pickupInfo.position.x, self.pickupInfo.position.y, self.pickupInfo.position.z, self.pickupInfo.rotation.x, self.pickupInfo.rotation.y, self.pickupInfo.rotation.z, self.pickupInfo.scale.x, self.pickupInfo.scale.y, self.pickupInfo.scale.z, 0, 0, 1)
 
     if self.pickupDrones ~= nil and next(self.pickupDrones) ~= nil then
         self:raiseActive()
@@ -168,6 +180,7 @@ function PickupDeliveryManager:update(dt)
 
     self.currentTime = self.currentTime + (dt / 1000)
     if self.currentTime > self.pickupCheckTime then
+        self.pickupCheckTime = math.random(self.minPickupCheckTime,self.maxPickupCheckTime)
         self:checkPickup()
     end
 end
@@ -214,14 +227,10 @@ function PickupDeliveryManager:checkPickup()
         self.palletsWaiting[pallet] = nil
     end
 
-    -- first time, combine loaded drones to pallets
-    if self.bIsFirstTime then
-        self.bIsFirstTime = false
-        self:reConnectLoadedDrones()
-    end
+    -- prioritize any loaded drones
+    self:reConnectLoadedDrones()
 
     self:requestDrones(self.readyPickupDrones)
-
 end
 
 function PickupDeliveryManager:reConnectLoadedDrones()
@@ -235,6 +244,7 @@ function PickupDeliveryManager:reConnectLoadedDrones()
         self:droneLostTarget(drone)
     end
 
+    self.loadedDrones = {}
 end
 
 
@@ -254,7 +264,7 @@ function PickupDeliveryManager:pickupOverlapCallback(objectId)
     if bValid then
         if self.palletsWaiting[object] == nil and self.palletsScheduled[object] == nil and not object.bDroneCarried then
             -- new pallet need to get connection offset height
-            self.palletsNeedInfo[object] = object
+            self.palletNeedInfo = object
             local x,y,z = getWorldTranslation(objectId)
             raycastAll(x,y + 3,z,0,-1,0,"pickupHeightCheckCallback",6,self,self.collisionMask)
         elseif self.palletsScheduled[object] ~= nil then
@@ -324,8 +334,8 @@ function PickupDeliveryManager:pickupHeightCheckCallback(objectId, x, y, z, dist
         return true
     end
 
-    if self.palletsNeedInfo[object] ~= nil then
-        self.palletsNeedInfo[object] = nil
+    if self.palletNeedInfo == object then
+        self.palletNeedInfo = nil
         self:addNewPallet(object,objectId,y)
         return false
     end
@@ -408,6 +418,7 @@ function PickupDeliveryManager:requestDrones(drones)
 
     for drone,_ in pairs(scheduledDrones) do
         self.readyPickupDrones[drone] = nil
+        self.loadedDrones[drone] = nil
 
         if drones ~= self.readyPickupDrones then
             drones[drone] = nil
@@ -524,7 +535,6 @@ function PickupDeliveryManager:onDeliveryDroneArrive(drone)
     end
 
     drone:removeOnDroneArrivedListener(self.deliveryDroneArrivedCallback)
-
     self:createDeliveryAction(drone)
 end
 
@@ -576,43 +586,25 @@ function PickupDeliveryManager:createPickupAction(drone)
 
     local startingCallback = function(drone)
             if drone:getTarget().bHook then
-                drone:useAnimation("hookAnimation",1,0,nil,nil)
+                drone:playDroneAnimation("hookAnimation",true)
             else
-                drone:useAnimation("palletHolderAnimation",1,0,nil,nil)
+                drone:playDroneAnimation("palletHolderAnimation",true)
             end
         end
 
 
-    local downToPallet = DroneActionPhase.new(drone,{x=targetX,y=targetY + target.heightOffset,z = targetZ} ,nil,0.8,nil,nil,endingCallback,nil,nil)
-    local rotateAgainstPallet = DroneActionPhase.new(drone,nil ,finalTargetDirection,nil,10,nil,nil,nil,downToPallet)
-    local toAbovePallet = DroneActionPhase.new(drone,abovePalletPosition,nil,0.8,nil,nil,nil,nil,rotateAgainstPallet)
-    local pickAction = DroneActionPhase.new(drone,nil,targetDirection,nil,10,startingCallback,nil,nil,toAbovePallet)
+    local downToPallet = DroneActionPhase.new(drone,{x=targetX,y=targetY + target.heightOffset,z = targetZ} ,nil,self.actionMoveSpeed,nil,nil,endingCallback,nil,nil)
+    local rotateAgainstPallet = DroneActionPhase.new(drone,nil ,finalTargetDirection,nil,self.actionRotationSpeed,nil,nil,nil,downToPallet)
+    local toAbovePallet = DroneActionPhase.new(drone,abovePalletPosition,nil,self.actionMoveSpeed,nil,nil,nil,nil,rotateAgainstPallet)
+    local pickAction = DroneActionPhase.new(drone,nil,targetDirection,nil,self.actionRotationSpeed,startingCallback,nil,nil,toAbovePallet)
 
-    self.pickupHandler:addDrone(pickAction)
+    self.pickupHandler:addAction(pickAction)
 end
 
 
 function PickupDeliveryManager:createDeliveryAction(drone)
     if self.owner == nil or drone == nil or self.deliveryHandler == nil then
         return
-    end
-
-    local target = drone:getTarget()
-    if target == nil then
-        drone:changeState(drone.spec_drone.EDroneStates.RETURNING)
-        return
-    end
-
-    local droneX, droneY,droneZ = getWorldTranslation(drone.rootNode)
-    self.distanceToBottom = 0
-
-    -- need to check entity if valid as pallet might have been consumed by now
-    if entityExists(target.objectId) then
-        drone:adjustCarriedPallet(false,target.pallet)
-        local palletX, palletY,palletZ = getWorldTranslation(target.objectId)
-        local terrainHeight = getTerrainHeightAtWorldPos(g_currentMission.terrainRootNode,palletX,palletY,palletZ)
-        self.currentDeliverDrone = drone
-        raycastAll(palletX,terrainHeight,palletZ,0,1,0,"pickupGroundCheckCallback",5,self,self.collisionMask + CollisionFlag.PLAYER)
     end
 
     local endFunction = function(drone)
@@ -638,6 +630,24 @@ function PickupDeliveryManager:createDeliveryAction(drone)
         end
 
 
+    local target = drone:getTarget()
+    if target == nil then
+        endFunction(drone)
+        return
+    end
+
+    local droneX, droneY,droneZ = getWorldTranslation(drone.rootNode)
+    self.distanceToBottom = 0
+
+    -- need to check entity if valid as pallet might have been consumed by now and bigbags need to be skipped doesn't get lowered
+    if entityExists(target.objectId) and target.pallet.spec_bigBag == nil then
+        local palletX, palletY,palletZ = getWorldTranslation(target.objectId)
+        local terrainHeight = getTerrainHeightAtWorldPos(g_currentMission.terrainRootNode,palletX,palletY,palletZ) + 0.1
+        self.deliveryTarget = target.pallet
+        raycastAll(palletX,terrainHeight,palletZ,0,1,0,"pickupGroundCheckCallback",5,self,self.collisionMask + CollisionFlag.PLAYER)
+    end
+
+    local additionalTaskFunction = nil
     local startAction = nil
     -- special case for custom deliverypickup point spec
     if self.owner.spec_customDeliveryPickupPoint ~= nil then
@@ -652,19 +662,28 @@ function PickupDeliveryManager:createDeliveryAction(drone)
             local deliverDirection = {x=0,y=0,z=0}
             deliverDirection.x, deliverDirection.y, deliverDirection.z = MathUtil.vector3Normalize(deliverPosition.x - droneX, deliverPosition.y - droneY, deliverPosition.z - droneZ)
 
-            local toDrop = DroneActionPhase.new(drone,{x=deliverPosition.x,y=droneY - self.distanceToBottom + 0.1,z=deliverPosition.z},nil,0.8,nil,nil,endFunction,nil,nil)
+            local toDrop = DroneActionPhase.new(drone,{x=deliverPosition.x,y=droneY - self.distanceToBottom + 0.1,z=deliverPosition.z},nil,self.actionMoveSpeed,nil,nil,endFunction,nil,nil)
 
-            local toDropPosition = DroneActionPhase.new(drone,{x=deliverPosition.x,y=droneY,z=deliverPosition.z},nil,1,nil,nil,nil,nil,toDrop)
+            local toDropPosition = DroneActionPhase.new(drone,{x=deliverPosition.x,y=droneY,z=deliverPosition.z},nil,self.actionMoveSpeed,nil,nil,nil,nil,toDrop)
 
-            startAction = DroneActionPhase.new(drone,nil,deliverDirection,nil,10,nil,nil,nil,toDropPosition)
+            startAction = DroneActionPhase.new(drone,nil,deliverDirection,nil,self.actionRotationSpeed,nil,nil,nil,toDropPosition)
         end
+    -- when it is not a custom delivery point and carried object is bigbag then will have a delay function to let the bigbag get emptied as it won't get emptied when sitting on ground.
+    elseif target.pallet.spec_bigBag ~= nil then
+        additionalTaskFunction = function(bFinalPosition,bFinalRotation,sDt,currentTime)
+                if currentTime > 8.0 then -- 5sec time the action has to run before this returns true so the action phase can end
+                    return true
+                else
+                    return false
+                end
+            end
     end
 
     if startAction == nil then
-        startAction = DroneActionPhase.new(drone,{x=droneX,y=droneY - self.distanceToBottom + 0.1,z=droneZ},nil,0.8,nil,nil,endFunction,nil,nil)
+        startAction = DroneActionPhase.new(drone,{x=droneX,y=droneY - self.distanceToBottom + 0.1,z=droneZ},nil,self.actionMoveSpeed,nil,nil,endFunction,additionalTaskFunction,nil)
     end
 
-    self.deliveryHandler:addDrone(startAction)
+    self.deliveryHandler:addAction(startAction)
 end
 
 
@@ -678,13 +697,10 @@ function PickupDeliveryManager:pickupGroundCheckCallback(objectId, x, y, z, dist
         return true
     end
 
-    if self.currentDeliverDrone:getTarget() ~= nil and self.currentDeliverDrone:getTarget().pallet == object then
+    if self.deliveryTarget == object then
         self.distanceToBottom = distance
-        print("distance to pallet bottom was : " .. tostring(distance))
         return false
     end
-
-
 
     return true
 end

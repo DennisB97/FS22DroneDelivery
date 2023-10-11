@@ -59,7 +59,6 @@ function PalletAddition:onVehicleFinishLoad()
 
     if PickupDeliveryHelper.isSupportedObject(self) then
         if self.savegame ~= nil then
-
             local bCarried = Utils.getNoNil(self.savegame.xmlFile:getValue(self.savegame.key..".FS22_DroneDelivery#isCarried"),false)
             PalletAddition.loadCarried(self,bCarried)
             return
@@ -73,7 +72,7 @@ function PalletAddition.loadCarried(object,bCarried)
 
     if bCarried then
         local id = PickupDeliveryHelper.getObjectId(object)
-        if id == nil then
+        if id == nil or object == nil or object.isDeleted then
             return
         end
 
@@ -83,6 +82,11 @@ function PalletAddition.loadCarried(object,bCarried)
         end
 
         if object.isServer then
+            -- overriding the update function here temporarily as an ugly hack
+            -- to avoid getting a nil error local x arithmetic, when update ticks after setting pallet to kinematic and the pallet was discharging while game was saved...
+            object.originalUpdateFunction = object.update
+            object.update = Utils.overwrittenFunction(object.update,PalletAddition.updateTest)
+
             setRigidBodyType(id, RigidBodyType.KINEMATIC)
             removeFromPhysics(id)
             addToPhysics(id)
@@ -90,3 +94,9 @@ function PalletAddition.loadCarried(object,bCarried)
     end
 
 end
+
+function PalletAddition:updateTest(superFunc,dt)
+    return
+end
+
+

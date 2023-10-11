@@ -32,7 +32,6 @@ function DroneHubListingScreen:onClose(element)
     self:clearDroneButtons()
 end
 
-
 --- onOpen prepares button callbacks, image files and UV's and focus.
 function DroneHubListingScreen:onOpen()
     DroneHubListingScreen:superClass().onOpen(self)

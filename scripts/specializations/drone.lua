@@ -27,8 +27,6 @@ Please refer to the game developer's website for more information.
 ---@class Drone.
 Drone = {}
 
-
-
 --- prerequisitesPresent checks if all prerequisite specializations are loaded, none needed in this case.
 --@param table specializations specializations.
 --@return boolean hasPrerequisite true if all prerequisite specializations are loaded.
@@ -36,6 +34,7 @@ function Drone.prerequisitesPresent(specializations)
     return true;
 end
 
+--- initSpecialization once init that goes and registers the xml paths and for savefile xml.
 function Drone.initSpecialization()
     Vehicle.xmlSchema:setXMLSpecializationType("Drone")
     Drone.registerXMLPaths(Vehicle.xmlSchema, "vehicle")
@@ -79,7 +78,6 @@ function Drone.registerFunctions(vehicleType)
     SpecializationUtil.registerFunction(vehicleType, "getHubSlot", Drone.getHubSlot)
     SpecializationUtil.registerFunction(vehicleType, "setHubAndSlot", Drone.setHubAndSlot)
     SpecializationUtil.registerFunction(vehicleType, "setDroneIdleState", Drone.setDroneIdleState)
-    SpecializationUtil.registerFunction(vehicleType, "useAnimation", Drone.useAnimation)
     SpecializationUtil.registerFunction(vehicleType, "setAnimationBool", Drone.setAnimationBool)
     SpecializationUtil.registerFunction(vehicleType, "addOnDroneArrivedListener", Drone.addOnDroneArrivedListener)
     SpecializationUtil.registerFunction(vehicleType, "removeOnDroneArrivedListener", Drone.removeOnDroneArrivedListener)
@@ -107,6 +105,10 @@ function Drone.registerFunctions(vehicleType)
     SpecializationUtil.registerFunction(vehicleType, "placeToStore", Drone.placeToStore)
     SpecializationUtil.registerFunction(vehicleType, "storeParkingOverlapCallback", Drone.storeParkingOverlapCallback)
     SpecializationUtil.registerFunction(vehicleType, "estimatePathChargeConsumption", Drone.estimatePathChargeConsumption)
+    SpecializationUtil.registerFunction(vehicleType, "setDroneAnimationDirectly", Drone.setDroneAnimationDirectly)
+    SpecializationUtil.registerFunction(vehicleType, "stopDroneAnimation", Drone.stopDroneAnimation)
+    SpecializationUtil.registerFunction(vehicleType, "playDroneAnimation", Drone.playDroneAnimation)
+    SpecializationUtil.registerFunction(vehicleType, "setManagers", Drone.setManagers)
 
 end
 
@@ -119,7 +121,6 @@ function Drone.registerEvents(vehicleType)
     SpecializationUtil.registerEvent(vehicleType, "onTargetLost")
     SpecializationUtil.registerEvent(vehicleType, "onPathReceived")
     SpecializationUtil.registerEvent(vehicleType, "onPointLost")
-
 end
 
 --- registerOverwrittenFunctions register overwritten functions.
@@ -145,29 +146,15 @@ function Drone:onLoad(savegame)
     local xmlFile = self.xmlFile
     local spec = self.spec_drone
     spec.EDroneStates = {NOROUTE = 0,WAITING = 1, CHARGING = 2, PICKING_UP = 3, DELIVERING = 4, RETURNING = 5, UNLINKED = 7, PICKUPCANCELLED = 8, UNDOCKING = 9, DOCKING = 10}
-    -- states classes will be only valid for server
-    spec.droneStates = {}
     spec.currentState = spec.EDroneStates.NOROUTE
     local loadID = ""
     spec.charge = self:randomizeCharge()
-    spec.droneDirtyFlag = self:getNextDirtyFlag()
-    spec.dronePositionDirtyFlag = self:getNextDirtyFlag()
-    spec.defaultCollisionMask = 203002
-    spec.linkedCollisionMask = CollisionFlag.PLAYER
     spec.bUpdateInitialized = false
-    spec.leftLegCol = xmlFile:getValue("vehicle.drone#leftLegCollision",nil,self.components,self.i3dMappings)
-    spec.rightLegCol = xmlFile:getValue("vehicle.drone#rightLegCollision",nil,self.components,self.i3dMappings)
-
     -- animation related bools
     spec.bLegsUp = false
     spec.bHookDown = false
     spec.bPalletHooksDown = false
     spec.bRotorsSpinning = false
-
-    spec.lastAbsolutePosition = {}
-    spec.lastAbsolutePosition.x, spec.lastAbsolutePosition.y, spec.lastAbsolutePosition.z = getWorldTranslation(self.rootNode)
-    spec.lastAbsoluteRotation = {}
-    spec.lastAbsoluteRotation.x, spec.lastAbsoluteRotation.y, spec.lastAbsoluteRotation.z = getWorldRotation(self.rootNode)
 
     if self.isClient then
         spec.samples = {}
@@ -175,7 +162,6 @@ function Drone:onLoad(savegame)
     end
 
     if self.isServer then
-
         if FlyPathfinding.bPathfindingEnabled then
             -- this path and spline creator will be used in cases where the usual trianglePath can't be used.
             spec.specialPathCreator = AStar.new(self.isServer,self.isClient)
@@ -184,6 +170,13 @@ function Drone:onLoad(savegame)
             spec.specialSplineCreator:register(true)
         end
 
+        spec.droneDirtyFlag = self:getNextDirtyFlag()
+        spec.droneOwnerDirtyFlag = self:getNextDirtyFlag()
+        spec.leftLegCol = xmlFile:getValue("vehicle.drone#leftLegCollision",nil,self.components,self.i3dMappings)
+        spec.rightLegCol = xmlFile:getValue("vehicle.drone#rightLegCollision",nil,self.components,self.i3dMappings)
+        spec.defaultCollisionMask = 203002
+        spec.linkedCollisionMask = 0
+        spec.dronePositionDirtyFlag = self:getNextDirtyFlag()
         spec.estimatedChargeUse = 5
         self.getObjectToMount = Utils.overwrittenFunction(self.getObjectToMount,self.onGetPalletToMount)
         spec.chargeSpeed = Utils.getNoNil(xmlFile:getValue("vehicle.drone#chargeSpeed"),5)
@@ -200,6 +193,8 @@ function Drone:onLoad(savegame)
         spec.arrivedListeners = {}
         spec.returnedListeners = {}
         spec.steering = DroneSteering.new(self,spec.groundOffset,spec.carrySpeed,spec.horizontalSpeed,spec.verticalSpeed)
+        -- states classes will be only valid for server
+        spec.droneStates = {}
         -- not all states need a class, some are mainly for showing the state name in hub.
         spec.droneStates[spec.EDroneStates.CHARGING] = DroneChargeState.new()
         spec.droneStates[spec.EDroneStates.CHARGING]:init(self,self.isServer,self.isClient)
@@ -217,13 +212,13 @@ function Drone:onLoad(savegame)
         spec.droneStates[spec.EDroneStates.DOCKING]:init(self,self.owner,self.isServer,self.isClient)
     end
 
-
     if savegame ~= nil then
         loadID = Utils.getNoNil(savegame.xmlFile:getValue(savegame.key..".FS22_DroneDelivery.drone#linkID"),"")
         -- on loading drones from save which is linked adds it to hash table so hubs can easily go through it and link this table reference.
         if loadID ~= "" then
             DroneDeliveryMod.loadedLinkedDrones[loadID] = self
 
+            -- load state and mark that state as loaded state
             local loadedState = savegame.xmlFile:getValue(savegame.key..".FS22_DroneDelivery.drone#state")
             if spec.droneStates[loadedState] ~= nil then
                 spec.droneStates[loadedState]:setIsSaveLoaded()
@@ -234,22 +229,14 @@ function Drone:onLoad(savegame)
 
         end
 
-        if spec.currentState == spec.EDroneStates.DELIVERING then
-
-            spec.carriedLoadedPalletPosition = {}
-            spec.carriedLoadedPalletPosition.x ,spec.carriedLoadedPalletPosition.y,spec.carriedLoadedPalletPosition.z = savegame.xmlFile:getValue(savegame.key..".FS22_DroneDelivery.drone#palletCoordinates")
-        end
-
         spec.charge = Utils.getNoNil(savegame.xmlFile:getValue(savegame.key..".FS22_DroneDelivery.drone#charge"),self:randomizeCharge())
         spec.bLegsUp = Utils.getNoNil(savegame.xmlFile:getValue(savegame.key..".FS22_DroneDelivery.drone#bLegsUp"),false)
         spec.bHookDown = Utils.getNoNil(savegame.xmlFile:getValue(savegame.key..".FS22_DroneDelivery.drone#bHookDown"),false)
         spec.bPalletHooksDown = Utils.getNoNil(savegame.xmlFile:getValue(savegame.key..".FS22_DroneDelivery.drone#bPalletHooksDown"),false)
         spec.bRotorsSpinning = Utils.getNoNil(savegame.xmlFile:getValue(savegame.key..".FS22_DroneDelivery.drone#bRotorsSpinning"),false)
-
     end
 
     self:setLinkID(loadID)
-
 end
 
 --- onDelete when drone deleted,
@@ -286,9 +273,9 @@ function Drone:onUpdate(dt)
     if not spec.bUpdateInitialized then
         spec.bUpdateInitialized = true
 
-        -- if bigbag hook down call to set linkID again so that the proper collision mask can now be set after update has run once
-        if spec.bHookDown then
-            self:setLinkID(spec.linkID)
+        -- setting back the original update function here as result from ugly hack in PalletAddition.
+        if self.spec_tensionBelts ~= nil and self.spec_tensionBelts.objectsToJoint[1] ~= nil then
+            self.spec_tensionBelts.objectsToJoint[1].object.update = self.spec_tensionBelts.objectsToJoint[1].object.originalUpdateFunction
         end
 
         -- the animations are valid now in first update tick, sets the initial state as loaded.
@@ -320,6 +307,8 @@ function Drone:onUpdate(dt)
         end
     end
 
+    self:raiseActive()
+
     if self.isServer then
         if spec.droneStates[spec.currentState] ~= nil then
             spec.droneStates[spec.currentState]:update(dt)
@@ -328,28 +317,21 @@ function Drone:onUpdate(dt)
         if not self:isDroneAtHub() and self:isLinked() and g_currentMission.gridMap3D ~= nil and g_currentMission.gridMap3D:isAvailable() then
             self:consumeBattery(dt)
         end
-
-        self:debugRender(dt)
     end
+
+
+    self:debugRender(dt)
 end
-
---- updateTick called every network tick if raiseactive
---@param is deltatime in ms.
-function Drone:updateTick(dt)
-
-    Drone:superClass().updateTick(self, dt)
-end
-
 
 --- debugRender if debug is on for mod then debug renders some .
 --@param dt is deltatime received from update function.
 function Drone:debugRender(dt)
-    if not self.isServer then
+    if g_currentMission.connectedToDedicatedServer and self.isServer then
         return
     end
 
     local spec = self.spec_drone
-    self:raiseActive()
+
     local positionX, positionY, positionZ = getWorldTranslation(self.rootNode)
 
     renderText3D(positionX - 1, positionY + 1.0, positionZ,0,0,0,0.25,"Current state:")
@@ -357,8 +339,6 @@ function Drone:debugRender(dt)
 
     renderText3D(positionX - 1, positionY + 1.5, positionZ,0,0,0,0.25,"Charge:")
     renderText3D(positionX + 1.5, positionY + 1.5, positionZ,0,0,0,0.25,string.format("%.1f",self:getCharge()))
-
-
 
 end
 
@@ -383,9 +363,6 @@ function Drone.registerDroneSaveXMLPaths(schema, basePath)
     schema:register(XMLValueType.STRING, basePath .. "#linkID", "link id between hub and drone")
     schema:register(XMLValueType.INT, basePath .. "#state", "state drone was in")
     schema:register(XMLValueType.INT, basePath .. "#charge", "charge % drone was in")
-    schema:register(XMLValueType.VECTOR_TRANS, basePath .. "#palletCoordinates", "If drone was carrying a pallet check coordinates")
-
-
     schema:register(XMLValueType.BOOL, basePath .. "#bLegsUp", "charge % drone was in")
     schema:register(XMLValueType.BOOL, basePath .. "#bHookDown", "charge % drone was in")
     schema:register(XMLValueType.BOOL, basePath .. "#bPalletHooksDown", "charge % drone was in")
@@ -406,13 +383,6 @@ function Drone:saveToXMLFile(xmlFile, key, usedModNames)
     xmlFile:setValue(key.."#bHookDown",spec.bHookDown)
     xmlFile:setValue(key.."#bPalletHooksDown",spec.bPalletHooksDown)
     xmlFile:setValue(key.."#bRotorsSpinning",spec.bRotorsSpinning)
-
-    if spec.currentState == spec.EDroneStates.DELIVERING and spec.target ~= nil then
-        local x,y,z = getWorldTranslation(spec.target.objectId)
-        xmlFile:setValue(key.."#palletCoordinates",x,y,z)
-    end
-
-
 end
 
 --- onReadStream initial receive at start from server these variables.
@@ -425,14 +395,14 @@ function Drone:onReadStream(streamId, connection)
         local state = streamReadInt8(streamId)
         self:changeState(state)
         spec.charge = streamReadInt8(streamId)
-        spec.lastAbsolutePosition.x = streamReadFloat32(streamId)
-        spec.lastAbsolutePosition.y = streamReadFloat32(streamId)
-        spec.lastAbsolutePosition.z = streamReadFloat32(streamId)
-        spec.lastAbsoluteRotation.x = NetworkUtil.readCompressedAngle(streamId)
-        spec.lastAbsoluteRotation.y = NetworkUtil.readCompressedAngle(streamId)
-        spec.lastAbsoluteRotation.z = NetworkUtil.readCompressedAngle(streamId)
+        local x = streamReadFloat32(streamId)
+        local y = streamReadFloat32(streamId)
+        local z = streamReadFloat32(streamId)
+        local rotX = NetworkUtil.readCompressedAngle(streamId)
+        local rotY = NetworkUtil.readCompressedAngle(streamId)
+        local rotZ = NetworkUtil.readCompressedAngle(streamId)
 
-        self:setAbsolutePosition(spec.lastAbsolutePosition.x, spec.lastAbsolutePosition.y, spec.lastAbsolutePosition.z, spec.lastAbsoluteRotation.x, spec.lastAbsoluteRotation.y, spec.lastAbsoluteRotation.z)
+        self:setAbsolutePosition(x, y, z, rotX, rotY, rotZ)
 
         spec.bLegsUp = streamReadBool(streamId)
         spec.bHookDown = streamReadBool(streamId)
@@ -446,6 +416,7 @@ function Drone:onReadStream(streamId, connection)
         end
         self:raiseActive()
     end
+
 end
 
 --- onWriteStream initial sync at start from server to client these variables.
@@ -470,11 +441,10 @@ function Drone:onWriteStream(streamId, connection)
         streamWriteBool(streamId,spec.bPalletHooksDown)
         streamWriteBool(streamId,spec.bRotorsSpinning)
 
-        if streamWriteBool(streamId,self.hub ~= nil) then
+        if streamWriteBool(streamId,spec.hub ~= nil) then
             streamWriteInt8(streamId,spec.hubSlotIndex)
-            NetworkUtil.writeNodeObject(streamId,self.hub)
+            NetworkUtil.writeNodeObject(streamId,spec.hub)
         end
-
 
     end
 
@@ -485,29 +455,37 @@ function Drone:onReadUpdateStream(streamId, timestamp, connection)
     if connection:getIsServer() then
         local spec = self.spec_drone
 
-        local state = streamReadInt8(streamId)
-        self:changeState(state)
-
-        -- the rotor animation play state is synced automatically by events but the rotor sound will be received by the stream
-        local rotorSpin = streamReadBool(streamId)
-        if rotorSpin ~= spec.bRotorsSpinning and spec.samples ~= nil and spec.samples.rotor ~= nil then
-            spec.bRotorsSpinning = rotorSpin
-            if spec.bRotorsSpinning then
-                g_soundManager:playSample(spec.samples.rotor)
-            else
-                g_soundManager:stopSample(spec.samples.rotor)
+        if streamReadBool(streamId) then
+            local state = streamReadInt8(streamId)
+            self:changeState(state)
+            -- the rotor animation play state is synced automatically by events but the rotor sound will be received by the stream
+            local rotorSpin = streamReadBool(streamId)
+            if rotorSpin ~= spec.bRotorsSpinning and spec.samples ~= nil and spec.samples.rotor ~= nil then
+                spec.bRotorsSpinning = rotorSpin
+                if spec.bRotorsSpinning then
+                    g_soundManager:playSample(spec.samples.rotor)
+                else
+                    g_soundManager:stopSample(spec.samples.rotor)
+                end
             end
+            spec.charge = streamReadInt8(streamId)
         end
 
         if streamReadBool(streamId) then
-            spec.lastAbsolutePosition.x = streamReadFloat32(streamId)
-            spec.lastAbsolutePosition.y = streamReadFloat32(streamId)
-            spec.lastAbsolutePosition.z = streamReadFloat32(streamId)
-            spec.lastAbsoluteRotation.x = NetworkUtil.readCompressedAngle(streamId)
-            spec.lastAbsoluteRotation.y = NetworkUtil.readCompressedAngle(streamId)
-            spec.lastAbsoluteRotation.z = NetworkUtil.readCompressedAngle(streamId)
+            spec.hubSlotIndex = streamReadInt8(streamId)
+            spec.hub = NetworkUtil.readNodeObject(streamId)
+            spec.hubSlot = spec.hub.spec_droneHub.droneSlots[spec.hubSlotIndex]
+        end
 
-            self:setAbsolutePosition(spec.lastAbsolutePosition.x, spec.lastAbsolutePosition.y, spec.lastAbsolutePosition.z, spec.lastAbsoluteRotation.x, spec.lastAbsoluteRotation.y, spec.lastAbsoluteRotation.z)
+        if streamReadBool(streamId) then
+            local x = streamReadFloat32(streamId)
+            local y = streamReadFloat32(streamId)
+            local z = streamReadFloat32(streamId)
+            local rotX = NetworkUtil.readCompressedAngle(streamId)
+            local rotY = NetworkUtil.readCompressedAngle(streamId)
+            local rotZ = NetworkUtil.readCompressedAngle(streamId)
+
+            self:setAbsolutePosition(x, y, z, rotX, rotY, rotZ)
         end
 
 
@@ -520,12 +498,18 @@ function Drone:onWriteUpdateStream(streamId, connection, dirtyMask)
     if not connection:getIsServer() then
         local spec = self.spec_drone
 
-        streamWriteInt8(streamId,spec.currentState)
+        if streamWriteBool(streamId,bitAND(dirtyMask,spec.droneDirtyFlag) ~= 0) then
+            streamWriteInt8(streamId,spec.currentState)
+            streamWriteBool(streamId,spec.bRotorsSpinning)
+            streamWriteInt8(streamId,spec.charge)
+        end
 
-        streamWriteBool(streamId,spec.bRotorsSpinning)
+        if streamWriteBool(streamId,bitAND(dirtyMask,spec.droneOwnerDirtyFlag) ~= 0) then
+            streamWriteInt8(streamId,spec.hubSlotIndex)
+            NetworkUtil.writeNodeObject(streamId,spec.hub)
+        end
 
         if streamWriteBool(streamId,bitAND(dirtyMask,spec.dronePositionDirtyFlag) ~= 0) then
-
             local x,y,z = getWorldTranslation(self.rootNode)
             local xRot,yRot,zRot = getWorldRotation(self.rootNode)
             streamWriteFloat32(streamId, x)
@@ -534,7 +518,6 @@ function Drone:onWriteUpdateStream(streamId, connection, dirtyMask)
             NetworkUtil.writeCompressedAngle(streamId, xRot)
             NetworkUtil.writeCompressedAngle(streamId, yRot)
             NetworkUtil.writeCompressedAngle(streamId, zRot)
-
         end
 
     end
@@ -589,17 +572,20 @@ function Drone:onHubUnlink(bEmergencyUnlink)
 
     self:setLinkID("")
     self:setHubAndSlot(nil,nil,nil)
-    self:changeState(spec.EDroneStates.NOROUTE)
-    self:setAnimationsToDefault()
+
+    if self.isServer then
+        self:changeState(spec.EDroneStates.NOROUTE)
+        self:setAnimationsToDefault()
+    end
 
     if bEmergencyUnlink and self.isServer then
 
-        local carriedPallet = self:emergencyDrop()
-        if carriedPallet ~= nil then
-            self:placeToStore(PickupDeliveryHelper.getObjectId(carriedPallet))
+        local droppedPallet = self:emergencyDrop()
+        if droppedPallet ~= nil then
+            self:placeToStore(droppedPallet)
         end
 
-        self:placeToStore(self.rootNode)
+        self:placeToStore(self)
     end
 
 end
@@ -614,6 +600,9 @@ function Drone:onHubLoaded(hub,hubSlot,hubSlotIndex)
     if spec.droneStates[spec.currentState] ~= nil then
         spec.droneStates[spec.currentState]:hubLoaded()
     end
+
+    self:raiseDirtyFlags(spec.droneOwnerDirtyFlag)
+
 end
 
 function Drone:setLinkID(id)
@@ -626,18 +615,23 @@ function Drone:setLinkID(id)
     if self.isServer then
         if id ~= "" then
 
-            -- attached bigbag can behave weirdly if drone has no collision at start so if update hasn't run yet then doesn't set collision to linked collision mask
-            if spec.bUpdateInitialized or (not spec.bUpdateInitialized and not spec.bHookDown) then
-                setCollisionMask(self.rootNode,spec.linkedCollisionMask)
-                setCollisionMask(spec.leftLegCol,spec.linkedCollisionMask)
-                setCollisionMask(spec.rightLegCol,spec.linkedCollisionMask)
-            end
+--             -- attached bigbag can behave weirdly if drone has no collision at start so if update hasn't run yet then doesn't set collision to linked collision mask
+--             if spec.bUpdateInitialized or (not spec.bUpdateInitialized and not spec.bHookDown) then
+--                 setCollisionMask(self.rootNode,spec.linkedCollisionMask)
+--                 setCollisionMask(spec.leftLegCol,spec.linkedCollisionMask)
+--                 setCollisionMask(spec.rightLegCol,spec.linkedCollisionMask)
+--             end
 
+            setCollisionMask(self.rootNode,0)
+            setCollisionMask(spec.leftLegCol,0)
+            setCollisionMask(spec.rightLegCol,0)
             setRigidBodyType(self.rootNode, RigidBodyType.KINEMATIC)
             self.components[1].isKinematic = true
             self.components[1].isDynamic = false
         else
             setCollisionMask(self.rootNode,spec.defaultCollisionMask)
+            setCollisionMask(spec.leftLegCol,spec.defaultCollisionMask)
+            setCollisionMask(spec.rightLegCol,spec.defaultCollisionMask)
             setRigidBodyType(self.rootNode, RigidBodyType.DYNAMIC)
             self.components[1].isKinematic = false
             self.components[1].isDynamic = true
@@ -742,8 +736,9 @@ function Drone:changeState(newState)
         self:raiseDirtyFlags(spec.droneDirtyFlag)
     end
 
-    if spec.hubSlot ~= nil then
-        spec.hubSlot:onDroneDataChanged()
+
+    if spec.hub ~= nil and spec.hubSlotIndex ~= nil then
+        spec.hub:onDataChange(spec.hubSlotIndex)
     end
 
 end
@@ -812,53 +807,57 @@ end
 
 function Drone:hasEnoughCharge()
     local spec = self.spec_drone
-    return (spec.charge - spec.estimatedChargeUse) > 0
+    -- charge to be at least left higher than 5 to go pickup
+    return (spec.charge - spec.estimatedChargeUse) > 5
 end
 
--- server only.
-function Drone:useAnimation(animationName,speed,animTime,bSetDirectTime,bStopAnimation)
+function Drone:setDroneAnimationDirectly(animationName,bState)
+    local spec = self.spec_drone
 
-    if bSetDirectTime then
-        self:setAnimationTime(animationName,animTime)
-        self:setAnimationBool(animationName,false,animTime ~= 0)
-    elseif bStopAnimation then
+    local animTime = 0
+
+    if bState == true then
+        animTime = 1
+    end
+
+    self:setAnimationTime(animationName,animTime)
+    self:setAnimationBool(animationName,bState)
+end
+
+--- stopDroneAnimation used to stop looping animations, so rotor animation.
+function Drone:stopDroneAnimation(animationName)
+    local spec = self.spec_drone
+
+    if animationName == "rotorAnimation" then
         self:stopAnimation(animationName,false)
-        self:setAnimationBool(animationName,false,false)
-    else
-        self:playAnimation(animationName,speed,animTime,false,true)
-        self:setAnimationBool(animationName,true)
+        self:setAnimationBool(animationName,false)
     end
 
 end
 
-function Drone:setAnimationBool(animationName,bFlip,bActive)
+function Drone:playDroneAnimation(animationName,bState)
+    local spec = self.spec_drone
+
+    local speed = -1
+    if bState == true then
+        speed = 1
+    end
+
+    self:playAnimation(animationName,speed,self:getAnimationTime(animationName),false,true)
+    self:setAnimationBool(animationName,bState)
+end
+
+function Drone:setAnimationBool(animationName,bState)
     local spec = self.spec_drone
 
     if animationName == "legAnimation" then
-        if bFlip then
-            spec.bLegsUp = not spec.bLegsUp
-        else
-            spec.bLegsUp = bActive
-        end
+        spec.bLegsUp = bState
     elseif animationName == "hookAnimation" then
-        if bFlip then
-            spec.bHookDown = not spec.bHookDown
-        else
-            spec.bHookDown = bActive
-        end
+        spec.bHookDown = bState
     elseif animationName == "palletHolderAnimation" then
-        if bFlip then
-            spec.bPalletHooksDown = not spec.bPalletHooksDown
-        else
-            spec.bPalletHooksDown = bActive
-        end
+        spec.bPalletHooksDown = bState
     elseif animationName == "rotorAnimation" then
-        if bFlip then
-            spec.bRotorsSpinning = not spec.bRotorsSpinning
-        else
-            spec.bRotorsSpinning = bActive
-        end
-
+        spec.bRotorsSpinning = bState
         if spec.samples ~= nil and spec.samples.rotor ~= nil then
             if spec.bRotorsSpinning then
                 g_soundManager:playSample(spec.samples.rotor)
@@ -908,14 +907,11 @@ function Drone:onTargetReceived(target)
 
     spec.target = target
 
-    if spec.currentState ~= spec.EDroneStates.PICKING_UP then
-
-        -- if delivering state means just after delivering drone was requested again by the manager to go deliver, no need to undock
-        if spec.currentState == spec.EDroneStates.DELIVERING then
-            self:changeState(spec.EDroneStates.PICKING_UP)
-        else
-            self:changeState(spec.EDroneStates.UNDOCKING)
-        end
+    -- if delivering state means just after delivering drone was requested again by the manager to go deliver, no need to undock
+    if spec.currentState == spec.EDroneStates.DELIVERING then
+        self:changeState(spec.EDroneStates.PICKING_UP)
+    elseif self:isDroneAtHub() then
+        self:changeState(spec.EDroneStates.UNDOCKING)
     else
         self:raiseActive()
     end
@@ -933,8 +929,8 @@ function Drone:onTargetLost()
 
     print("on target lost")
     self:changeState(spec.EDroneStates.PICKUPCANCELLED)
-    self:useAnimation("hookAnimation",-1,self:getAnimationTime("hookAnimation"),nil,nil)
-    self:useAnimation("palletHolderAnimation",-1,self:getAnimationTime("palletHolderAnimation"),nil,nil)
+    self:playDroneAnimation("hookAnimation",false)
+    self:playDroneAnimation("palletHolderAnimation",false)
 end
 
 function Drone:getTarget()
@@ -956,20 +952,28 @@ function Drone:onPointLost()
         spec.deliveryManager = nil
     end
 
-    local carriedPallet = self:emergencyDrop()
-    if carriedPallet ~= nil then
-        self:placeToStore(PickupDeliveryHelper.getObjectId(carriedPallet))
+    if not self:isDroneAtHub() then
+        local droppedPallet = self:emergencyDrop()
+        if droppedPallet ~= nil then
+            self:placeToStore(droppedPallet)
+        end
+        self:changeState(spec.EDroneStates.PICKUPCANCELLED)
+    else
+        self:setDroneIdleState()
     end
-    self:changeState(spec.EDroneStates.PICKUPCANCELLED)
+
 end
 
+function Drone:setManagers(pickupManager,deliveryManager)
+    local spec = self.spec_drone
+    spec.pickupManager = pickupManager
+    spec.deliveryManager = deliveryManager
+end
 
-function Drone:onPathReceived(trianglePath,pickupManager,deliveryManager)
+function Drone:onPathReceived(trianglePath)
     local spec = self.spec_drone
 
     spec.trianglePath = trianglePath
-    spec.pickupManager = pickupManager
-    spec.deliveryManager = deliveryManager
 
     self:estimatePathChargeConsumption()
 
@@ -991,18 +995,18 @@ function Drone:setAnimationsToDefault()
     local spec = self.spec_drone
 
     if spec.bLegsUp then
-        self:useAnimation("legAnimation",-1,self:getAnimationTime("legAnimation"),nil,nil)
+        self:setDroneAnimationDirectly("legAnimation",false)
     end
 
     if spec.bHookDown then
-        self:useAnimation("hookAnimation",-1,self:getAnimationTime("hookAnimation"),nil,nil)
+        self:setDroneAnimationDirectly("hookAnimation",false)
     end
 
     if spec.bPalletHooksDown then
-        self:useAnimation("palletHolderAnimation",-1,self:getAnimationTime("palletHolderAnimation"),nil,nil)
+        self:setDroneAnimationDirectly("palletHolderAnimation",false)
     end
 
-    self:useAnimation("rotorAnimation",nil,nil,false,true)
+    self:stopDroneAnimation("rotorAnimation")
 
     if self.isServer then
         self:raiseDirtyFlags(spec.droneDirtyFlag)
@@ -1034,6 +1038,9 @@ end
 function Drone:drop()
     local spec = self.spec_drone
     if spec.target == nil then
+        self:playDroneAnimation("palletHolderAnimation",false)
+        self:playDroneAnimation("hookAnimation",false)
+        self:setAllTensionBeltsActive(false,false)
         return false
     end
 
@@ -1042,10 +1049,10 @@ function Drone:drop()
         if self.spec_attacherJoints.attachedImplements[1] ~= nil and self.spec_attacherJoints.attachedImplements[1].object ~= nil and entityExists(PickupDeliveryHelper.getObjectId(self.spec_attacherJoints.attachedImplements[1].object)) then
             self:detachImplement(1)
         end
-        self:useAnimation("hookAnimation",-1,self:getAnimationTime("hookAnimation"),nil,nil)
+        self:playDroneAnimation("hookAnimation",false)
     else
         self:setAllTensionBeltsActive(false,false)
-        self:useAnimation("palletHolderAnimation",-1,self:getAnimationTime("palletHolderAnimation"),nil,nil)
+        self:playDroneAnimation("palletHolderAnimation",false)
     end
     spec.target.pallet.bDroneCarried = false
     self:adjustCarriedPallet(false,spec.target.pallet)
@@ -1095,11 +1102,15 @@ function Drone:adjustCarriedPallet(bCarrying,pallet)
         return
     end
 
+    if pallet.isDeleted or not entityExists(id) then
+        return
+    end
+
     if bCarrying then
         spec.originalPalletCollisionMasks = {}
         spec.originalPalletCollisionMasks.child = {}
         spec.originalPalletCollisionMasks.main = getCollisionMask(id)
-        setCollisionMask(id,spec.linkedCollisionMask)
+        setCollisionMask(id,CollisionFlag.PLAYER)
 
         if pallet.spec_bigBag then
             setCollisionMask(id,0) -- no player collision either on bigbag, as drone has playercollision and bigbag might bug out above drone
@@ -1113,9 +1124,9 @@ function Drone:adjustCarriedPallet(bCarrying,pallet)
                     spec.originalPalletCollisionMasks.child[childNode] = getCollisionMask(childNode)
 
                     if pallet.spec_bigBag then
-                        setCollisionMask(id,0) -- no player collision either on bigbag, as drone has playercollision and bigbag might bug out above drone
+                        setCollisionMask(childNode,0) -- no player collision either on bigbag, as drone has playercollision and bigbag might bug out above drone
                     else
-                        setCollisionMask(childNode,spec.linkedCollisionMask)
+                        setCollisionMask(childNode,CollisionFlag.PLAYER)
                     end
                 end
             end
@@ -1138,6 +1149,9 @@ function Drone:adjustCarriedPallet(bCarrying,pallet)
                 end
             end
         end
+        setRigidBodyType(id, RigidBodyType.DYNAMIC)
+        removeFromPhysics(id)
+        addToPhysics(id)
     end
 
 end
@@ -1190,8 +1204,8 @@ function Drone:emergencyDrop()
     -- drop a bigbag if is carried
     if self.spec_attacherJoints.attachedImplements[1] ~= nil and self.spec_attacherJoints.attachedImplements[1].object ~= nil then
         self:adjustCarriedPallet(false,self.spec_attacherJoints.attachedImplements[1].object)
-        self:detachImplement(1)
         droppedObject = self.spec_attacherJoints.attachedImplements[1].object
+        self:detachImplement(1)
     end
 
     for objectId, data in pairs(self.spec_tensionBelts.objectsToJoint) do
@@ -1201,24 +1215,24 @@ function Drone:emergencyDrop()
 
     self:setAllTensionBeltsActive(false,false)
 
-    self:useAnimation("hookAnimation",-1,self:getAnimationTime("hookAnimation"),nil,nil)
-    self:useAnimation("palletHolderAnimation",-1,self:getAnimationTime("palletHolderAnimation"),nil,nil)
+    self:playDroneAnimation("hookAnimation",false)
+    self:playDroneAnimation("palletHolderAnimation",false)
 
     return droppedObject
 end
 
 
-function Drone:placeToStore(objectId)
+function Drone:placeToStore(object)
     local spec = self.spec_drone
-
+    DebugUtil.printTableRecursively(g_currentMission.storeSpawnPlaces,"spawnPlaces: ",0,2)
     local storeSpawnPlace = g_currentMission.storeSpawnPlaces[1]
-    if storeSpawnPlace == nil then
+    if storeSpawnPlace == nil or object == nil or object.isDeleted then
         return
     end
 
     local tries = 0
-    local maxTries = 10
-
+    local maxTries = 100
+    local objectId = PickupDeliveryHelper.getObjectId(object)
 
     while tries <= maxTries do
 
@@ -1232,13 +1246,23 @@ function Drone:placeToStore(objectId)
         overlapBox(randomPosition.x,randomPosition.y,randomPosition.z,0,0,0,1,1,1,"storeParkingOverlapCallback",self,CollisionFlag.VEHICLE + CollisionFlag.FILLABLE + CollisionFlag.DYNAMIC_OBJECT,true,false,true,false)
 
         if not spec.bStoreOverlapCheckSolid then
-                if objectId == self.rootNode then
-                    local rotX, rotY, rotZ = getWorldRotation(self.rootNode)
-                    self:setDirectPosition(randomPosition,{x=rotX,y=rotY,z=rotZ},true)
+            if object == self then -- case when is drone and not carried pallet
+                local rotX, rotY, rotZ = getWorldRotation(self.rootNode)
+                self:setDirectPosition(randomPosition,{x=rotX,y=rotY,z=rotZ},true)
+            else
+
+                if object.spec_bigBag ~= nil then
+                    local tempRootNode = createTransformGroup("tempRootNode")
+                    setTranslation(tempRootNode,randomPosition.x,randomPosition.y,randomPosition.z)
+                    for i, component in pairs(object.components) do
+                        local x,y,z = localToWorld(tempRootNode, unpack(component.originalTranslation))
+                        setWorldTranslation(component.node,x,y,z)
+                    end
+                    delete(tempRootNode)
                 else
                     setTranslation(objectId,randomPosition.x,randomPosition.y,randomPosition.z)
                 end
-
+            end
             break
         end
 
@@ -1277,14 +1301,13 @@ function Drone:estimatePathChargeConsumption()
     totalDistance = totalDistance + spec.trianglePath.toHub:getSplineLength()
 
     -- simply calculates 90% as fullspeed and rest vertical
-    local fullSpeedDistance = totalDistance * 0.9
+    local fullSpeedDistance = totalDistance * 0.85
     local slowSpeedDistance = totalDistance - fullSpeedDistance
 
     local secondsTaken = fullSpeedDistance / spec.horizontalSpeed
     secondsTaken = secondsTaken + (slowSpeedDistance / spec.verticalSpeed)
 
     spec.estimatedChargeUse = secondsTaken * spec.chargeConsumption
-    print("estimated charge use for route is : " .. tostring(spec.estimatedChargeUse))
 end
 
 

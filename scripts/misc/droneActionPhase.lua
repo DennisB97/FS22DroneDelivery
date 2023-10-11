@@ -120,20 +120,25 @@ function DroneActionPhase:run(dt)
 
         quatX,quatY,quatZ,quatW = MathUtil.slerpQuaternion(self.startQuat.x, self.startQuat.y, self.startQuat.z, self.startQuat.w,self.targetQuat.x, self.targetQuat.y, self.targetQuat.z, self.targetQuat.w,self.quaternionAlpha)
 
+        -- slerpQuaternion might give NaN values need to filter out
+        if tostring(quatX) == "nan" or tostring(quatY) == "nan" or tostring(quatZ) == "nan" or tostring(quatW) == "nan" then
+            quatX,quatY,quatZ,quatW = getWorldQuaternion(self.owner.rootNode)
+        end
+
         if self.quaternionAlpha < 1 then
             bFinalRotation = false
         end
 
     end
 
-    self.currentTime = self.currentTime + (dt/1000)
+    self.currentTime = self.currentTime + sDt
 
     self.drone:setWorldPositionQuaternion(x,y,z, quatX,quatY,quatZ,quatW, 1, false)
 
     local additionalTaskDone = true
 
     if self.additionalTaskCallback ~= nil then
-        additionalTaskDone = self.additionalTaskCallback(bFinalPosition,bFinalRotation,dt)
+        additionalTaskDone = self.additionalTaskCallback(bFinalPosition,bFinalRotation,sDt,self.currentTime)
     end
 
     if bFinalPosition and bFinalRotation and additionalTaskDone then

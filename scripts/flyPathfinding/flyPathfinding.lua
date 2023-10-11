@@ -101,9 +101,6 @@ function FlyPathfinding:loadMapData(xmlFile)
                 g_currentMission.gridMap3D = nil
                 return
             end
-
-            -- adds a debugging console command to be able to visualize the octree
-            addConsoleCommand( 'GridMap3DOctreeDebug', 'toggle debugging for octree', 'octreeDebugToggle', g_currentMission.gridMap3D)
             FlyPathfinding.bPathfindingEnabled = true
         else
             Logging.info("Some other mod has created the pathfinding grid before this mod at: " .. FlyPathfinding.modDir)

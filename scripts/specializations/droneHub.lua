@@ -219,28 +219,6 @@ function DroneHub:onUpdate(dt)
         spec.bSearchedDrones = true
     end
 
---     self:raiseActive()
---     spec.test = spec.test + (dt/1000)
---
---     if spec.test > 30 then
---         spec.test = 0
---         local firstSlotAnimatedObject = self.spec_animatedObjects.animatedObjects[1]
---         if firstSlotAnimatedObject ~= nil and firstSlotAnimatedObject.activatable ~= nil then
---             firstSlotAnimatedObject.activatable:onAnimationInputToggle()
---         end
---
---         local secondSlotAnimatedObject = self.spec_animatedObjects.animatedObjects[2]
---         if secondSlotAnimatedObject ~= nil and secondSlotAnimatedObject.activatable ~= nil then
---             secondSlotAnimatedObject.activatable:onAnimationInputToggle()
---         end
---
---         local thirdSlotAnimatedObject = self.spec_animatedObjects.animatedObjects[3]
---         if thirdSlotAnimatedObject ~= nil and thirdSlotAnimatedObject.activatable ~= nil then
---             thirdSlotAnimatedObject.activatable:onAnimationInputToggle()
---         end
---
---     end
-
 end
 
 function DroneHub:setChargeCoverAnimation(slotIndex,bOpen)
@@ -279,10 +257,6 @@ function DroneHub:onFinalizePlacement()
     local xmlFile = self.xmlFile
 
     if self.isServer and not spec.bInvalid then
-        DebugUtil.printTableRecursively(self.spec_animatedObjects,"self.spec_animatedObjects : ",0,5)
-        DebugUtil.printTableRecursively(PlaceableAnimatedObjects,"PlaceableAnimatedObjectsC : ",0,5)
-        DebugUtil.printTableRecursively(AnimatedObject,"AnimatedObjectC : ",0,5)
-        DebugUtil.printTableRecursively(AnimatedObjectActivatable,"AnimatedObjectActivatableC : ",0,5)
         spec.droneHandler = DroneActionManager.new(self,self.isServer,self.isClient,false)
         spec.droneHandler:register(true)
 
@@ -468,31 +442,6 @@ function DroneHub:getEntrancePosition()
 
     return {x=spec.entrancePosition.x, y=spec.entrancePosition.y,z=spec.entrancePosition.z}
 end
--- --- collectPickObjectsOW overriden function for collecting pickable objects, avoiding error for trigger node getting added twice.
--- --@param superFunc original function.
--- --@param trigger node
--- function DroneHub:collectPickObjectsOW(superFunc,node)
---     local spec = self.spec_droneHub
---     local bExists = false
---
---     if spec == nil then
---         superFunc(self,node)
---         return
---     end
---
---     if getRigidBodyType(node) ~= RigidBodyType.NONE then
---        for _, loadTrigger in ipairs(spec.unloadingStation.unloadTriggers) do
---             if node == loadTrigger.exactFillRootNode then
---                 bExists = true
---                 break
---             end
---         end
---     end
---
---     if not bExists then
---         superFunc(self,node)
---     end
--- end
 
 --- onMenuTriggerCallback is called when player enters larger trigger around the hub.
 --@param triggerId is the trigger's id.
@@ -552,14 +501,14 @@ function DroneHub:unLinkDrone(slotIndex)
     spec.droneSlots[slotIndex]:finalizeUnlinking()
 end
 
-function DroneHub:receiveConfigSettings(slotIndex,pickUpPointCopy,deliveryPointCopy)
+function DroneHub:receiveConfigSettings(slotIndex,newPickupConfig,newDeliveryConfig)
 
     local spec = self.spec_droneHub
     if spec.droneSlots == nil or spec.droneSlots[slotIndex] == nil then
         return
     end
 
-    spec.droneSlots[slotIndex]:verifySettings(pickUpPointCopy,deliveryPointCopy)
+    spec.droneSlots[slotIndex]:verifySettings(newPickupConfig,newDeliveryConfig)
 end
 
 function DroneHub:clearConfigSettings(slotIndex)
@@ -571,13 +520,14 @@ function DroneHub:clearConfigSettings(slotIndex)
     spec.droneSlots[slotIndex]:finalizeSettingsClear()
 end
 
-function DroneHub:validatedSlotSettings(slotIndex,bValid)
+--@param bLoadedConfig indicates if the settings were loaded from xml file.
+function DroneHub:validatedSlotSettings(slotIndex,bValid,bLoadedConfig)
     local spec = self.spec_droneHub
     if spec.droneSlots == nil or spec.droneSlots[slotIndex] == nil then
         return
     end
 
-    spec.droneSlots[slotIndex]:onValidatedSettings(bValid)
+    spec.droneSlots[slotIndex]:onValidatedSettings(bValid,bLoadedConfig)
 end
 
 function DroneHub:renameDroneRoute(slotIndex,name)
