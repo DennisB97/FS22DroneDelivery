@@ -1,5 +1,3 @@
-
-
 --- UnLinkDroneEvent is used for linking a hub and a drone together.
 UnLinkDroneEvent = {}
 UnLinkDroneEvent_mt = Class(UnLinkDroneEvent,Event)

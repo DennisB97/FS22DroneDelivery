@@ -1,4 +1,3 @@
-
 --- linkDroneEvent is used for linking a hub and a drone together.
 LinkDroneEvent = {}
 LinkDroneEvent_mt = Class(LinkDroneEvent,Event)

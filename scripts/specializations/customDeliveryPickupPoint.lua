@@ -23,8 +23,6 @@ Selling or distributing FS22_DroneDelivery mod for a fee or any other form of co
 Please refer to the game developer's website for more information.
 ]]
 
-
-
 --- CustomDeliveryPickupPoint specialization for placeables.
 ---@class CustomDeliveryPickupPoint.
 CustomDeliveryPickupPoint = {}
@@ -356,7 +354,7 @@ function CustomDeliveryPickupPoint:scaleAll()
     -- -1 on scale so diagonal scaling is correct
     local scale = spec.scale - 1
 
-    local diagonalScale = (1.4142 * spec.defaultSize / 2) * scale
+    local diagonalScale = (0.7071 * spec.defaultSize) * scale
 
     if spec.allStripes.leftTop ~= nil then
 
@@ -419,7 +417,6 @@ end
 -- used to update the stripe positions, and prepares to create all pallet positions.
 function CustomDeliveryPickupPoint:onFinalizePlacement()
     local spec = self.spec_customDeliveryPickupPoint
-    local xmlFile = self.xmlFile
 
     -- update local position tables now when final scale been set as placeable is placed
     spec.allStripes.leftTopPosition.x, spec.allStripes.leftTopPosition.y, spec.allStripes.leftTopPosition.z = getTranslation(spec.allStripes.leftTop)
@@ -560,7 +557,7 @@ function CustomDeliveryPickupPoint:createPalletPositions()
 
     local palletSize = spec.defaultSize
     spec.tiles = (spec.defaultSize * spec.scale) / palletSize
-    local halfDiagonal = (palletSize*1.4142)/2
+    local halfDiagonal = palletSize * 0.7071
 
     -- chosen one corner with offset of half pallet size, pallet size is basically set as 2m, most default game objects fits in this range.
     local startPositionX, startPositionY, startPositionZ = spec.allStripes.leftTopPosition.x + (spec.allStripes.diagonalTopLeftDirection.x * -1 * halfDiagonal),spec.allStripes.leftTopPosition.y, spec.allStripes.leftTopPosition.z + (spec.allStripes.diagonalTopLeftDirection.z * -1 * halfDiagonal)

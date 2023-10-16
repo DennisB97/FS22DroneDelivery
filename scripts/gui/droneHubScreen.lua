@@ -1,4 +1,3 @@
-
 ---@class DroneHubScreen is main start screen for configuring drones from a drone hub.
 DroneHubScreen = {}
 DroneHubScreen.CONTROLS = {
@@ -24,7 +23,7 @@ function DroneHubScreen.new()
         end
     end
 
-    -- creates all the screens that this screen will be using.
+    -- creates all the other screens that this screen will be using.
     self.droneListScreen = DroneHubListingScreen.new(self)
     g_gui:loadGui(Utils.getFilename("config/gui/droneHubListingScreen.xml", DroneDeliveryMod.modDir),"DroneHubListingScreen",self.droneListScreen)
     FocusManager:loadElementFromCustomValues(self.droneListScreen)
@@ -39,6 +38,7 @@ function DroneHubScreen.new()
     return self
 end
 
+--- mouseEventFix overriden mouseEvent to fix nil issue caused by something unknown.
 function DroneHubScreen.mouseEventFix(self,superFunc,posX, posY, isDown, isUp, button, eventUsed)
     if eventUsed == nil then
         eventUsed = false
@@ -104,6 +104,7 @@ function DroneHubScreen:onOpen()
 
     if self.droneList ~= nil and self.controller ~= nil then
 
+        -- ugly fix for unknown nil in mouseEvent
         local function mouseEvent(self,superFunc,posX, posY, isDown, isUp, button, eventUsed)
                 if self:getIsActive() and not self.ignoreMouse then
                     if DroneHubScreen.mouseEventFix(self,nil, posX, posY, isDown, isUp, button, eventUsed) then

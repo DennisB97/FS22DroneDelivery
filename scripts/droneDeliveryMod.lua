@@ -12,7 +12,9 @@ DroneDeliveryMod.loadedLinkedDrones = {}
 g_droneHubScreen = nil
 
 function DroneDeliveryMod:loadMap(filename)
-    PalletAddition.initialize()
+    if g_server ~= nil then
+        PalletAddition.initialize()
+    end
     self:setupGui()
 end
 

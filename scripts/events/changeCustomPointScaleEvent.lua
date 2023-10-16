@@ -1,4 +1,3 @@
-
 --- ChangeCustomPointScaleEvent is used to change scale of custom delivery pickup point when changing scale of it when constructing.
 ChangeCustomPointScaleEvent = {}
 ChangeCustomPointScaleEvent_mt = Class(ChangeCustomPointScaleEvent,Event)
@@ -31,7 +30,7 @@ function ChangeCustomPointScaleEvent:writeStream(streamId, connection)
     streamWriteInt8(streamId, self.scale)
 end
 
---- run sets the drone hub in use or not in use.
+--- run gives the position string and scale to server's CustomDeliveryPickupPoint.
 function ChangeCustomPointScaleEvent:run(connection)
 
     if self.positionString ~= nil then
@@ -53,5 +52,4 @@ function ChangeCustomPointScaleEvent.sendEvent(positionString,scale)
     else
         g_client:getServerConnection():sendEvent(ChangeCustomPointScaleEvent.new(positionString,scale))
     end
-
 end

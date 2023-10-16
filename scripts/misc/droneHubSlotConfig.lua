@@ -249,11 +249,12 @@ function DronePickupConfig:copy()
     return newCopy
 end
 
+--- restrictFillTypes called to set the fillTypes, which is the common shared filltypes between the pickup and delivery place.
+--@param fillTypes is an array of the fillTypes possible.
 function DronePickupConfig:restrictFillTypes(fillTypes)
     self.fillTypes = fillTypes
     self.fillTypeIndex = 1
 end
-
 
 --- On saving additionally to the base config, this saves the configurated values such as array of filltypes, price limit and chosen filltype.
 function DronePickupConfig:saveToXMLFile(xmlFile, key, usedModNames)
@@ -282,7 +283,7 @@ function DronePickupConfig:saveToXMLFile(xmlFile, key, usedModNames)
     xmlFile:setValue(key.."#allFillTypes",fillTypeString)
 end
 
---- On loading additioanlly to loading the base config, this loads the configurated values such as array of filltypes, price limit and chosen filltype.
+--- On loading additionally to loading the base config, this loads the configurated values such as array of filltypes, price limit and chosen filltype.
 function DronePickupConfig:loadFromXMLFile(xmlFile, key)
     DronePickupConfig:superClass().loadFromXMLFile(self,xmlFile,key)
 
@@ -403,6 +404,7 @@ DroneHubSlotConfig = {}
 DroneHubSlotConfig_mt = Class(DroneHubSlotConfig)
 InitObjectClass(DroneHubSlotConfig, "DroneHubSlotConfig")
 
+--- the dirty bitfields so that GUI can know if value is dirty or not to be possible to apply settings or not.
 DroneHubSlotConfig.EDirtyFields = {PICKUPPLACEABLE = 0x01, DELIVERYPLACEABLE = 0x02, PRICELIMIT = 0x04, PRICELIMITUSED = 0x08, FILLTYPEID = 0x10, FILLLIMITID = 0x20}
 
 --- new creates a new DroneHubSlotConfig, creates the pickup and delivery config and rest variables.
@@ -515,15 +517,58 @@ function DroneHubSlotConfig:searchPlaceables()
         bValid = false
     end
 
+    -- recheck filltypes of the pickup and delivery placeable, removing and adding mods can affect filltype availability
+    if bValid then
+        bValid = self:reCheckFillTypes()
+    end
+
     if not bValid then
         self.pickupConfig:reset()
         self.deliveryConfig:reset()
-        self.bLoadedConfig = false
+--         self.bLoadedConfig = false
         return false
     end
 
-    -- sets all dirty as everything needs to be sent over when loaded.
+    -- sets all dirty as everything needs to be sent over when loaded
     self:setAllDirty()
+    return true
+end
+
+-- reCheckFillTypes goes through the common filltypes and checks if there is any new fill types since loading the game
+function DroneHubSlotConfig:reCheckFillTypes()
+    if self.pickupConfig == nil or self.deliveryConfig == nil then
+        return false
+    end
+
+    local pickupAllFillTypes = PickupDeliveryHelper.getFilltypeIds(self.pickupConfig.placeable,true)
+    local deliveryAllFillTypes = PickupDeliveryHelper.getFilltypeIds(self.deliveryConfig.placeable,false)
+
+    self.pickupConfig.allFillTypes = pickupAllFillTypes
+
+    local commonFillTypes = PickupDeliveryHelper.validateInputOutput(pickupAllFillTypes,deliveryAllFillTypes)
+    if next(commonFillTypes) == nil then
+        return false
+    end
+
+    local indicesOld = {}
+
+    for i,id in ipairs(commonFillTypes) do
+        for _,oldId in ipairs(self.pickupConfig.fillTypes) do
+            if id == oldId then
+                table.insert(indicesOld,i)
+                break
+            end
+        end
+    end
+
+    for i = #indicesOld, 1, -1 do
+        table.remove(commonFillTypes,indicesOld[i])
+    end
+
+    for _,id in pairs(commonFillTypes) do
+        table.insert(self.pickupConfig.fillTypes,id)
+    end
+
     return true
 end
 
@@ -668,6 +713,8 @@ function DroneHubSlotConfig:removeDroneFromManager(bDelivery)
     end
 end
 
+--- setManagerToHoldDrone is called to either set pickup or delivery drone in manager to hold state as config is being changed.
+--@param bDelivery indicates if a pickup or delivery drone.
 function DroneHubSlotConfig:setManagerToHoldDrone(bDelivery)
     if self.pickupConfig == nil or self.deliveryConfig == nil or not self.isServer then
         return
@@ -685,6 +732,8 @@ function DroneHubSlotConfig:setManagerToHoldDrone(bDelivery)
 
 end
 
+--- clearManagerHold is called to remove a drone from hold on pickup or delivery manager, as some new config was invalid and config did not change so drone is ready again.
+--@param bDelivery indicates if a pickup or delivery drone.
 function DroneHubSlotConfig:clearManagerHold(bDelivery)
     if self.pickupConfig == nil or self.deliveryConfig == nil or not self.isServer then
         return
@@ -708,7 +757,6 @@ end
 function DroneHubSlotConfig:addVerifyingConfigs(pickupConfigCopy,deliveryConfigCopy)
     self.verifyPickupConfig = pickupConfigCopy
     self.verifyDeliveryConfig = deliveryConfigCopy
-    print("Added verifying config")
 end
 
 --- clearVerifyingConfigs is called to clear the stored configs waiting to be verified.
@@ -738,8 +786,6 @@ function DroneHubSlotConfig:verifyWorkConfigs(pickupConfigCopy,deliveryConfigCop
     sendPickupConfig:nilEverything()
     local sendDeliveryConfig = DroneBaseConfig.new()
     sendDeliveryConfig:nilEverything()
-
-    print("self.dirty is : " .. tostring(self.dirty))
 
     if bitAND(self.dirty,DroneHubSlotConfig.EDirtyFields.PICKUPPLACEABLE) ~= 0 then
         sendPickupConfig:setPlaceable(pickupConfigCopy.placeable)

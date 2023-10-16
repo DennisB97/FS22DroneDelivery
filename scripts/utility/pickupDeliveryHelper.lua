@@ -35,14 +35,16 @@ PickupDeliveryHelper.specialPalletNames = {
 }
 
 PickupDeliveryHelper.allBaleNames = {
-    SQUAREBALE = true,
-    SQUAREBALE_COTTON = true,
-    SQUAREBALE_WOOD = true,
-    ROUNDBALE = true,
-    ROUNDBALE_GRASS = true,
-    ROUNDBALE_COTTON = true,
-    ROUNDBALE_WOOD = true,
-    DRYGRASS_WINDROW = true
+--     SQUAREBALE = true,
+--     SQUAREBALE_COTTON = true,
+--     SQUAREBALE_WOOD = true,
+--     ROUNDBALE = true,
+--     ROUNDBALE_GRASS = true,
+--     ROUNDBALE_COTTON = true,
+--     ROUNDBALE_WOOD = true,
+    DRYGRASS_WINDROW = true,
+    STRAW = true,
+    SILAGE = true
 }
 
 -- special husbandries to avoid, cow uses mixed food so only the husbandry with robot could have hay delivered, but if wanted can use NovaLift for that case.
@@ -108,14 +110,17 @@ function PickupDeliveryHelper.getFilltypeIds(placeable,bPickup)
     local fillTypes = {}
 
     if placeable == nil then
+        Logging.warning("placeable was nil for PickupDeliveryHelper.getFilltypeIds: ")
         return fillTypes
     end
 
     if bPickup then
 
         -- if pickup place then farmID has to match because can't pickup from any other
-        if placeable.ownerFarmId ~= g_currentMission.player.farmId then
-            return fillTypes
+        if g_currentMission.connectedToDedicatedServer and g_server == nil or not g_currentMission.connectedToDedicatedServer then
+            if placeable.ownerFarmId ~= g_currentMission.player.farmId then
+                return fillTypes
+            end
         end
 
         -- honey spec can only mean it can be pickup from a honey location
@@ -156,9 +161,7 @@ function PickupDeliveryHelper.getFilltypeIds(placeable,bPickup)
     else
         -- can't deliver anything to a greenhouse so making sure greenhouse spec is nil
         if placeable.spec_productionPoint ~= nil and placeable.spec_greenhouse == nil then
-
             local production = placeable.spec_productionPoint.productionPoint
-
             if production ~= nil and production.inputFillTypeIds ~= nil then
                 for fillId,_  in pairs(production.inputFillTypeIds) do
 
@@ -403,6 +406,42 @@ function PickupDeliveryHelper.getPointPosition(bPickup,placeable)
     return position
 end
 
+function PickupDeliveryHelper.getCorrectUnloadingPosition(placeable,fillType)
+    local position = nil
+    if placeable == nil or fillType == nil then
+        return position
+    end
+
+    local unloadTriggers = nil
+    if placeable.spec_productionPoint ~= nil then
+        local production = placeable.spec_productionPoint.productionPoint
+            if production ~= nil and production.inputFillTypeIds ~= nil and production.unloadingStation ~= nil then
+                unloadTriggers = production.unloadingStation.unloadTriggers
+            end
+    elseif placeable.spec_sellingStation ~= nil then
+        local sellingStation = placeable.spec_sellingStation.sellingStation
+
+        if sellingStation ~= nil and sellingStation.acceptedFillTypes ~= nil and sellingStation.unloadTriggers ~= nil then
+            unloadTriggers = sellingStation.unloadTriggers
+        end
+    end
+
+    if unloadTriggers == nil then
+        return position
+    end
+
+    for _, trigger in ipairs(unloadTriggers) do
+        if trigger.fillTypes[fillType] ~= nil then
+            position = {x=0,y=0,z=0}
+            position.x,position.y,position.z = getWorldTranslation(trigger.exactFillRootNode)
+            position.y = position.y + 3.5 -- suitable offset above the exact node
+            return position
+        end
+    end
+
+    return position
+end
+
 --- getPickupArea called to get the information of pickup area.
 --@param placeable is the pickup placeable to check area from.
 --@return pickup info table of {position=,rotation=,scale=}.
@@ -427,15 +466,21 @@ function PickupDeliveryHelper.getPickupArea(placeable)
 
 
     if placeable.spec_beehivePalletSpawner ~= nil then
-        pickupInfo = PickupDeliveryHelper.getPalletSpawnerInfo(placeable.spec_beehivePalletSpawner.palletSpawner)
-
+        local foundPickupInfo = PickupDeliveryHelper.getPalletSpawnerInfo(placeable.spec_beehivePalletSpawner.palletSpawner)
+        if foundPickupInfo ~= nil then
+            pickupInfo = foundPickupInfo
+        end
     elseif placeable.spec_husbandryPallets ~= nil then
-        pickupInfo = PickupDeliveryHelper.getPalletSpawnerInfo(placeable.spec_husbandryPallets.palletSpawner)
-
+        local foundPickupInfo = PickupDeliveryHelper.getPalletSpawnerInfo(placeable.spec_husbandryPallets.palletSpawner)
+        if foundPickupInfo ~= nil then
+            pickupInfo = foundPickupInfo
+        end
     elseif placeable.spec_productionPoint ~= nil then
         local production = placeable.spec_productionPoint.productionPoint
-        pickupInfo = PickupDeliveryHelper.getPalletSpawnerInfo(production.palletSpawner)
-
+        local foundPickupInfo = PickupDeliveryHelper.getPalletSpawnerInfo(production.palletSpawner)
+        if foundPickupInfo ~= nil then
+            pickupInfo = foundPickupInfo
+        end
     elseif placeable.spec_customDeliveryPickupPoint ~= nil then
 
         local x,y,z = getWorldTranslation(placeable.rootNode)
@@ -466,6 +511,9 @@ end
 --@param palletSpawner is a placeable spawner to check the area from.
 --@return pickup info table of {position=,rotation=,scale=}.
 function PickupDeliveryHelper.getPalletSpawnerInfo(palletSpawner)
+    if palletSpawner == nil then
+        return nil
+    end
     local firstSpawnPlace = palletSpawner.spawnPlaces[1]
     local spawnPlaceCount = #palletSpawner.spawnPlaces
 
@@ -555,7 +603,6 @@ function PickupDeliveryHelper.hasStorageAvailability(placeable,fillType,fillLeve
                 if capacity < fillLevel then -- bales might be larger than whole capacity on tiny husbandry
                     adjustedFillLevel = capacity
                 end
-                DebugUtil.printTableRecursively(placeable.spec_husbandryFood,"husbandryFood: ",0,4)
 
                 if capacity < currentFillLevel + adjustedFillLevel - emptyBufferLevel then
                     return false

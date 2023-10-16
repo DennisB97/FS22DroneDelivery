@@ -8,7 +8,7 @@ function ConfigValidatedEvent.emptyNew()
     local self = Event.new(ConfigValidatedEvent_mt)
     return self
 end
---- new creates a new event and savess received params.
+--- new creates a new event and saves received params.
 --@param hub is drone hub which has had a slot settings changed.
 --@param slotIndex is the index of slot of the hub that has settings changed.
 --@param bValid indicates if the new settings received(path was able to be created) were valid.
@@ -36,7 +36,7 @@ function ConfigValidatedEvent:writeStream(streamId, connection)
     streamWriteBool(streamId, self.bValid)
     streamWriteBool(streamId,self.bLoadedConfig)
 end
---- run calls the invalidPlacement of birdfeeder object.
+--- run calls the validatedSlotSettings function of dronehub.
 function ConfigValidatedEvent:run(connection)
     if self.hub ~= nil then
         self.hub:validatedSlotSettings(self.slotIndex,self.bValid,self.bLoadedConfig)

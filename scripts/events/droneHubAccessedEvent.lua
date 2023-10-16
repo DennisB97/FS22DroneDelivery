@@ -1,5 +1,3 @@
-
-
 --- DroneHubAccessedEvent is used to signal a drone hub has been accessed by another player, so that interaction can be limited to one player at a time.
 DroneHubAccessedEvent = {}
 DroneHubAccessedEvent_mt = Class(DroneHubAccessedEvent,Event)

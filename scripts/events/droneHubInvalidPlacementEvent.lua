@@ -1,6 +1,3 @@
-
-
-
 --- DroneHubInvalidPlacementEvent is used for signaling farm members of their drone hub being badly placed.
 DroneHubInvalidPlacementEvent = {}
 DroneHubInvalidPlacementEvent_mt = Class(DroneHubInvalidPlacementEvent,Event)
@@ -12,7 +9,7 @@ function DroneHubInvalidPlacementEvent.emptyNew()
     return self
 end
 --- new creates a new event and saves object received as param.
---@param object is the bird feeder object.
+--@param object is drone hub object.
 function DroneHubInvalidPlacementEvent.new(object)
     local self = DroneHubInvalidPlacementEvent.emptyNew()
     self.object = object

@@ -10,8 +10,8 @@ function ChangeConfigEvent.emptyNew()
 end
 
 --- new creates a new event and saves object received as param.
---@param hub is the drone hub which slot's route will be renamed.
---@param slotIndex is the index of slot which to be renamed.
+--@param hub is the drone hub which slot's route will be changed.
+--@param slotIndex is the index of slot which will have config changed.
 --@param newPickupConfig is the copy of DronePickupConfig settings for pickup from the GUI.
 --@param newDeliveryConfig is the copy of DroneBaseConfig settings for delivery from the GUI.
 function ChangeConfigEvent.new(hub,slotIndex,newPickupConfig,newDeliveryConfig)
@@ -62,7 +62,7 @@ function ChangeConfigEvent:readStream(streamId, connection)
         self.newPickupConfig.allFillTypes = allFillTypes
         self.newPickupConfig:restrictFillTypes(fillTypes)
     elseif streamReadBool(streamId) then
-
+        -- if pickup placeable was not new however if delivery placeable is new then needs new common filltypes set
         local fillTypes = {}
 
         local fillTypesString = streamReadString(streamId)
@@ -162,8 +162,8 @@ function ChangeConfigEvent:run(connection)
     end
 end
 --- sendEvent called when event wants to be sent.
---@param hub is the drone hub which slot's route will be renamed.
---@param slotIndex is the index of slot which to be renamed.
+--@param hub is the drone hub which slot's route will be changed.
+--@param slotIndex is the index of slot which will have config changed.
 --@param newPickupConfig is the copy of DronePickupConfig settings for pickup from the GUI.
 --@param newDeliveryConfig is the copy of DroneBaseConfig settings for delivery from the GUI.
 function ChangeConfigEvent.sendEvent(hub,slotIndex,newPickupConfig,newDeliveryConfig)

@@ -36,11 +36,6 @@ function DroneHub.prerequisitesPresent(specializations)
     return true;
 end
 
-function DroneHub.initSpecialization()
-
-end
-
-
 --- registerEventListeners registers all needed FS events.
 function DroneHub.registerEventListeners(placeableType)
     SpecializationUtil.registerEventListener(placeableType, "onLoad", DroneHub)
@@ -66,7 +61,6 @@ function DroneHub:run()
         g_droneHubScreen:setController(self)
         g_gui:showGui("DroneHubScreen")
     end
-
 end
 
 --- registerFunctions registers new functions.
@@ -88,7 +82,6 @@ function DroneHub.registerFunctions(placeableType)
     SpecializationUtil.registerFunction(placeableType, "getEntrancePosition", DroneHub.getEntrancePosition)
     SpecializationUtil.registerFunction(placeableType, "invalidPlacement", DroneHub.invalidPlacement)
     SpecializationUtil.registerFunction(placeableType, "checkAccess", DroneHub.checkAccess)
-    SpecializationUtil.registerFunction(placeableType, "checkAccessNonInitCallback", DroneHub.checkAccessNonInitCallback)
     SpecializationUtil.registerFunction(placeableType, "checkAccessInitCallback", DroneHub.checkAccessInitCallback)
     SpecializationUtil.registerFunction(placeableType, "hasAnyLinkedDrones", DroneHub.hasAnyLinkedDrones)
     SpecializationUtil.registerFunction(placeableType, "setChargeCoverAnimation", DroneHub.setChargeCoverAnimation)
@@ -97,21 +90,12 @@ function DroneHub.registerFunctions(placeableType)
     SpecializationUtil.registerFunction(placeableType, "clearConfigSettings", DroneHub.clearConfigSettings)
 end
 
---- registerEvents registers new events.
-function DroneHub.registerEvents(placeableType)
---     SpecializationUtil.registerEvent(placeableType, "onPlaceableFeederFillLevelChanged")
-
-end
-
 --- registerOverwrittenFunctions register overwritten functions.
 function DroneHub.registerOverwrittenFunctions(placeableType)
     SpecializationUtil.registerOverwrittenFunction(placeableType, "canBeSold", DroneHub.canBeSold)
-
 end
 
-
-
---- onLoad loading creates the
+--- onLoad loading creates all the required variables and creates the slots for the drones.
 --@param savegame loaded savegame.
 function DroneHub:onLoad(savegame)
 	--- Register the spec
@@ -134,7 +118,6 @@ function DroneHub:onLoad(savegame)
         end
 
         spec.entrancePosition.x, spec.entrancePosition.y, spec.entrancePosition.z = getWorldTranslation(entrance)
-
     end
 
     local i = 0
@@ -171,6 +154,8 @@ function DroneHub:onLoad(savegame)
 
 end
 
+--- canBeSold the hub can only be sold if doesn't have any drones linked.
+--@return true,nil if can be sold else false, and message.
 function DroneHub:canBeSold()
 
     if self:hasAnyLinkedDrones() then
@@ -180,7 +165,7 @@ function DroneHub:canBeSold()
     return true, nil
 end
 
---- onDelete when drone hub deleted, clean up the unloading station and storage and birds and others.
+--- onDelete when drone hub deleted, cleans up the slots and dronehandler and menutrigger.
 function DroneHub:onDelete()
     local spec = self.spec_droneHub
 
@@ -204,9 +189,8 @@ function DroneHub:onDelete()
 
 end
 
-
-
 --- onUpdate update function, called when raiseActive called and initially.
+--@param dt is deltatime in ms.
 function DroneHub:onUpdate(dt)
     local spec = self.spec_droneHub
 
@@ -221,6 +205,9 @@ function DroneHub:onUpdate(dt)
 
 end
 
+--- setChargeCoverAnimation sets the animation for the slot cover for specific slot.
+--@param slotIndex indicates which slot cover animation needs to be changed.
+--@param bOpen bool indicating should the slot cover be open or closed.
 function DroneHub:setChargeCoverAnimation(slotIndex,bOpen)
     if self.spec_animatedObjects == nil or self.spec_animatedObjects.animatedObjects[slotIndex] == nil then
         return
@@ -237,24 +224,10 @@ function DroneHub:setChargeCoverAnimation(slotIndex,bOpen)
     end
 end
 
---- debugRender if debug is on for mod then debug renders some feeder variables.
---@param dt is deltatime received from update function.
-function DroneHub:debugRender(dt)
-    if not self.isServer then
-        return
-    end
-
-    local spec = self.spec_droneHub
-    self:raiseActive()
-
-
-end
-
---- Event on finalizing the placement of this bird feeder.
--- used to create the birds and feeder states and other variables initialized.
+--- Event on finalizing the placement of this drone hub.
+-- used to create the dronehandler and accesstester, and either subscribes to the grid done message or proceeds to initialize the hub immediately.
 function DroneHub:onFinalizePlacement()
     local spec = self.spec_droneHub
-    local xmlFile = self.xmlFile
 
     if self.isServer and not spec.bInvalid then
         spec.droneHandler = DroneActionManager.new(self,self.isServer,self.isClient,false)
@@ -272,10 +245,6 @@ function DroneHub:onFinalizePlacement()
             spec.accessTester = AStar.new(self.isServer,self.isClient)
             spec.accessTester:register(true)
 
-            -- add this hub to be ignored by the navigation grid as non solid.
---             g_currentMission.gridMap3D:addObjectIgnoreID(self.rootNode)
-
-
             if g_currentMission.gridMap3D:isAvailable() then
                 self:initializeHub()
             else
@@ -286,10 +255,8 @@ function DroneHub:onFinalizePlacement()
             for _, slot in ipairs(spec.droneSlots) do
                 slot:changeState(slot.ESlotState.NOFLYPATHFINDING)
             end
-
         end
     end
-
 
     if spec.menuTrigger ~= nil then
         addTrigger(spec.menuTrigger,"onMenuTriggerCallback",self)
@@ -297,25 +264,28 @@ function DroneHub:onFinalizePlacement()
 
 end
 
+--- onGridMapGenerated callback to the grid being generated complete message.
+-- proceeds to initialize the hub when grid has been generated.
 function DroneHub:onGridMapGenerated()
     self:initializeHub()
 end
 
+--- intializeHub called to check first the access to the entrance of hub by pathfind test.
 function DroneHub:initializeHub()
-    local spec = self.spec_droneHub
-
     local callback = function(aStarSearch) self:checkAccessInitCallback(aStarSearch) end
     self:checkAccess(callback)
 end
 
+--- setSlotDirty marks a specific slot as dirty and in need of sync.
+--@param slotIndex the index of the slot which is dirty.
 function DroneHub:setSlotDirty(slotIndex)
     local spec = self.spec_droneHub
     if spec.droneSlots[slotIndex] ~= nil then
         self:raiseDirtyFlags(spec.droneSlots[slotIndex]:getDirtyFlag())
     end
-
 end
 
+--- setAllSlotsDirty will mark all the slots of the dronehub as dirty and raise the flags.
 function DroneHub:setAllSlotsDirty()
     local spec = self.spec_droneHub
     for _, slot in ipairs(spec.droneSlots) do
@@ -325,6 +295,8 @@ function DroneHub:setAllSlotsDirty()
     self:raiseDirtyFlags(dirtyFlags)
 end
 
+--- hasAnyLinkedDrones called to check if hub has any drone linked up on any of the slots the hub has.
+--@return false if did not have any linked drones.
 function DroneHub:hasAnyLinkedDrones()
     local spec = self.spec_droneHub
 
@@ -337,26 +309,23 @@ function DroneHub:hasAnyLinkedDrones()
     return false
 end
 
---- Registering
+--- Registering xmlpaths for the entrance, menutrigger and drone attachnode.
 function DroneHub.registerXMLPaths(schema, basePath)
     schema:setXMLSpecializationType("DroneHub")
     schema:register(XMLValueType.NODE_INDEX,        basePath .. ".droneHub#menuTrigger", "trigger used to be able to enter the menu of dronehub")
     schema:register(XMLValueType.NODE_INDEX,        basePath .. ".droneHub#entrance", "Entrance node used for docking drones or leaving drones")
     schema:register(XMLValueType.NODE_INDEX,        basePath .. ".droneHub.drones.drone(?)#attachNode", "drone attach node on hub")
-    DroneHubDroneSlot.registerXMLPaths(schema, basePath .. ".droneHub.drones.drone(?)")
-
     schema:setXMLSpecializationType()
 end
 
---- Registering
+--- Registering save xml paths for hub, hub itself does not save any but hubslot has so forwards call.
 function DroneHub.registerSavegameXMLPaths(schema, basePath)
     schema:setXMLSpecializationType("DroneHub")
-
     DroneHubDroneSlot.registerSavegameXMLPaths(schema, basePath .. "drones.drone(?)")
     schema:setXMLSpecializationType()
 end
 
---- On saving,
+--- On saving forwards saving call to each slot that hub has.
 function DroneHub:saveToXMLFile(xmlFile, key, usedModNames)
     local spec = self.spec_droneHub
 
@@ -367,7 +336,7 @@ function DroneHub:saveToXMLFile(xmlFile, key, usedModNames)
 
 end
 
---- On loading,
+--- On loading forwards loading call to each slot that hub has.
 function DroneHub:loadFromXMLFile(xmlFile, key)
     local spec = self.spec_droneHub
 
@@ -388,8 +357,6 @@ function DroneHub:onReadStream(streamId, connection)
         for _, slot in ipairs(spec.droneSlots) do
             slot:readStream(streamId,connection)
         end
-
-
     end
 end
 
@@ -403,8 +370,6 @@ function DroneHub:onWriteStream(streamId, connection)
         for _, slot in ipairs(spec.droneSlots) do
             slot:writeStream(streamId,connection)
         end
-
-
     end
 end
 
@@ -416,9 +381,7 @@ function DroneHub:onReadUpdateStream(streamId, timestamp, connection)
         for _, slot in ipairs(spec.droneSlots) do
             slot:readUpdateStream(streamId,timestamp,connection)
         end
-
     end
-
 end
 
 --- onWriteUpdateStream syncs from server to client these variabels when dirty raised.
@@ -429,11 +392,10 @@ function DroneHub:onWriteUpdateStream(streamId, connection, dirtyMask)
         for _, slot in ipairs(spec.droneSlots) do
             slot:writeUpdateStream(streamId,connection,dirtyMask)
         end
-
     end
-
 end
 
+--- getEntrancePosition returns the entrance position of dronehub, given as {x=,y=,z=}.
 function DroneHub:getEntrancePosition()
     local spec = self.spec_droneHub
     if spec.entrancePosition == nil then
@@ -476,13 +438,17 @@ function DroneHub:onMenuTriggerCallback(triggerId, otherId, onEnter, onLeave, on
             end
         end
     end
-
 end
 
+--- getDroneHandler called to return the drone handler of hub.
 function DroneHub:getDroneHandler()
     return self.spec_droneHub.droneHandler
 end
 
+--- linkDrone called from event to forward call of linking to hub slot.
+--@param drone which is being linked up.
+--@param id new linking id between the slot and the drone.
+--@param slotIndex indicating which slot is being linked up.
 function DroneHub:linkDrone(drone,id,slotIndex)
     local spec = self.spec_droneHub
     if spec.droneSlots == nil or spec.droneSlots[slotIndex] == nil then
@@ -492,6 +458,8 @@ function DroneHub:linkDrone(drone,id,slotIndex)
     spec.droneSlots[slotIndex]:finalizeLinking(drone,id)
 end
 
+--- unLinkDrone called from event to forward call of unlinking drone from hub slot.
+--@param slotIndex indicating which slot is being unlinked.
 function DroneHub:unLinkDrone(slotIndex)
     local spec = self.spec_droneHub
     if spec.droneSlots == nil or spec.droneSlots[slotIndex] == nil then
@@ -501,6 +469,10 @@ function DroneHub:unLinkDrone(slotIndex)
     spec.droneSlots[slotIndex]:finalizeUnlinking()
 end
 
+--- receiveConfigSettings called from event to forward call to slot about a config change.
+--@param slotIndex indicating which slot is receiving new config.
+--@param newPickupConfig is the new pickup settings
+--@param newDeliveryConfig is the new delivery settings.
 function DroneHub:receiveConfigSettings(slotIndex,newPickupConfig,newDeliveryConfig)
 
     local spec = self.spec_droneHub
@@ -511,6 +483,8 @@ function DroneHub:receiveConfigSettings(slotIndex,newPickupConfig,newDeliveryCon
     spec.droneSlots[slotIndex]:verifySettings(newPickupConfig,newDeliveryConfig)
 end
 
+--- clearConfigSettings is called from event to forward call to slot about settings being cleared.
+--@param slotIndex indicating which slot is clearing config.
 function DroneHub:clearConfigSettings(slotIndex)
     local spec = self.spec_droneHub
     if spec.droneSlots == nil or spec.droneSlots[slotIndex] == nil then
@@ -520,6 +494,9 @@ function DroneHub:clearConfigSettings(slotIndex)
     spec.droneSlots[slotIndex]:finalizeSettingsClear()
 end
 
+--- validatedSlotSettings is called from event to forward call to slot about new settings been validated.
+--@param slotIndex indicating which slot has settings validated.
+--@param bValid indicates if the settings were valid or not.
 --@param bLoadedConfig indicates if the settings were loaded from xml file.
 function DroneHub:validatedSlotSettings(slotIndex,bValid,bLoadedConfig)
     local spec = self.spec_droneHub
@@ -530,6 +507,9 @@ function DroneHub:validatedSlotSettings(slotIndex,bValid,bLoadedConfig)
     spec.droneSlots[slotIndex]:onValidatedSettings(bValid,bLoadedConfig)
 end
 
+--- renameDroneRoute is called from event to forward call to slot about new name for the slot route.
+--@param slotIndex indicating which slot has its route renamed.
+--@parma name is the new name to be given.
 function DroneHub:renameDroneRoute(slotIndex,name)
     local spec = self.spec_droneHub
     if spec.droneSlots == nil or spec.droneSlots[slotIndex] == nil then
@@ -539,26 +519,32 @@ function DroneHub:renameDroneRoute(slotIndex,name)
     spec.droneSlots[slotIndex]:finalizeRenaming(name)
 end
 
+--- setInUse marks the dronehub as being in use.
 function DroneHub:setInUse(inUse)
     local spec = self.spec_droneHub
-
     spec.bInUse = inUse
 end
 
+--- onExitingMenu called when the dronehub menu is exited, will mark as not in use and also send event to let each client know.
 function DroneHub:onExitingMenu()
     self:setInUse(false)
     DroneHubAccessedEvent.sendEvent(self,false)
-
 end
 
+--- addOnDataChangedListeners called to add any callback to the data changed.
+--@param callback is the function to call when data has changed on dronehub.
 function DroneHub:addOnDataChangedListeners(callback)
     table.addElement(self.spec_droneHub.dataChangedListeners,callback)
 end
 
+--- removeOnDataChangedListeners called to remove any callback from the data changed listeners.
+--@param callback is the function that was suppose to be called when data has changed on dronehub.
 function DroneHub:removeOnDataChangedListeners(callback)
     table.removeElement(self.spec_droneHub.dataChangedListeners, callback)
 end
 
+--- onDataChange called when data has changed on the hub slot.
+--@param slotIndex is on which slot data has changed.
 function DroneHub:onDataChange(slotIndex)
     for _, callback in ipairs(self.spec_droneHub.dataChangedListeners) do
         callback(slotIndex)
@@ -568,7 +554,7 @@ end
 --- checkAccess uses AStar pathfinder to check that the hub is placed in a suitable space.
 -- server only.
 --@param callback is the callback to call when AStar is done pathfinding with result.
---@return true if could check feeder access which would mean it is not invalid placed already.
+--@return true if could check hub access which would mean it is not invalid placed already.
 function DroneHub:checkAccess(callback)
     local spec = self.spec_droneHub
     if callback == nil or spec.bInvalid then
@@ -582,22 +568,6 @@ function DroneHub:checkAccess(callback)
         end
     end
     return true
-end
-
---- checkAccessNonInitCallback a non initializing callback for the checkAccess, used when drone runs into an issue for getting to hub.
--- server only.
---@param aSearchResult is the result received from AStar class as type {path array of (x=,y=,z=},bWasGoal}.
-function DroneHub:checkAccessNonInitCallback(aSearchResult)
-    local spec = self.spec_droneHub
-    if spec.bInvalid then
-        return
-    end
-
-    -- second value is bool indicating if goal(hub) was reached or not
-    if not aSearchResult[2] then
-        self:invalidPlacement()
-        return
-    end
 end
 
 --- checkAccessInitCallback is callback used for checking hub access when initializing hub after grid is available.
@@ -622,7 +592,8 @@ function DroneHub:checkAccessInitCallback(aSearchResult)
     self:raiseDirtyFlags(dirtyFlags)
 end
 
-
+--- invalidPlacement called when dronehub access has been blocked to the entrance position.
+-- marks all the slots as invalid placement, and notifies player.
 function DroneHub:invalidPlacement()
 
     local spec = self.spec_droneHub
@@ -644,7 +615,6 @@ function DroneHub:invalidPlacement()
 
         self:raiseDirtyFlags(dirtyFlags)
     end
-
 end
 
 

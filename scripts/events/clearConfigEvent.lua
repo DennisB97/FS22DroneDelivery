@@ -1,5 +1,3 @@
-
-
 --- ClearConfigEvent is used for sending command to clear the setting for a drone.
 ClearConfigEvent = {}
 ClearConfigEvent_mt = Class(ClearConfigEvent,Event)

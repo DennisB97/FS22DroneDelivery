@@ -186,7 +186,7 @@ function DroneSteering:run(dt)
     local futureZ = currentPosition.z + (directionZ * self.futureDistance)
 
     -- getting the close position on spline from the future position and distance along the spline, and distance to the target
-    local splinePosition, splineDistance,directionToSpline, distanceToTarget = self.targetSpline:getClosePositionOnCurve({x=futureX,y=futureY,z=futureZ},0.10,self.targetSpline.segments[self.currentSegmentIndex])
+    local splinePosition, splineDistance,_directionToSpline, distanceToTarget = self.targetSpline:getClosePositionOnCurve({x=futureX,y=futureY,z=futureZ},0.10,self.targetSpline.segments[self.currentSegmentIndex])
     -- getting also the tangent the forward direction of the position on spline
     local _,splineDirection, _,_ = self.targetSpline:getSplineInformationAtDistance(splineDistance)
     if self.pathDirection == -1 then

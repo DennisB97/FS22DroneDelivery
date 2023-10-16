@@ -1,5 +1,3 @@
-
-
 ---@class DroneHubConfigScreen, used to display and adjust settings for a drone in drone hub.
 DroneHubConfigScreen = {}
 DroneHubConfigScreen.CONTROLS = {
@@ -150,6 +148,11 @@ function DroneHubConfigScreen:onClose(element)
 
     if self.droneSlot ~= nil then
         self.droneSlot:removeOnInteractionDisabledListeners(self.interactionDisabledCallback)
+    end
+
+    if self.selectorBrush ~= nil then
+        self.selectorBrush:delete()
+        self.selectorBrush = nil
     end
 
     self.droneSlot = nil
@@ -574,6 +577,22 @@ function DroneHubConfigScreen:onSettingsApplied()
     self:reEnableConfigScreen()
 end
 
+--- rePositionCamera called to reposition the camera on placeable instead of player if available.
+function DroneHubConfigScreen:rePositionCamera()
+    if self.camera == nil or self.newPickupConfig == nil or self.newDeliveryConfig == nil then
+        return
+    end
+
+    if self.bPickupSelection and self.newPickupConfig:hasPoint() then
+        local x,_,z = getTranslation(self.newPickupConfig.placeable.rootNode)
+        self.camera:setMapPosition(x, z)
+    elseif self.newDeliveryConfig:hasPoint() then
+        local x,_,z = getTranslation(self.newDeliveryConfig.placeable.rootNode)
+        self.camera:setMapPosition(x, z)
+    end
+
+end
+
 --- activateSelection will activate the pickup/delivery point selection top down view.
 function DroneHubConfigScreen:activateSelection()
     if self.camera == nil or self.cursor == nil or self.selectorBrush == nil then
@@ -581,13 +600,13 @@ function DroneHubConfigScreen:activateSelection()
     end
 
     self:registerMouseActionEvents()
-
     self.main:setVisible(false)
     g_depthOfFieldManager:popArea()
     self.bSelecting = true
     self:updateConfigScreen()
     g_currentMission.hud.ingameMap:setTopDownCamera(self.camera)
     self.camera:activate()
+    self:rePositionCamera()
     self.cursor:activate()
     self.selectorBrush:activate(true)
 end
@@ -686,6 +705,7 @@ function DroneHubConfigScreen:onSelection()
         self.deliveryMap:setPlaceable(hitPlaceable)
         -- if valid then restricts the filltypes on the pickup to the common ones.
         self.newPickupConfig:restrictFillTypes(availableFillTypes)
+
         self:addFillTypeOptions(availableFillTypes)
 
         self.newDeliveryConfig:setPlaceable(hitPlaceable)

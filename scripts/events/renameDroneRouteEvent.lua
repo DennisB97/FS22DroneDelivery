@@ -1,4 +1,3 @@
-
 --- RenameDroneRouteEvent is used for renaming a drone route.
 RenameDroneRouteEvent = {}
 RenameDroneRouteEvent_mt = Class(RenameDroneRouteEvent,Event)

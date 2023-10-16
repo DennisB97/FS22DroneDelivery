@@ -1,5 +1,3 @@
-
-
 ---@class DroneHubConfigMapScreen handles showing a map of pickup/delivery position, button for activating the selection.
 DroneHubConfigMapScreen = {}
 DroneHubConfigMapScreen.CONTROLS = {
@@ -28,6 +26,7 @@ function DroneHubConfigMapScreen:onCreate()
     end
 end
 
+--- setPlaceable sets new placeable which this map points to and its name.
 function DroneHubConfigMapScreen:setPlaceable(placeable)
     if placeable == nil then
         self.placeableName = ""

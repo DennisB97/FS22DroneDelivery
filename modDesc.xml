@@ -12,7 +12,7 @@
         <en><![CDATA[Future has arrived to Farming Simulator with drones that can carry Pallets, Big bags and Bales.
 
 - NovaW-4:
-  Purchase price: 150000 €
+  Purchase price: 100000 €
   Can be found in the game under (NovaW-4): Vehicles / Miscellaneous
   Has to be lifted on the placeable NovaHub-X1/X2/X3 and then linked up to the hub.
   Route and settings can be adjusted from the hub.
@@ -51,6 +51,7 @@
   Drones cannot be sold before unlinking them from a hub, drone cannot be unlinked or route settings changed while it is away from the hub.
   Hub cannot be sold before unlinking every drone.
   Pickup or delivery placeable cannot either be sold if they are used by a hub.
+  Works only on default sized maps!
 
   Drone route settings:
   - Delivery type: Choose what the drone should pick up and deliver, if multiple options then "Any" can be used to indicate anything is fine.
@@ -71,7 +72,7 @@
         <de><![CDATA[Mit Drohnen, die Paletten, Bigbag und Ballen transportieren können, ist im Landwirtschafts-Simulator die Zukunft angekommen.
 
 - NovaW-4:
-  Kaufpreise: 150000 €
+  Kaufpreise: 100000 €
   Zu finden im Spiel unter (NovaW-4): Fahrzeuge / Diverses
   Muss auf den platzierbaren NovaHub-X1/X2/X3 gehoben und dann mit dem Hub verbunden werden.
   Route und Einstellungen können vom Hub aus angepasst werden.
@@ -109,6 +110,7 @@
   Drohnen können nicht verkauft werden, bevor die Verbindung zu einem Hub aufgehoben wurde. Die Verbindung der Drohne kann nicht aufgehoben oder Routeneinstellungen geändert werden, während sie sich außerhalb des Hubs befindet.
   Der Hub kann nicht verkauft werden, bevor die Verknüpfung aller Drohnen aufgehoben wurde.
   Abhol- oder Lieferplätze können ebenfalls nicht verkauft werden, wenn sie von einem Hub genutzt werden.
+  Funktioniert nur bei Karten in Standardgröße!
 
   Drohnenrouteneinstellungen:
   - Lieferart: Wählen Sie aus, was die Drohne aufnehmen und liefern soll. Bei mehreren Optionen kann „Alle“ verwendet werden, um anzuzeigen, dass alles in Ordnung ist.

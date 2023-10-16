@@ -80,7 +80,7 @@ function DroneHubDroneSlot:onDelete()
 
 end
 
---- On saving
+--- On saving, slot saves the link id and name of route, forwards saving to slotConfig.
 function DroneHubDroneSlot:saveToXMLFile(xmlFile, key, usedModNames)
 
     xmlFile:setValue(key.."#droneID", self.linkedDroneID)
@@ -91,7 +91,7 @@ function DroneHubDroneSlot:saveToXMLFile(xmlFile, key, usedModNames)
     end
 end
 
---- On loading
+--- On loading slot loads the link id and name of route, forwards loading to slotConfig.
 function DroneHubDroneSlot:loadFromXMLFile(xmlFile, key)
 
     self.linkedDroneID = Utils.getNoNil(xmlFile:getValue(key.."#droneID"),"")
@@ -104,20 +104,14 @@ function DroneHubDroneSlot:loadFromXMLFile(xmlFile, key)
     return true
 end
 
-
---- Registering
-function DroneHubDroneSlot.registerXMLPaths(schema, basePath)
-
-end
-
---- Registering
+--- Registering savegame paths for the slot, and forwards call to the slotConfig.
 function DroneHubDroneSlot.registerSavegameXMLPaths(schema, basePath)
     schema:register(XMLValueType.STRING,        basePath .. "#droneID", "Drone and slot unique ID")
     schema:register(XMLValueType.STRING,        basePath .. "#name", "Drone route name")
-    schema:register(XMLValueType.BOOL,        basePath .. "#slotCoverOpen", "Bool indicating if slot cover is open state")
     DroneHubSlotConfig.registerSavegameXMLPaths(schema,basePath)
 end
 
+--- on receive sync from server the link id,name and linked drone, and forwards call to the slotConfig.
 function DroneHubDroneSlot:readStream(streamId,connection)
 
     self.linkedDroneID = streamReadString(streamId)
@@ -132,6 +126,7 @@ function DroneHubDroneSlot:readStream(streamId,connection)
 
 end
 
+--- on sync to clients the slot variables, and forward calls to the slotConfig.
 function DroneHubDroneSlot:writeStream(streamId,connection)
 
     streamWriteString(streamId,self.linkedDroneID)
@@ -147,30 +142,25 @@ end
 --- readUpdateStream receives from server these variables when dirty raised on server.
 function DroneHubDroneSlot:readUpdateStream(streamId, timestamp, connection)
     if connection:getIsServer() then
-
-
         local state = streamReadInt8(streamId)
         self:changeState(state)
-
-
     end
 end
 
 --- writeUpdateStream syncs from server to client these variabels when dirty raised.
 function DroneHubDroneSlot:writeUpdateStream(streamId, connection, dirtyMask)
     if not connection:getIsServer() then
-
-
         streamWriteInt8(streamId,self.currentState)
-
-
     end
 end
 
+--- getDirtyFlag returns the state dirty flag of slot.
 function DroneHubDroneSlot:getDirtyFlag()
     return self.stateDirtyFlag
 end
 
+--- getOwnerFarmId called to receive the farmId of hub.
+--@return farmId if not found then -1.
 function DroneHubDroneSlot:getOwnerFarmId()
     local farmId = -1
     if self.hubOwner ~= nil then
@@ -179,12 +169,14 @@ function DroneHubDroneSlot:getOwnerFarmId()
     return farmId
 end
 
+--- createActionPhases calls to create both the undocking and docking actions.
 function DroneHubDroneSlot:createActionPhases()
 
     self:createUnDockingAction()
     self:createDockingAction()
 end
 
+--- createUndockingAction creates the action which will handle undocking the drone from the hub when going to pickup something.
 function DroneHubDroneSlot:createUnDockingAction()
     if self.hubOwner == nil then
         return
@@ -240,6 +232,7 @@ function DroneHubDroneSlot:createUnDockingAction()
     self.unDockingAction = DroneActionPhase.new(nil,slightlyUpPosition,nil,0.1,nil,rotorStartCallback,legsUpCallback,nil,slightlyForwardAction) -- slowly up first 10cm/s speed
 end
 
+--- createDockingAction creates the action that handles drone docking into the hub slot.
 function DroneHubDroneSlot:createDockingAction()
     if self.hubOwner == nil then
         return
@@ -295,18 +288,21 @@ function DroneHubDroneSlot:createDockingAction()
     self.dockingAction = DroneActionPhase.new(nil,nil,directionToSlot,nil,self.dockTurnSpeed,nil,nil,nil,slightlyForwardAction)
 end
 
+--- requestUndocking when called adds the undocking action to the hub's drone handler.
 function DroneHubDroneSlot:requestUndocking()
     if self.unDockingAction ~= nil and self.hubOwner ~= nil then
         self.hubOwner:getDroneHandler():addAction(self.unDockingAction)
     end
 end
 
+--- requestDocking when called adds the docking action to the hub's drone handler.
 function DroneHubDroneSlot:requestDocking()
     if self.dockingAction ~= nil and self.hubOwner ~= nil then
         self.hubOwner:getDroneHandler():addAction(self.dockingAction)
     end
 end
 
+--- requestDirectReturn when called sets the drone instantly back to the hub, and defaults drone animations, opens the charge covers on hub.
 function DroneHubDroneSlot:requestDirectReturn()
     if self.linkedDrone == nil or self.hubOwner == nil then
         return
@@ -319,7 +315,7 @@ function DroneHubDroneSlot:requestDirectReturn()
     self.linkedDrone:setDroneIdleState()
 end
 
---- initialize gets called from hub when grid has been generated
+--- initialize gets called from hub when grid has been generated.
 function DroneHubDroneSlot:initialize()
     if self.linkedDrone == nil then
         self:changeState(self.ESlotState.NOLINK)
@@ -327,13 +323,15 @@ function DroneHubDroneSlot:initialize()
     end
 
     if self.slotConfig ~= nil then
-        -- if has no loaded pickup and delivery placeable then doesn't get initialized and returns false so need to change to linked state
         if not self.slotConfig:initializeConfig() then
+            -- if has no loaded pickup and delivery placeable then doesn't get initialized and returns false so need to change to linked state
             self:newPathInvalidated()
         end
     end
 end
 
+--- changeState changes the hubSlot state.
+--@param newState is new hubslot state of ESlotState.
 function DroneHubDroneSlot:changeState(newState)
 
     if self.currentState == newState or newState == nil or newState < 0 then
@@ -359,12 +357,15 @@ function DroneHubDroneSlot:changeState(newState)
     end
 end
 
+--- onInteractionStateChanged if hub slot state's interaction from player changes then called to notice all listeners.
 function DroneHubDroneSlot:onInteractionStateChanged(isDisabled)
     for _, callback in ipairs(self.interactionDisabledListeners) do
         callback(isDisabled)
     end
 end
 
+--- getStateText called to receive the active state's name, if in a linked state then will return the drone's current state.
+--@return name of state as string.
 function DroneHubDroneSlot:getStateText()
     local stateText = self:getCurrentStateName()
 
@@ -377,6 +378,8 @@ function DroneHubDroneSlot:getStateText()
     return stateText
 end
 
+--- isInteractionDisabled called to check if slot is in a state that prohibits interaction from player.
+--@return true if is disabled.
 function DroneHubDroneSlot:isInteractionDisabled()
 
     if self.currentState == self.ESlotState.INCOMPATIBLEPLACEMENT or self.currentState == self.ESlotState.NOFLYPATHFINDING or
@@ -387,21 +390,26 @@ function DroneHubDroneSlot:isInteractionDisabled()
     return false
 end
 
+--- addOnInteractionDisabledListeners to add any listener for the disabled call.
+--@param callback to execute when call proceeds.
 function DroneHubDroneSlot:addOnInteractionDisabledListeners(callback)
     table.addElement(self.interactionDisabledListeners,callback)
 end
 
+--- removeOnInteractionDisabledListeners to remove any listener for the disabled call.
+--@param callback to remove from listener.
 function DroneHubDroneSlot:removeOnInteractionDisabledListeners(callback)
     table.removeElement(self.interactionDisabledListeners, callback)
 end
 
-
+--- searchDrone gets called from hub on initial update run, so that both drones and hubs are loaded.
 function DroneHubDroneSlot:searchDrone()
 
     if self.linkedDroneID == "" or self.slotConfig == nil then
         return
     end
 
+    -- tries to match any loaded drone with id with this slot
     if DroneDeliveryMod.loadedLinkedDrones[self.linkedDroneID] ~= nil then
         self.linkedDrone = DroneDeliveryMod.loadedLinkedDrones[self.linkedDroneID]
         DroneDeliveryMod.loadedLinkedDrones[self.linkedDroneID] = nil
@@ -423,11 +431,13 @@ function DroneHubDroneSlot:searchDrone()
     self:changeState(self.ESlotState.NOLINK)
 end
 
+--- noticeDroneReturnal is called to add a listener to the drone arrive, so that slot knows when drone is ready to start docking back.
 function DroneHubDroneSlot:noticeDroneReturnal()
     self.linkedDrone:addOnDroneArrivedListener(self.droneArriveCallback)
 end
 
-
+--- onDroneArrived is callback from the drone arrived listener, used when drone has arrived back to the hub and needs docking.
+--@param drone is the drone that has arrived.
 function DroneHubDroneSlot:onDroneArrived(drone)
     if drone == nil or self.slotConfig == nil then
         return
@@ -437,6 +447,8 @@ function DroneHubDroneSlot:onDroneArrived(drone)
     drone:changeState(drone.spec_drone.EDroneStates.DOCKING)
 end
 
+--- tryLinkDrone called from GUI when trying to link up a drone.
+-- overlap checks the slot position to try and link a drone up.
 function DroneHubDroneSlot:tryLinkDrone()
     if self.currentState ~= self.ESlotState.NOLINK then
         return false
@@ -456,7 +468,7 @@ function DroneHubDroneSlot:tryLinkDrone()
     return true
 end
 
-
+--- tryUnlinkDrone gets called from GUI when trying to unlink a drone, only if drone is at the hub in possible state.
 function DroneHubDroneSlot:tryUnLinkDrone()
     if self.currentState ~= self.ESlotState.LINKED or self.linkedDrone == nil then
         return false
@@ -473,6 +485,8 @@ function DroneHubDroneSlot:tryUnLinkDrone()
     return true
 end
 
+--- tryChangeName is called from GUI when trying to change the route name.
+--@param name is a new name for the route.
 function DroneHubDroneSlot:tryChangeName(name)
     if self.currentState == self.ESlotState.NOLINK then
         return false
@@ -483,6 +497,8 @@ function DroneHubDroneSlot:tryChangeName(name)
     return true
 end
 
+--- getDroneCharge called to find out the drone charge.
+--@return drone charge, if not linked will return 0.
 function DroneHubDroneSlot:getDroneCharge()
     local charge = 0
 
@@ -493,13 +509,15 @@ function DroneHubDroneSlot:getDroneCharge()
     return charge
 end
 
+--- getDronePositionAndRotation called to receive the position and rotation of linked drone.
+--@return position, rotation of linked drone, else nil.
 function DroneHubDroneSlot:getDronePositionAndRotation()
     local position = nil
     local rotation = nil
 
     if self.linkedDrone ~= nil then
-        position = {}
-        rotation = {}
+        position = {x=0,y=0,z=0}
+        rotation = {x=0,y=0,z=0}
 
         position.x, position.y, position.z = getWorldTranslation(self.linkedDrone.rootNode)
         rotation.x, rotation.y, rotation.z = getWorldRotation(self.linkedDrone.rootNode)
@@ -508,10 +526,12 @@ function DroneHubDroneSlot:getDronePositionAndRotation()
     return position, rotation
 end
 
+--- getDrone called to return the linked drone.
 function DroneHubDroneSlot:getDrone()
     return self.linkedDrone
 end
 
+--- isDroneAtSlot called to check if drone is at hub or not.
 function DroneHubDroneSlot:isDroneAtSlot()
     if self.linkedDrone == nil then
         return true
@@ -520,14 +540,17 @@ function DroneHubDroneSlot:isDroneAtSlot()
     return self.linkedDrone:isDroneAtHub()
 end
 
+--- getConfig returns slotConfig.
 function DroneHubDroneSlot:getConfig()
     return self.slotConfig
 end
 
+--- isLinked checks if has a drone linked or not.
 function DroneHubDroneSlot:isLinked()
     return self.linkedDrone ~= nil
 end
 
+--- requestClear requests event for clearing the config of this slot.
 function DroneHubDroneSlot:requestClear()
 
     self:changeState(self.ESlotState.APPLYINGSETTINGS)
@@ -535,6 +558,7 @@ function DroneHubDroneSlot:requestClear()
     ClearConfigEvent.sendEvent(self.hubOwner,self.slotIndex)
 end
 
+--- getCurrentStateName returns the slot state name as string.
 function DroneHubDroneSlot:getCurrentStateName()
     local stateName = ""
 
@@ -612,6 +636,9 @@ function DroneHubDroneSlot:emergencyUnlink()
     self.linkedDrone = nil
 end
 
+--- finalizeLinking forwarded from hub through the event call.
+--@param drone is the new drone that will be linked.
+--@param id is the linkID that will join the slot and drone.
 function DroneHubDroneSlot:finalizeLinking(drone,id)
     if drone == nil then
         return
@@ -634,6 +661,8 @@ function DroneHubDroneSlot:finalizeLinking(drone,id)
     self:changeState(self.ESlotState.LINKED)
 end
 
+--- finalizeUnlinking forwaded from hub through the unlinking event call.
+-- finalizes the unlinking of drone, only if drone is at the hub.
 function DroneHubDroneSlot:finalizeUnlinking()
     if not self.linkedDrone:isDroneAtHub() then
         self:changeState(self.ESlotState.LINKED)
@@ -655,11 +684,15 @@ function DroneHubDroneSlot:finalizeUnlinking()
     self:changeState(self.ESlotState.NOLINK)
 end
 
+--- finalizeRenaming forwarded from hub through the renaming event call.
+-- changes the route name to something else than default drone name.
+--@param name is the new name to set.
 function DroneHubDroneSlot:finalizeRenaming(name)
     self.name = name
     self.hubOwner:onDataChange(self.slotIndex)
 end
 
+--- finalizeSettingsClear forwarded from hub through the clearConfig event call.
 function DroneHubDroneSlot:finalizeSettingsClear()
     if self.linkedDrone == nil or not self.linkedDrone:isDroneAtHub() then
         self:changeState(self.ESlotState.LINKED)
@@ -677,6 +710,10 @@ function DroneHubDroneSlot:finalizeSettingsClear()
     self:changeState(self.ESlotState.LINKED)
 end
 
+--- verifySettings forwarded from hub through the changeConfig event call.
+-- stores the possible new config, while then server proceeds to confirm and create path to the new placeables if possible.
+--@param newPickupConfig is the new config for pickup.
+--@param newDeliveryConfig is the new config for delivery.
 function DroneHubDroneSlot:verifySettings(newPickupConfig,newDeliveryConfig)
     if newPickupConfig == nil or newDeliveryConfig == nil or self.slotConfig == nil or self.hubOwner == nil then
         return
@@ -705,7 +742,9 @@ function DroneHubDroneSlot:verifySettings(newPickupConfig,newDeliveryConfig)
 
 end
 
+--- onValidatedPaths callback from the pathCreator when a path has either succeeded or failed creating.
 -- server only.
+--@param trianglePath is the new three paths created or nil if wasn't able to create a path somewhere.
 function DroneHubDroneSlot:onValidatedPaths(trianglePath)
 
     -- a pickup or delivery placeable was changed but path couldn't be made there so invalidate
@@ -718,6 +757,7 @@ function DroneHubDroneSlot:onValidatedPaths(trianglePath)
     self:prepareSettingApply()
 end
 
+--- newPathInvalidated called to inform that path creation failed.
 function DroneHubDroneSlot:newPathInvalidated()
     -- only while loading a save can the drone not be in the hub and have a path be validated, so if path couldn't be made, need to tell drone come back
     if not self.linkedDrone:isDroneAtHub() and self.slotConfig:isLoadedConfig() then
@@ -757,12 +797,12 @@ function DroneHubDroneSlot:prepareSettingApply()
     ConfigValidatedEvent.sendEvent(self.hubOwner,self.slotIndex,false,self.slotConfig:isLoadedConfig())
 end
 
+--- onValidatedSettings forwarded from hub through the configValidated event.
+--@param bValid indicates if the settings were valid or not.
 --@param bLoadedConfig indicates if the settings were loaded from xml file.
 function DroneHubDroneSlot:onValidatedSettings(bValid,bLoadedConfig)
     self:changeState(self.ESlotState.LINKED)
 
-    print("on validated settings loadedconfig: " .. tostring(bLoadedConfig))
-    print("on validated settings bValid: " .. tostring(bValid))
     if not bValid then
         self.slotConfig:clearVerifyingConfigs()
 

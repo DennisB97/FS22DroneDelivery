@@ -1,4 +1,3 @@
-
 ---@class DroneHubListingScreen handles showing drone status and position, and functionality wise drone linking and unlinking.
 DroneHubListingScreen = {}
 DroneHubListingScreen.CONTROLS = {
@@ -154,6 +153,7 @@ function DroneHubListingScreen:updateListingScreen()
 
 end
 
+--- updateFocusNavigation updates the controller focus routes.
 function DroneHubListingScreen:updateFocusNavigation()
 
     if self.buttonLayout == nil or self.droneIdentity == nil then
@@ -185,7 +185,6 @@ function DroneHubListingScreen:updateFocusNavigation()
     end
 
 end
-
 
 --- updateIdentity changes the drone route/name UI element's button and text depending on if drone is linked or not.
 function DroneHubListingScreen:updateIdentity()
@@ -276,7 +275,6 @@ function DroneHubListingScreen:updateMap()
     end
 
 end
-
 
 --- onChangeDroneName callback on drone name change button clicked.
 -- will open text input dialog.

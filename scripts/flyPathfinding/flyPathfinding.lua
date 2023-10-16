@@ -57,7 +57,7 @@ SOFTWARE.
     Did not see any possiblity to avoid including very thin meshes near terrain like the roads in the octree grid as solid, could cut some generation time by a good solution.
 
 
-    If copying pathfinding to another mod should include the whole flyPathfinding folder and create the grid in same way as here, to avoid version issues if grid, AStar or CatmullRomSpline/Creator gets any breaking changes.
+    If copying pathfinding to another mod can include the whole flyPathfinding folder and create the grid in same way as here, to avoid version issues if grid, AStar or CatmullRomSpline/Creator gets any breaking changes.
     Original place for the set of scripts can be found at https://github.com/DennisB97/FS22FlyPathfinding
 --]]
 
@@ -68,7 +68,7 @@ FlyPathfinding.modDir = g_currentModDirectory .. "scripts/flyPathfinding/"
 -- the g_currentMission.gridMap3D might ne valid if some other mod had it too, but if the required version was lower then the following bool is false to indicate can't use pathfinding until upgraded.
 FlyPathfinding.bPathfindingEnabled = false
 -- grid version, to know if there has been any changes to the Grid system when multiple mods use this pathfinding system as the grid is shared between mods.
-FlyPathfinding.requiredGridVersion = "1.0.1"
+FlyPathfinding.requiredGridVersion = "1.0.2"
 
 --- deleteMap is FS22 function called after exiting played save.
 function FlyPathfinding:deleteMap(savegame)
@@ -116,7 +116,6 @@ function FlyPathfinding:loadMapData(xmlFile)
             end
         end
     end
-
 end
 
 FarmlandManager.loadMapData = Utils.appendedFunction(FarmlandManager.loadMapData,FlyPathfinding.loadMapData)
