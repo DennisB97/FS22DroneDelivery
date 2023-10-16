@@ -68,7 +68,7 @@ FlyPathfinding.modDir = g_currentModDirectory .. "scripts/flyPathfinding/"
 -- the g_currentMission.gridMap3D might ne valid if some other mod had it too, but if the required version was lower then the following bool is false to indicate can't use pathfinding until upgraded.
 FlyPathfinding.bPathfindingEnabled = false
 -- grid version, to know if there has been any changes to the Grid system when multiple mods use this pathfinding system as the grid is shared between mods.
-FlyPathfinding.requiredGridVersion = "1.0.2"
+FlyPathfinding.requiredGridVersion = "1.0.1"
 
 --- deleteMap is FS22 function called after exiting played save.
 function FlyPathfinding:deleteMap(savegame)
