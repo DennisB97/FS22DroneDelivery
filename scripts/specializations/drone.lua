@@ -317,7 +317,7 @@ function Drone:onUpdate(dt)
         end
     end
 
-    self:debugRender(dt)
+    --self:debugRender(dt)
 end
 
 --- debugRender if debug is on for mod then debug renders some .
