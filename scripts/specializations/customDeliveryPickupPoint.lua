@@ -142,7 +142,7 @@ function CustomDeliveryPickupPoint:onLoad(savegame)
 
 
     if self.isServer and savegame == nil then
-        self.collisionMask = CollisionFlag.STATIC_WORLD + CollisionFlag.VEHICLE + CollisionFlag.DYNAMIC_OBJECT + CollisionFlag.TRIGGER_VEHICLE + CollisionFlag.FILLABLE
+        self.collisionMask = CollisionFlag.STATIC_WORLD + CollisionFlag.VEHICLE + CollisionFlag.DYNAMIC_OBJECT + CollisionFlag.TRIGGER_VEHICLE
         local x,y,z = getWorldTranslation(self.rootNode)
         local encodedPosition = self.encodeCoordinates(x,y,z)
         -- checks if position encoded into string matches hashtable key with scaling value

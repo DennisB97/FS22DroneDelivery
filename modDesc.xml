@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8" standalone="no" ?>
-<modDesc descVersion="77">
+<modDesc descVersion="79">
     <author>Dennis B</author>
     <version>1.0.0.0</version>
 
@@ -12,24 +12,24 @@
         <en><![CDATA[Future has arrived to Farming Simulator with drones that can carry Pallets, Big bags and Bales.
 
 - NovaW-4:
-  Purchase price: 100000 €
+  Purchase price: 100000 $
   Can be found in the game under (NovaW-4): Vehicles / Miscellaneous
   Has to be lifted on the placeable NovaHub-X1/X2/X3 and then linked up to the hub.
   Route and settings can be adjusted from the hub.
   Drone and hub will be in a booting (non-interactable) state while the navigation grid is being generated for the server/host at start of the game, will take a few minutes if not on dedicated server.
 
 - NovaHub-X1:
-  Purchase price: 20000 €
+  Purchase price: 20000 $
   Can be found in the game under (NovaHub-X1): Construction / Buildings / Tools
   Drone slots: 1
 
 - NovaHub-X2:
-  Purchase price: 25000 €
+  Purchase price: 25000 $
   Can be found in the game under (NovaHub-X2): Construction / Buildings / Tools
   Drone slots: 2
 
 - NovaHub-X3:
-  Purchase price: 30000 €
+  Purchase price: 30000 $
   Can be found in the game under (NovaHub-X3): Construction / Buildings / Tools
   Drone slots: 3
 
@@ -37,7 +37,7 @@
   Hub will be in booting (non-interactable) state while the navigation grid is being generated for the server/host at start of the game, will take a few minutes if not on dedicated server.
 
 - NovaLift:
-  Purchase price: 5000 €
+  Purchase price: 5000 $
   Can be found in the game under (NovaLift): Construction / Buildings / Tools
   NovaLift is a placeable that can be used as a pickup or delivery point for the drone, any pallet, big bag or bale can be transported to or from a NovaLift.
   NovaLift size can be scaled between 2m - 16m before placing.
@@ -126,7 +126,6 @@
   -Drohnen 3
   Schneiderei (Kleidung) -> Palletenlager / NovaLift / Supermarkt
 
-
   Beachten Sie, dass die Erstellung des Navigationsrasters für Drohnen zu Beginn des Ladens in den Spielstand einige Minuten dauern wird, wenn es sich nicht auf einem dedizierten Server befindet.
   FarmingSimulator2022/modSettings/flyPathfinding/config.xml verfügt über anpassbare Einstellungen bezüglich der Erstellung des Navigationsrasters, wenn die Leistung langsam ist.]]></de>
 
@@ -143,10 +142,6 @@
         <storeItem xmlFilename="xml/novaHub-X3.xml"/>
         <storeItem xmlFilename="xml/customDeliveryPickupPoint.xml"/>
     </storeItems>
-
-    <brands>
-        <brand title="NovaFlyFast" image="images/brand_novaFlyFast.dds" name="NovaFlyFast"/>
-    </brands>
 
     <extraSourceFiles>
         <sourceFile filename="scripts/droneDeliveryMod.lua" />

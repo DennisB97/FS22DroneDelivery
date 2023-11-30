@@ -1131,7 +1131,6 @@ end
 function Drone:onGetPalletToMount(superFunc,belt)
     local spec = self.spec_drone
 
-
     if spec.currentState == spec.EDroneStates.DELIVERING and not spec.bUpdateInitialized then
         -- if on loading the game in delivering state and not update initialized yet, will check and match pallet from the global PalletAddition.loadedCarriedPallets table
         if PalletAddition.loadedCarriedPallets[spec.linkID] ~= nil then
@@ -1326,7 +1325,7 @@ function Drone:placeToStore(object)
         randomPosition.z = randomPosition.z + (storeSpawnPlace.dirZ * randomDistance)
 
         spec.bStoreOverlapCheckSolid = false
-        overlapBox(randomPosition.x,randomPosition.y,randomPosition.z,0,0,0,1,1,1,"storeParkingOverlapCallback",self,CollisionFlag.VEHICLE + CollisionFlag.FILLABLE + CollisionFlag.DYNAMIC_OBJECT,true,false,true,false)
+        overlapBox(randomPosition.x,randomPosition.y,randomPosition.z,0,0,0,1,1,1,"storeParkingOverlapCallback",self,CollisionFlag.VEHICLE + CollisionFlag.DYNAMIC_OBJECT,true,false,true,false)
 
         if not spec.bStoreOverlapCheckSolid then
             if object == self then -- case when is drone and not carried pallet

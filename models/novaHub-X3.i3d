@@ -40,7 +40,7 @@
   </Dynamics>
 
   <Scene>
-      <TransformGroup name="novaHub-X3" nodeId="20">
+      <TransformGroup name="novaHub-X3" clipDistance="400" nodeId="20">
         <TransformGroup name="novaHub-X3_vis" nodeId="21">
           <TransformGroup name="LOD0" nodeId="22">
             <Shape shapeId="1" name="novaHub-X3" translation="0 -0.01 0" rotation="-6.83019e-06 -0 0" clipDistance="300" nodeId="23" materialIds="5" castsShadows="true" receiveShadows="true">

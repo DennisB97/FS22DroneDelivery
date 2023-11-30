@@ -59,7 +59,7 @@ function PickupDeliveryManager.new(owner,isServer,isClient)
     self.palletNeedInfo = nil
     self.palletsWaiting = {}
     self.palletsScheduled = {}
-    self.collisionMask = CollisionFlag.STATIC_WORLD + CollisionFlag.VEHICLE + CollisionFlag.DYNAMIC_OBJECT + CollisionFlag.TRIGGER_VEHICLE + CollisionFlag.FILLABLE
+    self.collisionMask = CollisionFlag.STATIC_WORLD + CollisionFlag.VEHICLE + CollisionFlag.DYNAMIC_OBJECT + CollisionFlag.TRIGGER_VEHICLE
     self:setPickupPosition()
     self.droneReturnedCallback = function(drone)
             self.readyPickupDrones[drone] = true

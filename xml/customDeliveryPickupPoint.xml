@@ -10,7 +10,7 @@
         <dailyUpkeep>5</dailyUpkeep>
         <lifetime>1000</lifetime>
         <rotation>0</rotation>
-        <brand>NovaFlyFast</brand>
+        <brand>Lizard</brand>
         <species>placeable</species>
         <category>placeableMisc</category>
         <brush>
@@ -73,8 +73,8 @@
         <i3dMapping id="tipOcclusionUpdateArea1Start" node="0>4|0" />
         <i3dMapping id="tipOcclusionUpdateArea1End" node="0>4|0|0" />
         <i3dMapping id="levelAreaStart" node="0>5|0" />
-        <i3dMapping id="levelAreaWidth" node="0>5|1" />
-        <i3dMapping id="levelAreaHeight" node="0>5|2" />
+        <i3dMapping id="levelAreaWidth" node="0>5|0|0" />
+        <i3dMapping id="levelAreaHeight" node="0>5|0|1" />
         <i3dMapping id="clearAreas" node="0>2" />
         <i3dMapping id="testAreas" node="0>3" />
         <i3dMapping id="tipOcclusionUpdateAreas" node="0>4" />

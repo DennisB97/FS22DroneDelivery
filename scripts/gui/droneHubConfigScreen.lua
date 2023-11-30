@@ -29,7 +29,7 @@ function DroneHubConfigScreen.new(target)
     self.config = nil
     self.camera = GuiTopDownCamera.new(nil, g_messageCenter, g_inputBinding)
     self.cursor = GuiTopDownCursor.new(nil, g_messageCenter, g_inputBinding)
-    self.cursor.rayCollisionMask = CollisionFlag.STATIC_WORLD + CollisionFlag.GROUND_TIP_BLOCKING + CollisionFlag.FILLABLE
+    self.cursor.rayCollisionMask = CollisionFlag.STATIC_WORLD + CollisionFlag.GROUND_TIP_BLOCKING
     self.originalHitCallback = self.cursor.getHitPlaceable
     self.onDrawCallback = function() self:onDraw() end
     self.selectorBrush = nil
@@ -263,7 +263,10 @@ function DroneHubConfigScreen:onOpen()
     end
 
     self:updateConfigScreen()
-    self.pickupMap:setButtonFocus()
+
+    if(g_inputBinding.lastInputMode ~= GS_INPUT_HELP_MODE_KEYBOARD) then
+        self.pickupMap:setButtonFocus()
+    end
 end
 
 --- ugly hack to adjust slider to reveal price limit element, no idea how slider should be setup...

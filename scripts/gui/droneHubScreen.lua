@@ -171,12 +171,12 @@ function DroneHubScreen:onListSelectionChanged(index)
     end
 
     -- removes active status from previous list element
-    if self.droneList.elements[self.previousListItem] ~= nil then
+    if self.droneList.elements[self.previousListItem] ~= nil and self.droneList.elements[self.previousListItem].onRemovedActive ~= nil then
         self.droneList.elements[self.previousListItem]:onRemovedActive()
     end
 
     -- sets new element as active
-    if self.droneList.elements[index] ~= nil then
+    if self.droneList.elements[index] ~= nil and self.droneList.elements[index].onActive ~= nil then
         self.droneList.elements[index]:onActive()
     end
 

@@ -53,11 +53,13 @@ function DroneSteering.new(owner,groundOffset,carrySpeed,horizontalSpeed,vertica
     self.futureDistance = 5
     self.targetDistance = 1
     self.slowRadius = 10
+    self.deAccelerationRadius = self.slowRadius + 5
     self.startPointCallback = nil
     self.actionManager = DroneActionManager.new(self,true,false)
     self.actionManager:register(true)
     self.velocity = {x=0,y=0,z=0}
     self.acceleration = 0.5
+    self.deAcceleration = 10
     self.bHasArrived = false
     self.minDegreeDifference = 5
     self.rotationSpeed = 20
@@ -178,7 +180,7 @@ function DroneSteering:run(dt)
     self.velocity.x = self.velocity.x + (directionX * (self.acceleration * sDt))
     self.velocity.y = self.velocity.y + (directionY * (self.acceleration * sDt))
     self.velocity.z = self.velocity.z + (directionZ * (self.acceleration * sDt))
-    self:limitVelocity(directionX,directionY,directionZ,false)
+    self:limitVelocity(sDt,directionX,directionY,directionZ)
 
     -- predicting the future position not necessarily on the spline
     local futureX = currentPosition.x + (directionX * self.futureDistance)
@@ -197,6 +199,9 @@ function DroneSteering:run(dt)
 
     -- checking the distance on the spline if near the end point of spline then marking as close to end
     local bCloseToEnd = self:isWithinSlowRadius(splineDistance)
+
+    -- checking the distance on the spline if nearing the slow limit point and should start deaccelerating
+    local bShouldDeAccelerate = self:isWithinDeAccRadius(splineDistance)
 
 --     if not g_currentMission.connectedToDedicatedServer then
 --         DebugUtil.drawOverlapBox(futureX, futureY, futureZ, 0, 0, 0, 0.25, 0.25, 0.25, 0, 0, 1)
@@ -232,9 +237,11 @@ function DroneSteering:run(dt)
         self.velocity.z = self.velocity.z + ((directionToTarget.z * currentMagnitude) - self.velocity.z)
 
         directionX, directionY, directionZ = MathUtil.vector3Normalize(self.velocity.x, self.velocity.y, self.velocity.z)
-        self:limitVelocity(directionX,directionY,directionZ,bCloseToEnd)
-        currentMagnitude = MathUtil.vector3Length(self.velocity.x,self.velocity.y,self.velocity.z)
+
     end
+
+    self:limitVelocity(sDt,directionX,directionY,directionZ,bCloseToEnd,bShouldDeAccelerate)
+    currentMagnitude = MathUtil.vector3Length(self.velocity.x,self.velocity.y,self.velocity.z)
 
     -- adjusts the future distance based on speed that drone has, the faster the longer future distance used
     self:scaleFutureDistance(currentMagnitude)
@@ -255,6 +262,21 @@ function DroneSteering:isWithinSlowRadius(splineDistance)
     if self.pathDirection == 1 and splineDistance >= self.targetSpline:getSplineLength() - self.slowRadius then
         return true
     elseif splineDistance <= self.slowRadius then
+        return true
+    else
+        return false
+    end
+
+end
+
+--- isWithinDeAccRadius called to check if drone on spline would be close enough to slow radius start point.
+--@param splineDistance is the distance to check on spline if close.
+--@return true if given distance is near depending on pathDirection.
+function DroneSteering:isWithinDeAccRadius(splineDistance)
+
+    if self.pathDirection == 1 and splineDistance >= self.targetSpline:getSplineLength() - self.deAccelerationRadius then
+        return true
+    elseif splineDistance <= self.deAccelerationRadius then
         return true
     else
         return false
@@ -342,21 +364,25 @@ function DroneSteering:arrived()
 end
 
 --- limitVelocity limits the drone velocity based on y direction, if close to arriving, and general maximum speed.
+--@param sDt is deltatime in seconds.
 --@param directionX, drone's x direction.
 --@param directionY, drone's y direction.
 --@param directionZ, drone's z direction.
 --@param bArriving, if close to arriving at the end of spline.
-function DroneSteering:limitVelocity(directionX,directionY,directionZ,bArriving)
+--@param bDeAccelerate, if close to the slow limit of nearing spline then indicates if should start deaccelerate.
+function DroneSteering:limitVelocity(sDt,directionX,directionY,directionZ,bArriving,bDeAccelerate)
 
     local magnitude = MathUtil.vector3Length(self.velocity.x,self.velocity.y,self.velocity.z)
 
     local alpha = math.abs(directionY)
 
+    local maxVelocity = MathUtil.lerp(self.horizontalSpeed,self.verticalSpeed,alpha)
+
     if bArriving then
         self.velocity.x, self.velocity.y, self.velocity.z = directionX * 1, directionY * 1, directionZ * 1
+    elseif bDeAccelerate then
+        maxVelocity = MathUtil.clamp(magnitude - (sDt * self.deAcceleration),self.verticalSpeed,99999)
     end
-
-    local maxVelocity = MathUtil.lerp(self.horizontalSpeed,self.verticalSpeed,alpha)
 
     if magnitude > maxVelocity then
         self.velocity.x, self.velocity.y, self.velocity.z = directionX * maxVelocity, directionY * maxVelocity, directionZ * maxVelocity

@@ -9,7 +9,7 @@
     <File fileId="1" filename="textures/droneDeliveryPickupAreaStripes_mat_diffuse.dds"/>
     <File fileId="2" filename="textures/droneDeliveryPickupAreaStripes_mat_normal.dds"/>
     <File fileId="3" filename="textures/droneDeliveryPickupAreaStripes_mat_specular.dds"/>
-	<File fileId="4" filename="$data/shaders/buildingShader.xml"/>
+    <File fileId="4" filename="$data/shaders/buildingShader.xml"/>
   </Files>
 
 
@@ -32,7 +32,7 @@
   </Dynamics>
 
   <Scene>
-      <TransformGroup name="customDeliveryPickupPoint" nodeId="10">
+      <TransformGroup name="customDeliveryPickupPoint" clipDistance="300" nodeId="10">
         <TransformGroup name="customDeliveryPickupPoint_vis" nodeId="11">
           <Shape shapeId="1" name="droneDeliveryPickupAreaStripes" translation="1 0.01 1" rotation="-6.83019e-06 -0 0" clipDistance="300" nodeId="12" materialIds="5" castsShadows="true" receiveShadows="true"/>
           <Shape shapeId="1" name="droneDeliveryPickupAreaStripes" translation="-1 0.01 1" rotation="-6.83019e-06 -90 0" clipDistance="300" nodeId="13" materialIds="5" castsShadows="true" receiveShadows="true"/>
@@ -59,9 +59,10 @@
           </TransformGroup>
         </TransformGroup>
         <TransformGroup name="levelAreas" nodeId="29">
-          <TransformGroup name="levelAreaStart" translation="1 0 1" nodeId="30"/>
-          <TransformGroup name="levelAreaWidth" translation="-1 0 1" nodeId="31"/>
-          <TransformGroup name="levelAreaHeight" translation="1 0 -1" nodeId="32"/>
+          <TransformGroup name="levelAreaStart" translation="-1.3 0 -1.3" nodeId="30">
+            <TransformGroup name="levelAreaWidth" translation="0 0 2.6" nodeId="31"/>
+            <TransformGroup name="levelAreaHeight" translation="2.6 0 0" nodeId="32"/>
+          </TransformGroup>
         </TransformGroup>
         <TransformGroup name="scaledTriggerCollision" nodeId="33">
           <TransformGroup name="transform" scale="2 1 2" nodeId="34">
