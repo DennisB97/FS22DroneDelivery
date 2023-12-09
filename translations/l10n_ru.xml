@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8" standalone="no" ?>
+<l10n>
+     <translationContributors>nagor</translationContributors>
+     <texts>
+		<text name="droneHub_hubActivateText" text="Настройка дронов"/>
+		<text name="droneHub_droneNotLinked" text="Нет подключённых дронов"/>
+		<text name="droneHub_droneLinked" text="Дрон подключён"/>
+        <text name="droneHub_rightsMissing" text="Вам нужны разрешения управления производством, чтобы настроить параметры дрона" />
+        <text name="droneHub_droneLinking" text="Подключение дрона..." />
+        <text name="droneHub_Booting" text="Загрузка..."/>
+        <text name="droneHub_IncompatiblePlacement" text="Недопустимое размещение"/>
+        <text name="droneHub_NoFlyPathfinding" text="Поиск маршрута не включён"/>
+        <text name="droneHub_ApplyingSettings" text="Применение настроек..."/>
+        <text name="droneHub_noAccess" text="Центр управления дронами заблокирован. Переустановите его."/>
+        <text name="droneHub_unlinkBeforeSell" text="Перед продажей необходимо отключить все дроны!"/>
+        <text name="droneManager_unlinkBeforeSell" text="К этому объекту подключены дроны, отключите их перед продажей!"/>
+        <text name="customAction_scale" text="Изменить масштаб"/>
+        <text name="customAction_select" text="Выберите объект"/>
+		<text name="drone_NoRoute" text="Нет маршрута"/>
+		<text name="drone_Charging" text="Зарядка"/>
+		<text name="drone_PickingUp" text="На погрузку"/>
+		<text name="drone_Delivering" text="На выгрузку"/>
+		<text name="drone_Returning" text="Возвращающийся"/>
+		<text name="drone_Waiting" text="Ожидающий"/>
+		<text name="drone_Unlinked" text="Неподключённый"/>
+		<text name="drone_PickupCancelled" text="Возвращается, поддон не найден"/>
+		<text name="drone_Undocking" text="Неприпаркован"/>
+		<text name="drone_Docking" text="Припаркован"/>
+        <text name="listingGUI_droneNotLinked" text="НЕТ ПОДКЛЮЧЁННЫХ ДРОНОВ"/>
+		<text name="listingGUI_newDroneName" text="Переименуйте этот маршрут дронов"/>
+		<text name="listingGUI_linkButton" text="Подключить дрон"/>
+        <text name="listingGUI_linkingFailure" text="Не удалось подключить дрон, обязательно поместите дрон на место парковки в центре управления дронами!"/>
+        <text name="listingGUI_configureButton" text="Настройка дрона"/>
+        <text name="listingGUI_unLinkButton" text="Отключить дрон" />
+        <text name="listingGUI_unLinkingFailure" text="Не удалось отключить дрон, отсоединить можно только тогда, когда дрон находится в центре управления дронами." />
+        <text name="listingGUI_linkingChange" text="Изменение статуса подключения..." />
+        <text name="listingGUI_unlinkConfirmTitle" text="Отключённый дрон" />
+        <text name="listingGUI_unlinkConfirmText" text="Вы уверены, что хотите отключить дрон? Это приведёт к удалению всех настроенных значений!" />
+        <text name="listingGUI_statusText" text="Статус: " />
+        <text name="configGUI_configure" text="Настройка" />
+        <text name="configGUI_pickupPointButton" text="Выберите пункт погрузки" />
+        <text name="configGUI_deliveryPointButton" text="Выберите пункт выгрузки" />
+        <text name="configGUI_deliveryType" text="Тип груза" />
+        <text name="configGUI_fillLimit" text="Мин. % наполнения" />
+        <text name="configGUI_priceLimit" text="Лимит цены продажи" />
+        <text name="configGUI_price" text="Цена" />
+        <text name="configGUI_newPriceLimit" text="Введите предел цены" />
+        <text name="configGUI_clearConfirmTitle" text="Очистить настройки" />
+        <text name="configGUI_clearConfirmText" text="Вы уверены, что хотите очистить настройки дрона? Это приведёт к удалению всех настроенных значений!" />
+        <text name="button_clear" text="Очистить настройки" />
+        <text name="fillType_any" text="Любой" />
+        <text name="typeDesc_drone" text="Дрон, который может переносить объекты при подключении к центру управления дронами." />
+        <text name="function_drone" text="Дрон, который может перевозить поддоны, тюки и большие мешки (МКР) при подключении к центру управления дронами." />
+        <text name="function_droneHub" text="Центр управления дронами управляет дронами, когда они помещены в него и подключены." />
+        <text name="function_customDeliveryPickupPoint" text="Масштабируемый пункт погрузки или выгрузки дронов." />
+        <text name="novaLift_connectedPickupDrones" text="Подключённые дроны на погрузку: " />
+        <text name="novaLift_connectedDeliveryDrones" text="Подключённые дроны на выгрузку: " />
+        <text name="novaLift_availableSpace" text="Доступное место: " />
+        <text name="input_FLYPATHFINDING_DBG_PREVIOUS" text="Debug previous" />
+        <text name="input_FLYPATHFINDING_DBG_NEXT" text="Debug next" />
+        <text name="input_FLYPATHFINDING_DBG_ASTAR_SHOW_CLOSEDNODES" text="Toggle closed nodes" />
+	</texts>
+</l10n>
