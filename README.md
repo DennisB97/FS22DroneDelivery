@@ -1,4 +1,4 @@
-# FS22_DroneDelivery v1.0.0.0
+# FS22_DroneDelivery v1.0.0.1
 
 ![Dronehub and drone](https://i.gyazo.com/dd3a2d1816c42f4ad8b103fe8c877423.jpg)
 
@@ -22,6 +22,10 @@ Drop the zipped file into your FS22 mods folder as usual (Documents/My Games/Far
 
 ## Changelog
 
+1.0.0.1 
+- Fixed my mod causing images and icons being bugged in the map.
+- Added ru GUI translation by nagor
+  
 1.0.0.0 initial release.
 
 
