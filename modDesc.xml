@@ -1,11 +1,12 @@
 ﻿<?xml version="1.0" encoding="utf-8" standalone="no" ?>
 <modDesc descVersion="79">
     <author>Dennis B</author>
-    <version>1.0.0.0</version>
+    <version>1.0.0.1</version>
 
     <title>
         <en>Drone Delivery</en>
         <de>Drohnenlieferung</de>
+        <ru>Доставка Дронами</ru>
     </title>
 
     <description>
@@ -68,7 +69,13 @@
   Tailor Shop (Clothes) -> Object storage / NovaLift / Supermarket
 
   Do note that creation of the navigation grid for drones will take few minutes at start of loading into save game, if not on dedicated server.
-  FarmingSimulator2022/modSettings/flyPathfinding/config.xml has tweakable settings regarding creation of the navigation grid, if performance is slow.]]></en>
+  FarmingSimulator2022/modSettings/flyPathfinding/config.xml has tweakable settings regarding creation of the navigation grid, if performance is slow.
+
+  Changelog
+  V1.0.0.1
+  - Fixed my mod causing images and icons being bugged in the map.
+  - Added ru GUI translation by nagor
+]]></en>
         <de><![CDATA[Mit Drohnen, die Paletten, Bigbag und Ballen transportieren können, ist im Landwirtschafts-Simulator die Zukunft angekommen.
 
 - NovaW-4:
@@ -127,7 +134,13 @@
   Schneiderei (Kleidung) -> Palletenlager / NovaLift / Supermarkt
 
   Beachten Sie, dass die Erstellung des Navigationsrasters für Drohnen zu Beginn des Ladens in den Spielstand einige Minuten dauern wird, wenn es sich nicht auf einem dedizierten Server befindet.
-  FarmingSimulator2022/modSettings/flyPathfinding/config.xml verfügt über anpassbare Einstellungen bezüglich der Erstellung des Navigationsrasters, wenn die Leistung langsam ist.]]></de>
+  FarmingSimulator2022/modSettings/flyPathfinding/config.xml verfügt über anpassbare Einstellungen bezüglich der Erstellung des Navigationsrasters, wenn die Leistung langsam ist.
+
+  Changelog
+  V1.0.0.1
+  - Ich habe meinen Mod korrigiert, der Bilder und Icons in der Karte fehlerhaft darstellt.
+  - ru GUI Übersetzung von nagor hinzugefügt
+]]></de>
 
     </description>
 

@@ -2,7 +2,7 @@
 DroneHubConfigMapScreen = {}
 DroneHubConfigMapScreen.CONTROLS = {
         BOX_LAYOUT = "boxLayout",
-        MAP = "map"
+        DRONE_POINT_MAP = "dronePointMap"
 	}
 
 DroneHubConfigMapScreen_mt = Class(DroneHubConfigMapScreen,ScreenElement)
@@ -15,15 +15,6 @@ function DroneHubConfigMapScreen.new(target)
     self.placeableName = ""
     self.mapPosition = nil
     return self
-end
-
---- onCreate called when this screen gets copied twice for the config screen, everytime when opening the config screen.
--- sets the map element to show current map's image.
-function DroneHubConfigMapScreen:onCreate()
-    if self.boxLayout ~= nil and self.map ~= nil then
-        self.map:setImageFilename(g_currentMission.mapImageFilename)
-        self.map:setImageUVs(nil, unpack(GuiUtils.getUVs({1024,1024,2048,2048},{4096,4096})))
-    end
 end
 
 --- setPlaceable sets new placeable which this map points to and its name.
@@ -41,13 +32,9 @@ function DroneHubConfigMapScreen:setPlaceable(placeable)
     self:updateConfigMapScreen()
 end
 
-function DroneHubConfigMapScreen:onGuiSetupFinished()
-	DroneHubConfigMapScreen:superClass().onGuiSetupFinished(self)
-end
-
 --- updateConfigMapScreen used to update all changing UI elements depending on adjusted configs.
 function DroneHubConfigMapScreen:updateConfigMapScreen()
-    if self.boxLayout == nil or self.map == nil then
+    if self.boxLayout == nil or self.dronePointMap == nil then
         return
     end
 
@@ -56,7 +43,7 @@ function DroneHubConfigMapScreen:updateConfigMapScreen()
 
     -- adjusts the map to show either the whole map or zooms in on the current work point position if valid
     if self.mapPosition == nil then
-        self.map:setImageUVs(nil,unpack(GuiUtils.getUVs({1024,1024,2048,2048},{4096,4096})))
+        self.dronePointMap:setImageUVs(nil,unpack(GuiUtils.getUVs({1024,1024,2048,2048},{4096,4096})))
         self:setPositionIconVisible(false)
     else
         local mapSize = getTerrainSize(g_currentMission.terrainRootNode)
@@ -66,7 +53,7 @@ function DroneHubConfigMapScreen:updateConfigMapScreen()
 
         local zoomSize = 516
 
-        self.map:setImageUVs(nil, unpack(GuiUtils.getUVs({positionX - (zoomSize / 2),positionZ - (zoomSize/2),zoomSize,zoomSize},{4096,4096})))
+        self.dronePointMap:setImageUVs(nil, unpack(GuiUtils.getUVs({positionX - (zoomSize / 2),positionZ - (zoomSize/2),zoomSize,zoomSize},{4096,4096})))
 
         self:setPositionIconVisible(true)
 
@@ -93,9 +80,9 @@ end
 --- setPositionIconVisible used to set the icon showing the pickup/delivery position on map to visible or not.
 --@param isVisible bool to indicate if should be set visible or not.
 function DroneHubConfigMapScreen:setPositionIconVisible(isVisible)
-    if self.map ~= nil then
-        self.map.elements[1]:setImageUVs(nil, unpack(GuiUtils.getUVs({0,0,32,32},{32,32})))
-        self.map.elements[1]:setVisible(isVisible)
+    if self.dronePointMap ~= nil then
+        self.dronePointMap.elements[1]:setImageUVs(nil, unpack(GuiUtils.getUVs({0,0,32,32},{32,32})))
+        self.dronePointMap.elements[1]:setVisible(isVisible)
     end
 end
 
@@ -111,12 +98,18 @@ end
 --@param bPickup true if is the map for pickup point.
 function DroneHubConfigMapScreen:init(bPickup)
 
-    if self.map ~= nil and self.boxLayout ~= nil then
+    if self.dronePointMap ~= nil then
+        -- sets the map element to show current map's image.
+        if self.dronePointMap ~= nil then
+            self.dronePointMap:setImageFilename(g_currentMission.mapImageFilename)
+            self.dronePointMap:setImageUVs(nil, unpack(GuiUtils.getUVs({1024,1024,2048,2048},{4096,4096})))
+        end
+
         if bPickup then
-            self.map.elements[1]:setImageFilename(Utils.getFilename("images/pickup.dds", DroneDeliveryMod.modDir))
+            self.dronePointMap.elements[1]:setImageFilename(Utils.getFilename("images/pickup.dds", DroneDeliveryMod.modDir))
             self:getButtonElement():setText(g_i18n:getText("configGUI_pickupPointButton"))
         else
-            self.map.elements[1]:setImageFilename(Utils.getFilename("images/delivery.dds", DroneDeliveryMod.modDir))
+            self.dronePointMap.elements[1]:setImageFilename(Utils.getFilename("images/delivery.dds", DroneDeliveryMod.modDir))
             self:getButtonElement():setText(g_i18n:getText("configGUI_deliveryPointButton"))
         end
     end
