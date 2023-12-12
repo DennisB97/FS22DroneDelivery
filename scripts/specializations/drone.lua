@@ -38,7 +38,7 @@ end
 function Drone.initSpecialization()
     Vehicle.xmlSchema:setXMLSpecializationType("Drone")
     Drone.registerXMLPaths(Vehicle.xmlSchema, "vehicle")
-    Drone.registerDroneSaveXMLPaths(Vehicle.xmlSchemaSavegame, "vehicles.vehicle(?).FS22_DroneDelivery.drone")
+    Drone.registerDroneSaveXMLPaths(Vehicle.xmlSchemaSavegame, "vehicles.vehicle(?)." .. DroneDeliveryMod.modName .. ".drone")
     Vehicle.xmlSchema:setXMLSpecializationType()
 end
 
@@ -142,7 +142,7 @@ end
 --@param savegame loaded savegame.
 function Drone:onLoad(savegame)
 	--- Register the spec
-	self.spec_drone = self["spec_FS22_DroneDelivery.drone"]
+	self.spec_drone = self["spec_" .. DroneDeliveryMod.modName .. ".drone"]
     local xmlFile = self.xmlFile
     local spec = self.spec_drone
     spec.EDroneStates = {NOROUTE = 0,WAITING = 1, CHARGING = 2, PICKING_UP = 3, DELIVERING = 4, RETURNING = 5, UNLINKED = 7, PICKUPCANCELLED = 8, UNDOCKING = 9, DOCKING = 10}
@@ -213,13 +213,13 @@ function Drone:onLoad(savegame)
     end
 
     if savegame ~= nil then
-        loadID = Utils.getNoNil(savegame.xmlFile:getValue(savegame.key..".FS22_DroneDelivery.drone#linkID"),"")
+        loadID = Utils.getNoNil(savegame.xmlFile:getValue(savegame.key.."." .. DroneDeliveryMod.modName .. ".drone#linkID"),"")
         -- on loading drones from save which is linked adds it to hash table so hubs can easily go through it and link this table reference.
         if loadID ~= "" then
             DroneDeliveryMod.loadedLinkedDrones[loadID] = self
 
             -- load state and mark that state as loaded state
-            local loadedState = savegame.xmlFile:getValue(savegame.key..".FS22_DroneDelivery.drone#state")
+            local loadedState = savegame.xmlFile:getValue(savegame.key.."." .. DroneDeliveryMod.modName .. ".drone#state")
             if spec.droneStates[loadedState] ~= nil then
                 spec.droneStates[loadedState]:setIsSaveLoaded()
             end
@@ -228,14 +228,14 @@ function Drone:onLoad(savegame)
             end
 
             -- load carried pallets rel y position to drone
-            self.palletRelPosY = Utils.getNoNil(savegame.xmlFile:getValue(savegame.key..".FS22_DroneDelivery.drone#carriedPalletRelY"),0)
+            self.palletRelPosY = Utils.getNoNil(savegame.xmlFile:getValue(savegame.key.."." .. DroneDeliveryMod.modName .. ".drone#carriedPalletRelY"),0)
         end
 
-        spec.charge = Utils.getNoNil(savegame.xmlFile:getValue(savegame.key..".FS22_DroneDelivery.drone#charge"),self:randomizeCharge())
-        spec.bLegsUp = Utils.getNoNil(savegame.xmlFile:getValue(savegame.key..".FS22_DroneDelivery.drone#bLegsUp"),false)
-        spec.bHookDown = Utils.getNoNil(savegame.xmlFile:getValue(savegame.key..".FS22_DroneDelivery.drone#bHookDown"),false)
-        spec.bPalletHooksDown = Utils.getNoNil(savegame.xmlFile:getValue(savegame.key..".FS22_DroneDelivery.drone#bPalletHooksDown"),false)
-        spec.bRotorsSpinning = Utils.getNoNil(savegame.xmlFile:getValue(savegame.key..".FS22_DroneDelivery.drone#bRotorsSpinning"),false)
+        spec.charge = Utils.getNoNil(savegame.xmlFile:getValue(savegame.key.."." .. DroneDeliveryMod.modName .. ".drone#charge"),self:randomizeCharge())
+        spec.bLegsUp = Utils.getNoNil(savegame.xmlFile:getValue(savegame.key.."." .. DroneDeliveryMod.modName .. ".drone#bLegsUp"),false)
+        spec.bHookDown = Utils.getNoNil(savegame.xmlFile:getValue(savegame.key.."." .. DroneDeliveryMod.modName .. ".drone#bHookDown"),false)
+        spec.bPalletHooksDown = Utils.getNoNil(savegame.xmlFile:getValue(savegame.key.."." .. DroneDeliveryMod.modName .. ".drone#bPalletHooksDown"),false)
+        spec.bRotorsSpinning = Utils.getNoNil(savegame.xmlFile:getValue(savegame.key.."." .. DroneDeliveryMod.modName .. ".drone#bRotorsSpinning"),false)
     end
 
     self:setLinkID(loadID)

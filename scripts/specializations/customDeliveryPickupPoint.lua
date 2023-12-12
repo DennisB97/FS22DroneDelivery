@@ -97,7 +97,7 @@ end
 --@param savegame loaded savegame.
 function CustomDeliveryPickupPoint:onLoad(savegame)
 	--- Register the spec
-	self.spec_customDeliveryPickupPoint = self["spec_FS22_DroneDelivery.customDeliveryPickupPoint"]
+	self.spec_customDeliveryPickupPoint = self["spec_" .. DroneDeliveryMod.modName .. ".customDeliveryPickupPoint"]
     local xmlFile = self.xmlFile
     local spec = self.spec_customDeliveryPickupPoint
 

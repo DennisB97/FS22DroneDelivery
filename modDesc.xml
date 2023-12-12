@@ -75,6 +75,7 @@
   V1.0.0.1
   - Fixed my mod causing images and icons being bugged in the map.
   - Added ru GUI translation by nagor
+  - Rotors now spin somewhat even when FPS is in the 30s.
 ]]></en>
         <de><![CDATA[Mit Drohnen, die Paletten, Bigbag und Ballen transportieren können, ist im Landwirtschafts-Simulator die Zukunft angekommen.
 
@@ -140,6 +141,7 @@
   V1.0.0.1
   - Ich habe meinen Mod korrigiert, der Bilder und Icons in der Karte fehlerhaft darstellt.
   - ru GUI Übersetzung von nagor hinzugefügt
+  - Die Rotoren drehen sich jetzt etwas, auch wenn die FPS in den 30ern liegen.
 ]]></de>
 
     </description>

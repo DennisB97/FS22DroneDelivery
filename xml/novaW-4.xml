@@ -46,10 +46,10 @@
         </animation>
 
         <animation name="rotorAnimation" looping="true" >
-            <part node="rotor1" startTime="0" duration="0.05" startRot="0 0 0" endRot="0 360 0"/>
-            <part node="rotor2" startTime="0" duration="0.05" startRot="0 0 0" endRot="0 360 0"/>
-            <part node="rotor5" startTime="0" duration="0.05" startRot="0 0 0" endRot="0 360 0"/>
-            <part node="rotor6" startTime="0" duration="0.05" startRot="0 0 0" endRot="0 360 0"/>
+            <part node="rotor1" startTime="0" duration="0.3" startRot="0 0 0" endRot="0 360 0"/>
+            <part node="rotor2" startTime="0" duration="0.3" startRot="0 0 0" endRot="0 360 0"/>
+            <part node="rotor5" startTime="0" duration="0.3" startRot="0 0 0" endRot="0 360 0"/>
+            <part node="rotor6" startTime="0" duration="0.3" startRot="0 0 0" endRot="0 360 0"/>
         </animation>
 
         <animation name="hookAnimation">

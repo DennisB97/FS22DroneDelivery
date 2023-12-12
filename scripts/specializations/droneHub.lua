@@ -99,7 +99,7 @@ end
 --@param savegame loaded savegame.
 function DroneHub:onLoad(savegame)
 	--- Register the spec
-	self.spec_droneHub = self["spec_FS22_DroneDelivery.droneHub"]
+	self.spec_droneHub = self["spec_" .. DroneDeliveryMod.modName .. ".droneHub"]
     local xmlFile = self.xmlFile
     local spec = self.spec_droneHub
     self.activateText = g_i18n:getText("droneHub_hubActivateText")

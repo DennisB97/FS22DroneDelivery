@@ -9,12 +9,12 @@ PalletAddition.loadedCarriedPallets = {}
 function PalletAddition.initialize()
 
     local schemaSavegame = Vehicle.xmlSchemaSavegame
-    schemaSavegame:register(XMLValueType.BOOL, "vehicles.vehicle(?).FS22_DroneDelivery#isCarried", "Is being carried by drone")
-    schemaSavegame:register(XMLValueType.STRING, "vehicles.vehicle(?).FS22_DroneDelivery#droneLinkID", "link id of drone carrying")
+    schemaSavegame:register(XMLValueType.BOOL, "vehicles.vehicle(?)." .. DroneDeliveryMod.modName .."#isCarried", "Is being carried by drone")
+    schemaSavegame:register(XMLValueType.STRING, "vehicles.vehicle(?)." .. DroneDeliveryMod.modName .. "#droneLinkID", "link id of drone carrying")
 
     schemaSavegame = ItemSystem.xmlSchemaSavegame
-    schemaSavegame:register(XMLValueType.BOOL, "items.item(?).FS22_DroneDelivery#isCarried", "Is being carried by drone")
-    schemaSavegame:register(XMLValueType.STRING, "items.item(?).FS22_DroneDelivery#droneLinkID", "link id of drone carrying")
+    schemaSavegame:register(XMLValueType.BOOL, "items.item(?)." .. DroneDeliveryMod.modName .. "#isCarried", "Is being carried by drone")
+    schemaSavegame:register(XMLValueType.STRING, "items.item(?)." .. DroneDeliveryMod.modName .. "#droneLinkID", "link id of drone carrying")
 
     Vehicle.tryFinishLoading = Utils.prependedFunction(Vehicle.tryFinishLoading,PalletAddition.onVehicleFinishLoad)
     Vehicle.saveToXMLFile = Utils.prependedFunction(Vehicle.saveToXMLFile,PalletAddition.reAdjustCarriedPallet)
@@ -46,16 +46,16 @@ function PalletAddition:onVehicleSave(xmlFile,key,usedModNames)
 
     if PickupDeliveryHelper.isSupportedObject(self) then
         if self.bDroneCarried and self.carryDrone ~= nil then
-            xmlFile:setValue(key .. ".FS22_DroneDelivery#isCarried",self.bDroneCarried)
-            xmlFile:setValue(key .. ".FS22_DroneDelivery#droneLinkID",self.carryDrone:getID())
+            xmlFile:setValue(key .. "." .. DroneDeliveryMod.modName .. "#isCarried",self.bDroneCarried)
+            xmlFile:setValue(key .. "." .. DroneDeliveryMod.modName .. "#droneLinkID",self.carryDrone:getID())
         end
     end
 end
 
 --- loadBale when a bale gets loaded, loads the new additional save variables and if was carried then sets itself into the global table.
 function PalletAddition:loadBale(superFunc,xmlFile, key, resetVehicles)
-    self.bDroneCarried = Utils.getNoNil(xmlFile:getValue(key..".FS22_DroneDelivery#isCarried"),false)
-    local linkId = Utils.getNoNil(xmlFile:getValue(key..".FS22_DroneDelivery#droneLinkID"),"")
+    self.bDroneCarried = Utils.getNoNil(xmlFile:getValue(key.."." .. DroneDeliveryMod.modName .. "#isCarried"),false)
+    local linkId = Utils.getNoNil(xmlFile:getValue(key.."." .. DroneDeliveryMod.modName .. "#droneLinkID"),"")
     if self.bDroneCarried and linkId ~= "" then
         PalletAddition.loadedCarriedPallets[linkId] = self
     end
@@ -73,8 +73,8 @@ function PalletAddition:onBaleSave(xmlFile,key)
     end
 
     if self.bDroneCarried then
-        xmlFile:setValue(key .. ".FS22_DroneDelivery#isCarried",bDroneCarry)
-        xmlFile:setValue(key .. ".FS22_DroneDelivery#droneLinkID",droneLinkID)
+        xmlFile:setValue(key .. "." .. DroneDeliveryMod.modName .. "#isCarried",bDroneCarry)
+        xmlFile:setValue(key .. "." .. DroneDeliveryMod.modName .. "#droneLinkID",droneLinkID)
     end
 
 end
@@ -85,9 +85,9 @@ function PalletAddition:onVehicleFinishLoad()
 
     if PickupDeliveryHelper.isSupportedObject(self) then
         if self.savegame ~= nil then
-            local bCarried = Utils.getNoNil(self.savegame.xmlFile:getValue(self.savegame.key..".FS22_DroneDelivery#isCarried"),false)
+            local bCarried = Utils.getNoNil(self.savegame.xmlFile:getValue(self.savegame.key.."." .. DroneDeliveryMod.modName .. "#isCarried"),false)
             self.bDroneCarried = bCarried
-            local linkId = Utils.getNoNil(self.savegame.xmlFile:getValue(self.savegame.key..".FS22_DroneDelivery#droneLinkID"),"")
+            local linkId = Utils.getNoNil(self.savegame.xmlFile:getValue(self.savegame.key.."." .. DroneDeliveryMod.modName .. "#droneLinkID"),"")
             if self.bDroneCarried and linkId ~= "" and self.spec_bigBag == nil then
                 PalletAddition.loadedCarriedPallets[linkId] = self
             end

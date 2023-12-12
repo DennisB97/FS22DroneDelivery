@@ -25,6 +25,7 @@ Drop the zipped file into your FS22 mods folder as usual (Documents/My Games/Far
 1.0.0.1 
 - Fixed my mod causing images and icons being bugged in the map.
 - Added ru GUI translation by nagor
+- Rotors now spin somewhat even when FPS is in the 30s.
   
 1.0.0.0 initial release.
 
