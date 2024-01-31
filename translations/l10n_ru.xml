@@ -56,8 +56,8 @@
         <text name="novaLift_connectedPickupDrones" text="Подключённые дроны на погрузку: " />
         <text name="novaLift_connectedDeliveryDrones" text="Подключённые дроны на выгрузку: " />
         <text name="novaLift_availableSpace" text="Доступное место: " />
-        <text name="input_FLYPATHFINDING_DBG_PREVIOUS" text="Debug previous" />
-        <text name="input_FLYPATHFINDING_DBG_NEXT" text="Debug next" />
-        <text name="input_FLYPATHFINDING_DBG_ASTAR_SHOW_CLOSEDNODES" text="Toggle closed nodes" />
+        <text name="input_FLYPATHFINDING_DBG_PREVIOUS" text="Отладка предыдущего" />
+        <text name="input_FLYPATHFINDING_DBG_NEXT" text="Отладка следующего" />
+        <text name="input_FLYPATHFINDING_DBG_ASTAR_SHOW_CLOSEDNODES" text="Переключить закрытые узлы" />
 	</texts>
 </l10n>
