@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8" standalone="no" ?>
-<modDesc descVersion="79">
+<modDesc descVersion="80">
     <author>Dennis B</author>
-    <version>1.0.0.1</version>
+    <version>1.0.0.2</version>
 
     <title>
         <en>Drone Delivery</en>
@@ -72,6 +72,9 @@
   FarmingSimulator2022/modSettings/flyPathfinding/config.xml has tweakable settings regarding creation of the navigation grid, if performance is slow.
 
   Changelog
+  V1.0.0.2
+  - Fixed a possiblity of nil access making game unplayable.
+  
   V1.0.0.1
   - Fixed my mod causing images and icons being bugged in the map.
   - Added ru GUI translation by nagor
@@ -138,6 +141,9 @@
   FarmingSimulator2022/modSettings/flyPathfinding/config.xml verfügt über anpassbare Einstellungen bezüglich der Erstellung des Navigationsrasters, wenn die Leistung langsam ist.
 
   Changelog
+  V1.0.0.2
+  - Es wurde ein Fall behoben, in dem auf einen Nullwert zugegriffen wurde, wodurch das Spiel unspielbar wurde.
+  
   V1.0.0.1
   - Ich habe meinen Mod korrigiert, der Bilder und Icons in der Karte fehlerhaft darstellt.
   - ru GUI Übersetzung von nagor hinzugefügt

@@ -1,4 +1,4 @@
-# FS22_DroneDelivery v1.0.0.1
+# FS22_DroneDelivery v1.0.0.2
 
 ![Dronehub and drone](https://i.gyazo.com/dd3a2d1816c42f4ad8b103fe8c877423.jpg)
 
@@ -21,6 +21,10 @@ This mod includes the set of scripts that enable fly pathfinding (https://github
 Drop the zipped file into your FS22 mods folder as usual (Documents/My Games/FarmingSimulator2022/mods).
 
 ## Changelog
+
+1.0.0.2
+- Fixed a possible nil access
+
 
 1.0.0.1 
 - Fixed my mod causing images and icons being bugged in the map.
