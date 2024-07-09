@@ -156,7 +156,7 @@ function DroneActionPhase:run(dt)
 
         -- slerpQuaternion might give NaN values need to filter out
         if tostring(quatX) == "nan" or tostring(quatY) == "nan" or tostring(quatZ) == "nan" or tostring(quatW) == "nan" then
-            quatX,quatY,quatZ,quatW = getWorldQuaternion(self.owner.rootNode)
+            quatX,quatY,quatZ,quatW = getWorldQuaternion(self.drone.rootNode)
         end
 
         if self.quaternionAlpha < 1 then
